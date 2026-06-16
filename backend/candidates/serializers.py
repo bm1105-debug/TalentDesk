@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from .models import Candidate, SkillTag
 
+
+
 class SkillTagSerializer(serializers.ModelSerializer):
     class Meta:
         model  = SkillTag
@@ -30,6 +32,12 @@ class CandidateSerializer(serializers.ModelSerializer):
             "created_by", "created_at", "updated_at",
         ]
         read_only_fields = ["created_by", "created_at", "updated_at"]
+        # Suppress built-in UniqueValidators so our validate() can return
+        # a rich error with the existing candidate's id, name, and status.
+        extra_kwargs = {
+            "email": {"validators": []},
+            "phone": {"validators": []},
+        }
 
     def _sync_skills(self, instance, skill_names):
         # Get-or-create each skill (save() normalizes to lowercase automatically)

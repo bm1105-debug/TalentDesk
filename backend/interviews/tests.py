@@ -241,6 +241,35 @@ class InterviewUpdateStatusTests(APITestCase):
         res = self.client.post(self._url(), {"status": "nonsense"}, format="json")
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_score_saved_via_update_status(self):
+        res = self.client.post(self._url(), {"status": "completed", "score": 82}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.interview.refresh_from_db()
+        self.assertEqual(self.interview.score, 82)
+        self.assertEqual(res.data["score"], 82)
+
+    def test_score_out_of_range_rejected(self):
+        res = self.client.post(self._url(), {"status": "completed", "score": 150}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_score_via_patch(self):
+        # Score can also be set directly via PATCH /interviews/{id}/
+        self.interview.status = "completed"
+        self.interview.save()
+        url = reverse("interview-detail", args=[self.interview.id])
+        res = self.client.patch(url, {"score": 75, "notes": "Good candidate."}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data["score"], 75)
+
+    def test_patch_score_on_past_interview_allowed(self):
+        # Completed interviews have scheduled_at in the past — patching should not be blocked
+        self.interview.status = "completed"
+        self.interview.scheduled_at = past(3)
+        self.interview.save()
+        url = reverse("interview-detail", args=[self.interview.id])
+        res = self.client.patch(url, {"score": 60}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
 
 # ── Permission Tests ──────────────────────────────────────────────────────────
 

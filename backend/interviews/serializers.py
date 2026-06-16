@@ -31,7 +31,7 @@ class InterviewSerializer(serializers.ModelSerializer):
             "scheduled_at", "duration_minutes",
             "meeting_link", "location",
             "interviewer", "interviewer_name",   # write id, read name
-            "notes",
+            "score", "notes",
             "created_by", "created_at", "updated_at",
         ]
         read_only_fields = ["created_by", "created_at", "updated_at"]
@@ -41,21 +41,20 @@ class InterviewSerializer(serializers.ModelSerializer):
         return f"{c.first_name} {c.last_name}"
 
     def validate_scheduled_at(self, value):
-        # Prevent scheduling interviews in the past — catches data entry mistakes
+        # Block past dates whenever scheduled_at is explicitly sent (create or reschedule).
+        # Not called at all when only score/notes are patched — no issue there.
         if value < timezone.now():
-            raise serializers.ValidationError(
-                "scheduled_at must be in the future."
-            )
+            raise serializers.ValidationError("scheduled_at must be in the future.")
         return value
 
     def validate(self, data):
-        # Only allow scheduling against active submittals —
-        # a rejected or placed candidate should not be getting new interviews
-        submittal = data.get("submittal") or getattr(self.instance, "submittal", None)
-        if submittal and submittal.status != "active":
-            raise serializers.ValidationError(
-                f"Cannot schedule an interview for a submittal with status '{submittal.status}'."
-            )
+        # Only enforce active submittal on creation — not on score/notes updates
+        if self.instance is None:
+            submittal = data.get("submittal")
+            if submittal and submittal.status != "active":
+                raise serializers.ValidationError(
+                    f"Cannot schedule an interview for a submittal with status '{submittal.status}'."
+                )
         return data
 
     def create(self, validated_data):
@@ -65,10 +64,6 @@ class InterviewSerializer(serializers.ModelSerializer):
 
 
 class InterviewStatusUpdateSerializer(serializers.Serializer):
-    """
-    Payload for POST /interviews/{id}/update-status/
-    Separates status changes from full updates so the transition
-    is explicit and notes can be required when marking no-show or cancelled.
-    """
     status = serializers.ChoiceField(choices=Interview.Status.choices)
     notes  = serializers.CharField(required=False, allow_blank=True, default="")
+    score  = serializers.IntegerField(required=False, min_value=0, max_value=100, allow_null=True)

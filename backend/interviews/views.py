@@ -73,12 +73,18 @@ class InterviewViewSet(viewsets.ModelViewSet):
 
         interview.status = new_status
 
-        # Append new notes below existing ones rather than overwriting —
-        # a panel interview may accumulate feedback from multiple reviewers
         if new_notes:
             separator = "\n\n---\n" if interview.notes else ""
             interview.notes = interview.notes + separator + new_notes
 
-        interview.save(update_fields=["status", "notes", "updated_at"])
+        score = serializer.validated_data.get("score")
+        if score is not None:
+            interview.score = score
+
+        update_fields = ["status", "notes", "updated_at"]
+        if score is not None:
+            update_fields.append("score")
+
+        interview.save(update_fields=update_fields)
 
         return Response(InterviewSerializer(interview, context={"request": request}).data)

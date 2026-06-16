@@ -93,23 +93,38 @@ class CandidateCreateTests(APITestCase):
         candidate = Candidate.objects.get(email="jane@example.com")
         self.assertEqual(candidate.created_by, self.recruiter)
 
-    def test_duplicate_email_rejected(self):
-        make_candidate(email="dup@example.com", phone="9000000004")
+    def test_duplicate_email_returns_rich_error(self):
+        existing = make_candidate(email="dup@example.com", phone="9000000004")
         payload = {
             "first_name": "Other", "last_name": "Person",
             "email": "dup@example.com", "phone": "9000000005",
         }
         res = self.client.post(self.url, payload, format="json")
-        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(res.status_code, status.HTTP_409_CONFLICT)
+        dup = res.data["duplicate"]
+        self.assertEqual(dup["field"], "email")
+        self.assertEqual(dup["id"], existing.id)
+        self.assertIn("Jane", dup["name"])
 
-    def test_duplicate_phone_rejected(self):
-        make_candidate(email="unique@example.com", phone="9000000006")
+    def test_duplicate_phone_returns_rich_error(self):
+        existing = make_candidate(email="unique@example.com", phone="9000000006")
         payload = {
             "first_name": "Other", "last_name": "Person",
             "email": "other@example.com", "phone": "9000000006",
         }
         res = self.client.post(self.url, payload, format="json")
-        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(res.status_code, status.HTTP_409_CONFLICT)
+        dup = res.data["duplicate"]
+        self.assertEqual(dup["field"], "phone")
+        self.assertEqual(dup["id"], existing.id)
+
+    def test_update_own_email_does_not_false_positive(self):
+        # Updating a candidate's own email should not trigger duplicate detection
+        candidate = make_candidate(email="myown@example.com", phone="9000000007")
+        auth(self.client, self.recruiter)
+        url = reverse("candidate-detail", args=[candidate.id])
+        res = self.client.patch(url, {"email": "myown@example.com"}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
 
     def test_unauthenticated_rejected(self):
         self.client.credentials()  # clear auth

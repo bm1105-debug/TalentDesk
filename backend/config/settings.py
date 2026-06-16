@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     "interviews",
     "communications",
     "cvgen",
+    "attachments",
 ]
 
 MIDDLEWARE = [

@@ -1,4 +1,4 @@
-from rest_framework import viewsets, filters
+from rest_framework import viewsets, filters, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -6,6 +6,27 @@ from rest_framework.response import Response
 from .models import Candidate, SkillTag
 from .serializers import CandidateSerializer, SkillTagSerializer
 from users.permissions import IsAccountManagerOrAbove, IsRecruiterOrAbove
+
+
+def _check_duplicate(field, value, exclude_pk=None):
+    """Return a 409 Response if a candidate with this field value already exists."""
+    qs = Candidate.objects.filter(**{field: value})
+    if exclude_pk:
+        qs = qs.exclude(pk=exclude_pk)
+    existing = qs.first()
+    if existing:
+        return Response(
+            {
+                "duplicate": {
+                    "field":  field,
+                    "id":     existing.id,
+                    "name":   f"{existing.first_name} {existing.last_name}",
+                    "status": existing.status,
+                }
+            },
+            status=status.HTTP_409_CONFLICT,
+        )
+    return None
 
 class SkillTagViewSet(viewsets.ReadOnlyModelViewSet):
     """
@@ -42,6 +63,19 @@ class CandidateViewSet(viewsets.ModelViewSet):
             qs = qs.filter(skills__name=skill.strip().lower())
 
         return qs
+
+    def create(self, request, *args, **kwargs):
+        email = request.data.get('email', '').strip()
+        phone = request.data.get('phone', '').strip()
+        if email:
+            dup = _check_duplicate('email', email)
+            if dup:
+                return dup
+        if phone:
+            dup = _check_duplicate('phone', phone)
+            if dup:
+                return dup
+        return super().create(request, *args, **kwargs)
 
     def get_permissions(self):
         # Only Account Managers and above can delete candidates

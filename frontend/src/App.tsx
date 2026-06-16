@@ -13,15 +13,7 @@ import Submittals from '@/pages/Submittals'
 import Interviews from '@/pages/Interviews'
 import Communications from '@/pages/Communications'
 import Search from '@/pages/Search'
-
-// Page placeholders — replaced one by one in subsequent blocks
-function ComingSoon({ name }: { name: string }) {
-  return (
-    <div className="text-gray-400 text-sm">
-      {name} — coming soon
-    </div>
-  )
-}
+import CandidateDetail from '@/pages/CandidateDetail'
 
 export default function App() {
   return (
@@ -40,6 +32,7 @@ export default function App() {
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard"      element={<Dashboard />} />
         <Route path="candidates"     element={<Candidates />} />
+        <Route path="candidates/:id" element={<CandidateDetail />} />
         <Route path="jobs"           element={<Jobs />} />
         <Route path="submittals"     element={<Submittals />} />
         <Route path="interviews"     element={<Interviews />} />

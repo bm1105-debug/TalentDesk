@@ -30,6 +30,7 @@ urlpatterns = [
     path("api/", include("communications.urls")),
 
     path("api/", include("cvgen.urls")),
+    path("api/", include("attachments.urls")),
 ]
 
 # Serve uploaded files (resumes, docs) in development only

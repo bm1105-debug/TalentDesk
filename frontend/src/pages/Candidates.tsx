@@ -7,7 +7,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Search, Plus, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, Plus, ChevronLeft, ChevronRight, FileUp, Loader2 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { useRef } from 'react'
 import api from '@/api/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -73,22 +75,64 @@ const STATUS_VARIANTS: Record<string, 'success' | 'default' | 'secondary' | 'des
 
 // ── Add Candidate Form ─────────────────────────────────────────────────────────
 
+interface DuplicateInfo {
+  field: string
+  id: number
+  name: string
+  status: string
+}
+
 function AddCandidateForm({ onSuccess }: { onSuccess: () => void }) {
   const qc = useQueryClient()
+  const navigate = useNavigate()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [parsing, setParsing] = useState(false)
+  const [parseError, setParseError] = useState('')
+  const [duplicate, setDuplicate] = useState<DuplicateInfo | null>(null)
 
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormValues>({
+  const { register, handleSubmit, reset, setValue, formState: { errors, isSubmitting } } = useForm<FormValues>({
     resolver: zodResolver(schema),
   })
 
   const create = useMutation({
     mutationFn: (payload: object) => api.post('/candidates/', payload).then(r => r.data),
     onSuccess: () => {
-      // Invalidate so the list refetches with the new candidate included
       qc.invalidateQueries({ queryKey: ['candidates'] })
       reset()
+      setDuplicate(null)
       onSuccess()
     },
+    onError: (err: any) => {
+      const data = err?.response?.data
+      if (err?.response?.status === 409 && data?.duplicate) {
+        setDuplicate(data.duplicate)
+      }
+    },
   })
+
+  async function handleParseResume(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setParseError('')
+    setParsing(true)
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      const { data } = await api.post('/attachments/parse/', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      if (data.first_name)    setValue('first_name', data.first_name)
+      if (data.last_name)     setValue('last_name', data.last_name)
+      if (data.email)         setValue('email', data.email)
+      if (data.phone)         setValue('phone', data.phone)
+      if (data.current_title) setValue('current_title', data.current_title)
+    } catch {
+      setParseError('Could not parse file. Fill in the fields manually.')
+    } finally {
+      setParsing(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
 
   async function onSubmit(values: FormValues) {
     const { skill_names, ...rest } = values
@@ -103,6 +147,30 @@ function AddCandidateForm({ onSuccess }: { onSuccess: () => void }) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 max-h-[70vh] overflow-y-auto pr-1">
+
+      {/* Parse resume */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5 flex items-center gap-3">
+        <FileUp className="h-4 w-4 text-blue-500 shrink-0" />
+        <span className="text-sm text-blue-700 flex-1">Auto-fill from CV</span>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          disabled={parsing}
+          onClick={() => fileInputRef.current?.click()}
+          className="shrink-0"
+        >
+          {parsing ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Upload CV'}
+        </Button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".pdf,.docx,.txt"
+          className="hidden"
+          onChange={handleParseResume}
+        />
+      </div>
+      {parseError && <p className="text-xs text-red-500">{parseError}</p>}
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
@@ -120,12 +188,14 @@ function AddCandidateForm({ onSuccess }: { onSuccess: () => void }) {
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
           <Label>Email *</Label>
-          <Input {...register('email')} type="email" placeholder="jane@example.com" />
+          <Input {...register('email')} type="email" placeholder="jane@example.com"
+            onChange={e => { setDuplicate(null); register('email').onChange(e) }} />
           {errors.email && <p className="text-xs text-red-500">{errors.email.message}</p>}
         </div>
         <div className="space-y-1">
           <Label>Phone *</Label>
-          <Input {...register('phone')} placeholder="+44 7700 900000" />
+          <Input {...register('phone')} placeholder="+44 7700 900000"
+            onChange={e => { setDuplicate(null); register('phone').onChange(e) }} />
           {errors.phone && <p className="text-xs text-red-500">{errors.phone.message}</p>}
         </div>
       </div>
@@ -183,9 +253,27 @@ function AddCandidateForm({ onSuccess }: { onSuccess: () => void }) {
         />
       </div>
 
-      {create.isError && (
+      {duplicate && (
+        <div className="bg-amber-50 border border-amber-300 rounded-md px-3 py-2.5 text-sm">
+          <p className="font-medium text-amber-800">
+            Duplicate {duplicate.field} — this candidate already exists:
+          </p>
+          <p className="text-amber-700 mt-1">
+            <strong>{duplicate.name}</strong> · {duplicate.status}
+          </p>
+          <button
+            type="button"
+            className="text-blue-600 hover:underline text-xs mt-1"
+            onClick={() => navigate(`/candidates/${duplicate.id}`)}
+          >
+            View existing profile &rarr;
+          </button>
+        </div>
+      )}
+
+      {create.isError && !duplicate && (
         <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
-          Failed to create candidate. Check for duplicate email/phone.
+          Failed to create candidate. Please check all fields.
         </p>
       )}
 
@@ -205,6 +293,7 @@ export default function Candidates() {
   const [status,    setStatus]    = useState('')
   const [page,      setPage]      = useState(1)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const navigate = useNavigate()
 
   const { data, isLoading } = useQuery<PaginatedResponse>({
     queryKey: ['candidates', search, status, page],
@@ -292,7 +381,8 @@ export default function Candidates() {
               </tr>
             )}
             {data?.results.map(c => (
-              <tr key={c.id} className="hover:bg-gray-50 transition-colors">
+              <tr key={c.id} className="hover:bg-gray-50 transition-colors cursor-pointer"
+                onClick={() => navigate(`/candidates/${c.id}`)}>
                 <td className="px-4 py-3 font-medium text-gray-900">
                   {c.first_name} {c.last_name}
                 </td>

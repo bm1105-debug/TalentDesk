@@ -123,3 +123,56 @@ class MeViewTests(APITestCase):
         """Unauthenticated request returns 401."""
         res = self.client.get(reverse("user_me"))
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class ChangePasswordTests(APITestCase):
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="rec", password="OldPass!99", role=Role.RECRUITER,
+            first_name="Rec", last_name="User", email="rec@test.com",
+        )
+        token_url = reverse("token_obtain")
+        res = self.client.post(token_url, {"username": "rec", "password": "OldPass!99"})
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {res.data['access']}")
+        self.url = reverse("change_password")
+
+    def test_correct_old_password_changes_it(self):
+        res = self.client.post(self.url, {
+            "old_password": "OldPass!99",
+            "new_password": "NewPass!88",
+            "new_password2": "NewPass!88",
+        }, format="json")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password("NewPass!88"))
+
+    def test_wrong_old_password_rejected(self):
+        res = self.client.post(self.url, {
+            "old_password": "WrongOld!00",
+            "new_password": "NewPass!88",
+            "new_password2": "NewPass!88",
+        }, format="json")
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_mismatched_new_passwords_rejected(self):
+        res = self.client.post(self.url, {
+            "old_password": "OldPass!99",
+            "new_password": "NewPass!88",
+            "new_password2": "Different!77",
+        }, format="json")
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_old_password_still_works_after_failed_attempt(self):
+        self.client.post(self.url, {
+            "old_password": "Wrong!00",
+            "new_password": "NewPass!88",
+            "new_password2": "NewPass!88",
+        }, format="json")
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password("OldPass!99"))
+
+    def test_unauthenticated_rejected(self):
+        self.client.credentials()
+        res = self.client.post(self.url, {}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)

@@ -56,6 +56,9 @@ class Interview(models.Model):
         default=Status.SCHEDULED,
     )
 
+    # Score entered by the interviewer after the interview (0–100)
+    score = models.PositiveSmallIntegerField(null=True, blank=True)
+
     # Outcome notes added by the recruiter or interviewer after the interview
     notes = models.TextField(blank=True)
 

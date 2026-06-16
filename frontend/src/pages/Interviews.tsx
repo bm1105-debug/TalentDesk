@@ -7,7 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, ChevronLeft, ChevronRight, CheckCircle, XCircle } from 'lucide-react'
+import { Plus, ChevronLeft, ChevronRight, CheckCircle, XCircle, Star } from 'lucide-react'
 import api from '@/api/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -28,6 +28,7 @@ interface Interview {
   duration_minutes: number | null
   meeting_link: string
   location: string
+  score: number | null
   notes: string
 }
 
@@ -176,6 +177,84 @@ function StatusButtons({ interview }: { interview: Interview }) {
   )
 }
 
+// ── Score Dialog ───────────────────────────────────────────────────────────────
+
+function ScoreDialog({ interview }: { interview: Interview }) {
+  const qc = useQueryClient()
+  const [open, setOpen] = useState(false)
+  const [score, setScore] = useState<string>(interview.score != null ? String(interview.score) : '')
+  const [notes, setNotes] = useState('')
+  const [error, setError] = useState('')
+
+  const save = useMutation({
+    mutationFn: () => api.patch(`/interviews/${interview.id}/`, {
+      score: score !== '' ? Number(score) : null,
+      notes: notes || undefined,
+    }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['interviews'] })
+      setOpen(false)
+      setError('')
+    },
+    onError: () => setError('Failed to save. Check score is 0–100.'),
+  })
+
+  if (interview.status !== 'completed') return null
+
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        title={interview.score != null ? 'Edit score' : 'Add score'}
+        className="flex items-center gap-1 text-xs px-2 py-1 rounded-md border border-gray-200 hover:bg-gray-50 transition-colors"
+      >
+        <Star className="h-3 w-3 text-amber-400" />
+        {interview.score != null ? (
+          <span className="font-semibold text-gray-700">{interview.score}/100</span>
+        ) : (
+          <span className="text-gray-400">Score</span>
+        )}
+      </button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Score Interview — {interview.candidate_name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-1">
+              <Label>Score (0–100)</Label>
+              <Input
+                type="number" min={0} max={100}
+                value={score}
+                onChange={e => setScore(e.target.value)}
+                placeholder="e.g. 78"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Feedback notes <span className="text-gray-400 font-normal">(appended to existing)</span></Label>
+              <textarea
+                value={notes}
+                onChange={e => setNotes(e.target.value)}
+                rows={3}
+                placeholder="Strong problem-solving skills…"
+                className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              />
+            </div>
+            {error && <p className="text-sm text-red-600">{error}</p>}
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+              <Button onClick={() => save.mutate()} disabled={save.isPending}>
+                {save.isPending ? 'Saving…' : 'Save Score'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  )
+}
+
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function Interviews() {
@@ -250,7 +329,12 @@ export default function Interviews() {
                     {i.status.replace('_', ' ')}
                   </Badge>
                 </td>
-                <td className="px-4 py-3"><StatusButtons interview={i} /></td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <StatusButtons interview={i} />
+                    <ScoreDialog interview={i} />
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
