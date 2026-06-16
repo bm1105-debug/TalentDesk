@@ -7,7 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, ChevronLeft, ChevronRight, ArrowRight, StickyNote } from 'lucide-react'
+import { Plus, ChevronLeft, ChevronRight, ArrowRight, StickyNote, HandCoins } from 'lucide-react'
 import api from '@/api/client'
 import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/button'
@@ -209,6 +209,110 @@ function AdvanceStageDialog({ submittal, onDone }: { submittal: Submittal; onDon
   )
 }
 
+// ── Make Offer Dialog ──────────────────────────────────────────────────────────
+
+const offerSchema = z.object({
+  salary:      z.coerce.number().positive('Salary must be a positive number'),
+  currency:    z.string().min(3).max(3).default('USD'),
+  offer_date:  z.string().min(1, 'Offer date is required'),
+  expiry_date: z.string().optional(),
+  start_date:  z.string().optional(),
+  notes:       z.string().optional(),
+})
+type OfferFormValues = z.infer<typeof offerSchema>
+
+function MakeOfferDialog({ submittal, onDone }: { submittal: Submittal; onDone: () => void }) {
+  const [open, setOpen] = useState(false)
+  const qc = useQueryClient()
+
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<OfferFormValues>({
+    resolver: zodResolver(offerSchema),
+    defaultValues: { currency: 'USD' },
+  })
+
+  const create = useMutation({
+    mutationFn: (payload: OfferFormValues) =>
+      api.post('/offers/', { ...payload, submittal: submittal.id }).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['offers'] })
+      qc.invalidateQueries({ queryKey: ['submittals'] })
+      reset(); setOpen(false); onDone()
+    },
+  })
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs text-emerald-600 hover:text-emerald-700">
+          <HandCoins className="h-3.5 w-3.5" /> Offer
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-sm">
+        <DialogHeader><DialogTitle>Make Offer</DialogTitle></DialogHeader>
+        <form onSubmit={handleSubmit(v => create.mutateAsync(v))} className="space-y-3">
+          <p className="text-sm text-gray-500">
+            {submittal.candidate_name} → <span className="font-medium">{submittal.job_title}</span>
+          </p>
+
+          <div className="flex gap-2">
+            <div className="flex-1 space-y-1">
+              <Label>Salary *</Label>
+              <input {...register('salary')} type="number" placeholder="75000"
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm" />
+              {errors.salary && <p className="text-xs text-red-500">{errors.salary.message}</p>}
+            </div>
+            <div className="w-20 space-y-1">
+              <Label>Currency</Label>
+              <input {...register('currency')} placeholder="USD" maxLength={3}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm uppercase" />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <Label>Offer date *</Label>
+            <input {...register('offer_date')} type="date"
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm" />
+            {errors.offer_date && <p className="text-xs text-red-500">{errors.offer_date.message}</p>}
+          </div>
+
+          <div className="flex gap-2">
+            <div className="flex-1 space-y-1">
+              <Label>Expiry date <span className="text-gray-400 font-normal">(optional)</span></Label>
+              <input {...register('expiry_date')} type="date"
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm" />
+            </div>
+            <div className="flex-1 space-y-1">
+              <Label>Start date <span className="text-gray-400 font-normal">(optional)</span></Label>
+              <input {...register('start_date')} type="date"
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm" />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <Label>Notes <span className="text-gray-400 font-normal">(optional)</span></Label>
+            <textarea {...register('notes')} rows={2}
+              placeholder="Equity, benefits, remote policy…"
+              className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" />
+          </div>
+
+          {create.isError && (
+            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
+              Failed. There may already be a pending offer for this submittal.
+            </p>
+          )}
+
+          <div className="flex justify-end gap-2 pt-1">
+            <Button type="button" variant="outline" size="sm" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button type="submit" size="sm" disabled={create.isPending}>
+              {create.isPending ? 'Saving…' : 'Create Offer'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 // ── Add Note Dialog ────────────────────────────────────────────────────────────
 
 function AddNoteDialog({ submittal, onDone }: { submittal: Submittal; onDone: () => void }) {
@@ -345,6 +449,7 @@ export default function Submittals() {
                     <div className="flex items-center gap-1">
                       <AdvanceStageDialog submittal={s} onDone={() => {}} />
                       <AddNoteDialog submittal={s} onDone={() => {}} />
+                      <MakeOfferDialog submittal={s} onDone={() => {}} />
                     </div>
                   )}
                   {/* Managers can change status on non-active submittals too */}

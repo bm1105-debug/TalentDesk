@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "cvgen",
     "attachments",
     "notifications",
+    "offers",
 ]
 
 MIDDLEWARE = [

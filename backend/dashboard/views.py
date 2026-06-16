@@ -14,6 +14,7 @@ from users.models import Role
 from users.permissions import IsRecruiterOrAbove
 from candidates.models import Candidate
 from interviews.models import Interview
+from offers.models import Offer
 
 
 # Submittals with no movement for this many days are flagged as stale
@@ -72,8 +73,31 @@ class MyDayView(APIView):
         # Stale = active submittal with no movement for STALE_DAYS days
         stale_submittals = active_submittals_qs.filter(updated_at__lt=stale_cutoff)
 
+        # ── Pending offers (firm-wide — any recruiter needs to chase these) ───
+        pending_offers_qs = (
+            Offer.objects
+            .filter(status=Offer.Status.PENDING)
+            .select_related("submittal__candidate", "submittal__job__client", "created_by")
+        )
+        if not is_manager:
+            pending_offers_qs = pending_offers_qs.filter(created_by=user)
+
         # ── Serialise ─────────────────────────────────────────────────────────
         ctx = {"request": request}
+
+        pending_offers_data = [
+            {
+                "id":             o.id,
+                "candidate_name": f"{o.submittal.candidate.first_name} {o.submittal.candidate.last_name}",
+                "job_title":      o.submittal.job.title,
+                "client_name":    o.submittal.job.client.name,
+                "salary":         str(o.salary),
+                "currency":       o.currency,
+                "offer_date":     o.offer_date.isoformat(),
+                "expiry_date":    o.expiry_date.isoformat() if o.expiry_date else None,
+            }
+            for o in pending_offers_qs
+        ]
 
         return Response({
             "summary": {
@@ -82,11 +106,12 @@ class MyDayView(APIView):
                 "urgent_jobs_count":        urgent_jobs.count(),
                 "overdue_jobs_count":       overdue_jobs.count(),
                 "stale_submittals_count":   stale_submittals.count(),
+                "pending_offers_count":     pending_offers_qs.count(),
             },
-            # Full objects so the frontend can render action cards directly
-            "urgent_jobs":       JobSerializer(urgent_jobs,       many=True, context=ctx).data,
-            "overdue_jobs":      JobSerializer(overdue_jobs,      many=True, context=ctx).data,
-            "stale_submittals":  SubmittalSerializer(stale_submittals, many=True, context=ctx).data,
+            "urgent_jobs":      JobSerializer(urgent_jobs,       many=True, context=ctx).data,
+            "overdue_jobs":     JobSerializer(overdue_jobs,      many=True, context=ctx).data,
+            "stale_submittals": SubmittalSerializer(stale_submittals, many=True, context=ctx).data,
+            "pending_offers":   pending_offers_data,
         })
 
 

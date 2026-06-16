@@ -18,6 +18,7 @@ import Reports from '@/pages/Reports'
 import Analytics from '@/pages/Analytics'
 import Scorecard from '@/pages/Scorecard'
 import ActivityLog from '@/pages/ActivityLog'
+import Offers from '@/pages/Offers'
 
 export default function App() {
   return (
@@ -46,6 +47,7 @@ export default function App() {
         <Route path="analytics"      element={<Analytics />} />
         <Route path="scorecard"      element={<Scorecard />} />
         <Route path="activity"       element={<ActivityLog />} />
+        <Route path="offers"         element={<Offers />} />
       </Route>
 
       {/* Catch-all */}

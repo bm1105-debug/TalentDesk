@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Users, Briefcase, FileText,
-  Calendar, Mail, Search, LogOut, KeyRound, BarChart2, TrendingUp, Award, ClipboardList,
+  Calendar, Mail, Search, LogOut, KeyRound, BarChart2, TrendingUp, Award, ClipboardList, HandCoins,
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/button'
@@ -125,6 +125,7 @@ const NAV_ITEMS = [
   { to: '/reports',        label: 'Reports',        icon: BarChart2 },
   { to: '/analytics',      label: 'Analytics',      icon: TrendingUp },
   { to: '/scorecard',      label: 'My Scorecard',   icon: Award },
+  { to: '/offers',         label: 'Offers',         icon: HandCoins },
 ]
 
 export default function Layout() {
