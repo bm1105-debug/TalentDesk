@@ -297,3 +297,58 @@ class InterviewPermissionTests(APITestCase):
         url = reverse("interview-detail", args=[self.interview.id])
         res = self.client.delete(url)
         self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
+
+
+# ── Date Range Filter Tests ───────────────────────────────────────────────────
+
+class InterviewDateFilterTests(APITestCase):
+
+    def setUp(self):
+        self.recruiter = make_user("datefilter@test.com")
+        auth(self.client, self.recruiter)
+        submittal = make_submittal(self.recruiter)
+
+        now = timezone.now()
+        # iv_past: 10 days ago
+        self.iv_past = Interview.objects.create(
+            submittal=submittal, interview_type="phone",
+            scheduled_at=now - timedelta(days=10), created_by=self.recruiter,
+            status="completed",
+        )
+        # iv_today
+        self.iv_today = Interview.objects.create(
+            submittal=submittal, interview_type="video",
+            scheduled_at=now, created_by=self.recruiter,
+        )
+        # iv_future: 10 days from now
+        self.iv_future = Interview.objects.create(
+            submittal=submittal, interview_type="phone",
+            scheduled_at=now + timedelta(days=10), created_by=self.recruiter,
+        )
+
+    def test_scheduled_after_filters_out_past(self):
+        today = timezone.now().date().isoformat()
+        res = self.client.get(URL, {"scheduled_after": today})
+        self.assertEqual(res.status_code, 200)
+        ids = [r["id"] for r in res.data["results"]]
+        self.assertNotIn(self.iv_past.id, ids)
+        self.assertIn(self.iv_today.id,  ids)
+        self.assertIn(self.iv_future.id, ids)
+
+    def test_scheduled_before_filters_out_future(self):
+        today = timezone.now().date().isoformat()
+        res = self.client.get(URL, {"scheduled_before": today})
+        self.assertEqual(res.status_code, 200)
+        ids = [r["id"] for r in res.data["results"]]
+        self.assertIn(self.iv_past.id,    ids)
+        self.assertIn(self.iv_today.id,   ids)
+        self.assertNotIn(self.iv_future.id, ids)
+
+    def test_date_range_returns_only_matching(self):
+        yesterday = (timezone.now() - timedelta(days=1)).date().isoformat()
+        tomorrow  = (timezone.now() + timedelta(days=1)).date().isoformat()
+        res = self.client.get(URL, {"scheduled_after": yesterday, "scheduled_before": tomorrow})
+        ids = [r["id"] for r in res.data["results"]]
+        self.assertIn(self.iv_today.id,    ids)
+        self.assertNotIn(self.iv_past.id,  ids)
+        self.assertNotIn(self.iv_future.id, ids)

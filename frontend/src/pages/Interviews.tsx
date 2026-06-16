@@ -1,13 +1,9 @@
-// What this file does: interview list with schedule dialog and inline status updates.
-// Fetches active submittals for the schedule form so only valid submittal+candidate
-// combinations can be booked.
-
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, ChevronLeft, ChevronRight, CheckCircle, XCircle, Star } from 'lucide-react'
+import { Plus, ChevronLeft, ChevronRight, CheckCircle, XCircle, Star, List, CalendarDays } from 'lucide-react'
 import api from '@/api/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -49,10 +45,45 @@ const STATUS_VARIANT: Record<string, 'default' | 'success' | 'secondary' | 'dest
   no_show:    'destructive',
 }
 
+const STATUS_CHIP: Record<string, string> = {
+  scheduled: 'bg-blue-100 text-blue-800',
+  completed: 'bg-green-100 text-green-800',
+  cancelled: 'bg-gray-100 text-gray-600',
+  no_show:   'bg-red-100 text-red-700',
+}
+
+const TYPE_LABEL: Record<string, string> = {
+  phone: 'Phone', video: 'Video', in_person: 'In Person', technical: 'Technical',
+}
+
+const MONTH_NAMES = [
+  'January','February','March','April','May','June',
+  'July','August','September','October','November','December',
+]
+const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
+
 function fmtDateTime(iso: string) {
-  return new Date(iso).toLocaleString(undefined, {
-    dateStyle: 'medium', timeStyle: 'short',
-  })
+  return new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+}
+
+function fmtTime(iso: string) {
+  return new Date(iso).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+}
+
+function isoDate(d: Date) {
+  return d.toISOString().slice(0, 10)
+}
+
+// Build a flat array of Date|null for the month grid, padded to full weeks
+function buildMonthGrid(year: number, month: number): (Date | null)[] {
+  const firstDay = new Date(year, month, 1)
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  const startPad = firstDay.getDay() // 0=Sun
+  const cells: (Date | null)[] = []
+  for (let i = 0; i < startPad; i++) cells.push(null)
+  for (let d = 1; d <= daysInMonth; d++) cells.push(new Date(year, month, d))
+  while (cells.length % 7 !== 0) cells.push(null)
+  return cells
 }
 
 // ── Schedule Form ──────────────────────────────────────────────────────────────
@@ -88,7 +119,6 @@ function ScheduleForm({ onSuccess }: { onSuccess: () => void }) {
 
   return (
     <form onSubmit={handleSubmit(v => create.mutateAsync(v))} className="space-y-3">
-
       <div className="space-y-1">
         <Label>Submittal *</Label>
         <select {...register('submittal')}
@@ -255,13 +285,166 @@ function ScoreDialog({ interview }: { interview: Interview }) {
   )
 }
 
-// ── Page ───────────────────────────────────────────────────────────────────────
+// ── Calendar View ──────────────────────────────────────────────────────────────
 
-export default function Interviews() {
-  const [statusFilter, setStatusFilter] = useState('')
-  const [page,         setPage]         = useState(1)
-  const [dialogOpen,   setDialogOpen]   = useState(false)
+function CalendarView({ year, month }: { year: number; month: number }) {
+  const [selected, setSelected] = useState<Interview | null>(null)
 
+  const firstDay = new Date(year, month, 1)
+  const lastDay  = new Date(year, month + 1, 0)
+
+  const { data, isLoading } = useQuery<PaginatedInterviews>({
+    queryKey: ['interviews', 'calendar', year, month],
+    queryFn: () => api.get('/interviews/', {
+      params: {
+        scheduled_after:  isoDate(firstDay),
+        scheduled_before: isoDate(lastDay),
+        page_size: 200,
+      },
+    }).then(r => r.data),
+  })
+
+  const interviews = data?.results ?? []
+  const cells = buildMonthGrid(year, month)
+
+  // Group interviews by date string "YYYY-MM-DD"
+  const byDate: Record<string, Interview[]> = {}
+  for (const iv of interviews) {
+    const d = iv.scheduled_at.slice(0, 10)
+    if (!byDate[d]) byDate[d] = []
+    byDate[d].push(iv)
+  }
+
+  const today = isoDate(new Date())
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      {/* Day headers */}
+      <div className="grid grid-cols-7 border-b border-gray-100">
+        {DAY_NAMES.map(d => (
+          <div key={d} className="py-2 text-center text-xs font-medium text-gray-400 uppercase tracking-wide">
+            {d}
+          </div>
+        ))}
+      </div>
+
+      {/* Day cells */}
+      {isLoading ? (
+        <div className="py-20 text-center text-sm text-gray-400">Loading…</div>
+      ) : (
+        <div className="grid grid-cols-7">
+          {cells.map((date, idx) => {
+            const key = date ? isoDate(date) : `pad-${idx}`
+            const dayInterviews = date ? (byDate[isoDate(date)] ?? []) : []
+            const isToday = date ? isoDate(date) === today : false
+
+            return (
+              <div
+                key={key}
+                className={`min-h-[100px] border-b border-r border-gray-100 p-1.5 ${
+                  !date ? 'bg-gray-50' : ''
+                }`}
+              >
+                {date && (
+                  <>
+                    <span className={`inline-flex items-center justify-center w-6 h-6 text-xs font-medium rounded-full mb-1 ${
+                      isToday
+                        ? 'bg-blue-600 text-white'
+                        : 'text-gray-600'
+                    }`}>
+                      {date.getDate()}
+                    </span>
+                    <div className="space-y-0.5">
+                      {dayInterviews.map(iv => (
+                        <button
+                          key={iv.id}
+                          onClick={() => setSelected(iv)}
+                          className={`w-full text-left text-xs px-1.5 py-0.5 rounded truncate font-medium ${STATUS_CHIP[iv.status] ?? 'bg-gray-100 text-gray-700'}`}
+                        >
+                          {fmtTime(iv.scheduled_at)} {iv.candidate_name}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Interview detail popover */}
+      {selected && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/30"
+          onClick={() => setSelected(null)}>
+          <div className="bg-white rounded-xl border border-gray-200 shadow-xl p-5 w-80 space-y-3"
+            onClick={e => e.stopPropagation()}>
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="font-semibold text-gray-900">{selected.candidate_name}</p>
+                <p className="text-sm text-gray-500">{selected.job_title}</p>
+              </div>
+              <Badge variant={STATUS_VARIANT[selected.status] ?? 'secondary'}>
+                {selected.status.replace('_', ' ')}
+              </Badge>
+            </div>
+            <dl className="text-sm space-y-1.5">
+              <div className="flex gap-2">
+                <dt className="text-gray-400 w-20 shrink-0">Type</dt>
+                <dd className="text-gray-700">{TYPE_LABEL[selected.interview_type] ?? selected.interview_type}</dd>
+              </div>
+              <div className="flex gap-2">
+                <dt className="text-gray-400 w-20 shrink-0">Time</dt>
+                <dd className="text-gray-700">{fmtDateTime(selected.scheduled_at)}</dd>
+              </div>
+              {selected.duration_minutes && (
+                <div className="flex gap-2">
+                  <dt className="text-gray-400 w-20 shrink-0">Duration</dt>
+                  <dd className="text-gray-700">{selected.duration_minutes} mins</dd>
+                </div>
+              )}
+              {selected.meeting_link && (
+                <div className="flex gap-2">
+                  <dt className="text-gray-400 w-20 shrink-0">Link</dt>
+                  <dd>
+                    <a href={selected.meeting_link} target="_blank" rel="noreferrer"
+                      className="text-blue-600 hover:underline truncate block max-w-[180px]">
+                      Join
+                    </a>
+                  </dd>
+                </div>
+              )}
+              {selected.location && (
+                <div className="flex gap-2">
+                  <dt className="text-gray-400 w-20 shrink-0">Location</dt>
+                  <dd className="text-gray-700">{selected.location}</dd>
+                </div>
+              )}
+              {selected.score != null && (
+                <div className="flex gap-2">
+                  <dt className="text-gray-400 w-20 shrink-0">Score</dt>
+                  <dd className="text-gray-700 font-semibold">{selected.score}/100</dd>
+                </div>
+              )}
+            </dl>
+            <div className="pt-1 border-t border-gray-100 flex justify-end">
+              <button onClick={() => setSelected(null)}
+                className="text-sm text-gray-500 hover:text-gray-700">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── List View ─────────────────────────────────────────────────────────────────
+
+function ListView({ statusFilter, page, setPage }: {
+  statusFilter: string
+  page: number
+  setPage: (fn: (p: number) => number) => void
+}) {
   const { data, isLoading } = useQuery<PaginatedInterviews>({
     queryKey: ['interviews', statusFilter, page],
     queryFn:  () => api.get('/interviews/', {
@@ -273,34 +456,7 @@ export default function Interviews() {
   const totalPages = data ? Math.ceil(data.count / 10) : 1
 
   return (
-    <div className="space-y-4">
-
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-gray-900">Interviews</h1>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm" className="gap-1.5">
-              <Plus className="h-4 w-4" /> Schedule Interview
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Schedule Interview</DialogTitle></DialogHeader>
-            <ScheduleForm onSuccess={() => setDialogOpen(false)} />
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      <div className="flex gap-3">
-        <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1) }}
-          className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
-          <option value="">All statuses</option>
-          <option value="scheduled">Scheduled</option>
-          <option value="completed">Completed</option>
-          <option value="cancelled">Cancelled</option>
-          <option value="no_show">No Show</option>
-        </select>
-      </div>
-
+    <>
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b border-gray-200">
@@ -354,6 +510,104 @@ export default function Interviews() {
           </div>
         </div>
       )}
+    </>
+  )
+}
+
+// ── Page ───────────────────────────────────────────────────────────────────────
+
+export default function Interviews() {
+  const [view,         setView]         = useState<'list' | 'calendar'>('list')
+  const [statusFilter, setStatusFilter] = useState('')
+  const [page,         setPage]         = useState(1)
+  const [dialogOpen,   setDialogOpen]   = useState(false)
+
+  const now = new Date()
+  const [calYear,  setCalYear]  = useState(now.getFullYear())
+  const [calMonth, setCalMonth] = useState(now.getMonth())
+
+  function prevMonth() {
+    if (calMonth === 0) { setCalYear(y => y - 1); setCalMonth(11) }
+    else setCalMonth(m => m - 1)
+  }
+  function nextMonth() {
+    if (calMonth === 11) { setCalYear(y => y + 1); setCalMonth(0) }
+    else setCalMonth(m => m + 1)
+  }
+
+  return (
+    <div className="space-y-4">
+
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-semibold text-gray-900">Interviews</h1>
+        <div className="flex items-center gap-2">
+          {/* View toggle */}
+          <div className="flex items-center rounded-md border border-gray-200 overflow-hidden">
+            <button
+              onClick={() => setView('list')}
+              className={`px-3 py-1.5 text-sm flex items-center gap-1.5 transition-colors ${
+                view === 'list' ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-500 hover:bg-gray-50'
+              }`}
+            >
+              <List className="h-4 w-4" /> List
+            </button>
+            <button
+              onClick={() => setView('calendar')}
+              className={`px-3 py-1.5 text-sm flex items-center gap-1.5 border-l border-gray-200 transition-colors ${
+                view === 'calendar' ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-500 hover:bg-gray-50'
+              }`}
+            >
+              <CalendarDays className="h-4 w-4" /> Calendar
+            </button>
+          </div>
+
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="gap-1.5">
+                <Plus className="h-4 w-4" /> Schedule Interview
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Schedule Interview</DialogTitle></DialogHeader>
+              <ScheduleForm onSuccess={() => setDialogOpen(false)} />
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+
+      {view === 'list' && (
+        <div className="flex gap-3">
+          <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1) }}
+            className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
+            <option value="">All statuses</option>
+            <option value="scheduled">Scheduled</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+            <option value="no_show">No Show</option>
+          </select>
+        </div>
+      )}
+
+      {view === 'calendar' && (
+        <div className="flex items-center gap-3">
+          <button onClick={prevMonth}
+            className="p-1.5 rounded-md border border-gray-200 hover:bg-gray-50 transition-colors">
+            <ChevronLeft className="h-4 w-4 text-gray-600" />
+          </button>
+          <span className="text-sm font-medium text-gray-900 w-36 text-center">
+            {MONTH_NAMES[calMonth]} {calYear}
+          </span>
+          <button onClick={nextMonth}
+            className="p-1.5 rounded-md border border-gray-200 hover:bg-gray-50 transition-colors">
+            <ChevronRight className="h-4 w-4 text-gray-600" />
+          </button>
+        </div>
+      )}
+
+      {view === 'list'
+        ? <ListView statusFilter={statusFilter} page={page} setPage={setPage} />
+        : <CalendarView year={calYear} month={calMonth} />
+      }
     </div>
   )
 }

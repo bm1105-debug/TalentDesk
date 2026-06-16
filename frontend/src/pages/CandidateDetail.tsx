@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Upload, Download, Trash2, FileText, Loader2 } from 'lucide-react'
+import { ArrowLeft, Upload, Download, Trash2, FileText, Loader2, FileDown } from 'lucide-react'
 import api from '@/api/client'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -185,6 +185,24 @@ export default function CandidateDetail() {
     enabled: !!id,
   })
 
+  const [cvDownloading, setCvDownloading] = useState<'pdf' | 'docx' | null>(null)
+
+  async function downloadCV(format: 'pdf' | 'docx') {
+    if (!candidate) return
+    setCvDownloading(format)
+    try {
+      const res = await api.get(`/cvgen/candidates/${id}/${format}/`, { responseType: 'blob' })
+      const url = URL.createObjectURL(res.data)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${candidate.first_name}_${candidate.last_name}_CV.${format}`
+      a.click()
+      URL.revokeObjectURL(url)
+    } finally {
+      setCvDownloading(null)
+    }
+  }
+
   if (isLoading) {
     return <div className="text-sm text-gray-400 py-10 text-center">Loading…</div>
   }
@@ -212,6 +230,24 @@ export default function CandidateDetail() {
             {candidate.current_title || 'No title'}
             {candidate.current_company && ` · ${candidate.current_company}`}
           </p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button size="sm" variant="outline" className="gap-1.5"
+            disabled={cvDownloading !== null}
+            onClick={() => downloadCV('pdf')}>
+            {cvDownloading === 'pdf'
+              ? <Loader2 className="h-4 w-4 animate-spin" />
+              : <FileDown className="h-4 w-4" />}
+            PDF
+          </Button>
+          <Button size="sm" variant="outline" className="gap-1.5"
+            disabled={cvDownloading !== null}
+            onClick={() => downloadCV('docx')}>
+            {cvDownloading === 'docx'
+              ? <Loader2 className="h-4 w-4 animate-spin" />
+              : <FileDown className="h-4 w-4" />}
+            DOCX
+          </Button>
         </div>
       </div>
 

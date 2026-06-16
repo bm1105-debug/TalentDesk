@@ -16,6 +16,8 @@ import Search from '@/pages/Search'
 import CandidateDetail from '@/pages/CandidateDetail'
 import Reports from '@/pages/Reports'
 import Analytics from '@/pages/Analytics'
+import Scorecard from '@/pages/Scorecard'
+import ActivityLog from '@/pages/ActivityLog'
 
 export default function App() {
   return (
@@ -42,6 +44,8 @@ export default function App() {
         <Route path="search"         element={<Search />} />
         <Route path="reports"        element={<Reports />} />
         <Route path="analytics"      element={<Analytics />} />
+        <Route path="scorecard"      element={<Scorecard />} />
+        <Route path="activity"       element={<ActivityLog />} />
       </Route>
 
       {/* Catch-all */}

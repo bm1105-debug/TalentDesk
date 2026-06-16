@@ -45,6 +45,13 @@ class InterviewViewSet(viewsets.ModelViewSet):
         if interview_type:
             qs = qs.filter(interview_type=interview_type)
 
+        scheduled_after  = self.request.query_params.get("scheduled_after")
+        scheduled_before = self.request.query_params.get("scheduled_before")
+        if scheduled_after:
+            qs = qs.filter(scheduled_at__date__gte=scheduled_after)
+        if scheduled_before:
+            qs = qs.filter(scheduled_at__date__lte=scheduled_before)
+
         return qs
 
     def perform_create(self, serializer):

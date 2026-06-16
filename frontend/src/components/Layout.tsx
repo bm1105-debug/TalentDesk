@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Users, Briefcase, FileText,
-  Calendar, Mail, Search, LogOut, KeyRound, BarChart2, TrendingUp,
+  Calendar, Mail, Search, LogOut, KeyRound, BarChart2, TrendingUp, Award, ClipboardList,
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/button'
@@ -124,6 +124,7 @@ const NAV_ITEMS = [
   { to: '/search',         label: 'Search',         icon: Search },
   { to: '/reports',        label: 'Reports',        icon: BarChart2 },
   { to: '/analytics',      label: 'Analytics',      icon: TrendingUp },
+  { to: '/scorecard',      label: 'My Scorecard',   icon: Award },
 ]
 
 export default function Layout() {
@@ -166,6 +167,23 @@ export default function Layout() {
               {label}
             </NavLink>
           ))}
+          {/* Manager-only: Audit Log */}
+          {['account_manager', 'ceo', 'team_lead'].includes(user?.role ?? '') && (
+            <NavLink
+              to="/activity"
+              className={({ isActive }) =>
+                cn(
+                  'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                  isActive
+                    ? 'bg-blue-50 text-blue-700'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                )
+              }
+            >
+              <ClipboardList className="h-4 w-4 flex-shrink-0" />
+              Audit Log
+            </NavLink>
+          )}
         </nav>
 
         {/* Logged-in user + actions at the bottom */}

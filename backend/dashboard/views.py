@@ -246,3 +246,64 @@ class AnalyticsView(APIView):
             "pipeline_funnel":       pipeline_funnel,
             "time_to_fill":          time_to_fill,
         })
+
+
+class ScorecardView(APIView):
+    """
+    GET /api/dashboard/scorecard/
+    Returns pipeline stats scoped to the logged-in user only.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        my_qs = Submittal.objects.filter(submitted_by=user)
+
+        total     = my_qs.count()
+        active    = my_qs.filter(status="active").count()
+        placed    = my_qs.filter(status="placed").count()
+        rejected  = my_qs.filter(status="rejected").count()
+        withdrawn = my_qs.filter(status="withdrawn").count()
+        conversion_rate = round((placed / total) * 100, 1) if total > 0 else 0.0
+
+        # Pipeline: my active submittals by stage
+        funnel_qs = (
+            my_qs
+            .filter(status="active", current_stage__isnull=False)
+            .values("current_stage__name", "current_stage__order")
+            .annotate(count=Count("id"))
+            .order_by("current_stage__order")
+        )
+        pipeline = [
+            {"stage": row["current_stage__name"], "count": row["count"]}
+            for row in funnel_qs
+        ]
+
+        # Recent placements — last 5
+        recent_qs = (
+            my_qs
+            .filter(status="placed")
+            .select_related("candidate", "job")
+            .order_by("-updated_at")[:5]
+        )
+        recent_placements = [
+            {
+                "candidate": f"{s.candidate.first_name} {s.candidate.last_name}",
+                "job":       s.job.title,
+                "placed_at": s.updated_at.date().isoformat(),
+            }
+            for s in recent_qs
+        ]
+
+        return Response({
+            "stats": {
+                "total":           total,
+                "active":          active,
+                "placed":          placed,
+                "rejected":        rejected,
+                "withdrawn":       withdrawn,
+                "conversion_rate": conversion_rate,
+            },
+            "pipeline":          pipeline,
+            "recent_placements": recent_placements,
+        })

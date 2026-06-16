@@ -592,3 +592,80 @@ class AnalyticsTimeToFillTests(APITestCase):
         res = self.client.get(self.url)
         self.assertIsNone(res.data["time_to_fill"]["avg_days"])
         self.assertEqual(res.data["time_to_fill"]["by_job"], [])
+
+
+# ── Scorecard Tests ───────────────────────────────────────────────────────────
+
+class ScorecardTests(APITestCase):
+
+    def setUp(self):
+        self.user = make_user("sc@scorecard.com")
+        self.other = make_user("other@scorecard.com")
+        auth(self.client, self.user)
+        self.url = reverse("dashboard-scorecard")
+
+        client_obj = make_client_obj()
+        job = make_job(client_obj, self.user)
+
+        cand = lambda e, p: Candidate.objects.create(
+            first_name="A", last_name="B", email=e, phone=p
+        )
+
+        # my submittals: 2 active, 1 placed, 1 rejected, 1 withdrawn
+        Submittal.objects.create(candidate=cand("s1@x.com", "1"), job=job, submitted_by=self.user, status="active")
+        Submittal.objects.create(candidate=cand("s2@x.com", "2"), job=job, submitted_by=self.user, status="active")
+        Submittal.objects.create(candidate=cand("s3@x.com", "3"), job=job, submitted_by=self.user, status="placed")
+        Submittal.objects.create(candidate=cand("s4@x.com", "4"), job=job, submitted_by=self.user, status="rejected")
+        Submittal.objects.create(candidate=cand("s5@x.com", "5"), job=job, submitted_by=self.user, status="withdrawn")
+
+        # other recruiter's submittal — must NOT appear in my scorecard
+        job2 = make_job(client_obj, self.other)
+        Submittal.objects.create(candidate=cand("s6@x.com", "6"), job=job2, submitted_by=self.other, status="placed")
+
+    def test_returns_200(self):
+        res = self.client.get(self.url)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+    def test_unauthenticated_returns_401(self):
+        self.client.credentials()
+        res = self.client.get(self.url)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_stats_scoped_to_user(self):
+        res = self.client.get(self.url)
+        s = res.data["stats"]
+        self.assertEqual(s["total"],     5)
+        self.assertEqual(s["active"],    2)
+        self.assertEqual(s["placed"],    1)
+        self.assertEqual(s["rejected"],  1)
+        self.assertEqual(s["withdrawn"], 1)
+
+    def test_conversion_rate(self):
+        res = self.client.get(self.url)
+        # 1 placed out of 5 total = 20.0%
+        self.assertEqual(res.data["stats"]["conversion_rate"], 20.0)
+
+    def test_conversion_rate_zero_when_no_submittals(self):
+        Submittal.objects.filter(submitted_by=self.user).delete()
+        res = self.client.get(self.url)
+        self.assertEqual(res.data["stats"]["conversion_rate"], 0.0)
+        self.assertEqual(res.data["stats"]["total"], 0)
+
+    def test_other_recruiter_excluded(self):
+        res = self.client.get(self.url)
+        # other recruiter has 1 placed, but my placed count is still 1 (not 2)
+        self.assertEqual(res.data["stats"]["placed"], 1)
+
+    def test_recent_placements_returned(self):
+        res = self.client.get(self.url)
+        self.assertEqual(len(res.data["recent_placements"]), 1)
+        self.assertIn("candidate", res.data["recent_placements"][0])
+        self.assertIn("job",       res.data["recent_placements"][0])
+        self.assertIn("placed_at", res.data["recent_placements"][0])
+
+    def test_pipeline_only_active(self):
+        # pipeline should only count active submittals (placed/rejected/withdrawn excluded)
+        res = self.client.get(self.url)
+        total_in_pipeline = sum(r["count"] for r in res.data["pipeline"])
+        # 2 active but both have no stage set → pipeline is empty (null stage excluded)
+        self.assertEqual(total_in_pipeline, 0)
