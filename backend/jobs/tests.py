@@ -4,6 +4,8 @@ from rest_framework.test import APITestCase
 
 from users.models import User, Role
 from clients.models import Client
+from candidates.models import Candidate
+from submittals.models import Submittal
 from .models import Job, PipelineStage, DEFAULT_PIPELINE
 
 
@@ -233,3 +235,47 @@ class JobAssignTests(APITestCase):
         url = reverse("job-assign", args=[self.job.id])
         res = self.client.post(url, {"user_id": 99999}, format="json")
         self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
+
+
+# ── Pipeline Report Tests ─────────────────────────────────────────────────────
+
+class PipelineReportTests(APITestCase):
+
+    def setUp(self):
+        self.recruiter = make_user("rec@test.com")
+        auth(self.client, self.recruiter)
+        acme = make_client()
+        manager = make_user("mgr@test.com", role=Role.ACCOUNT_MANAGER)
+        self.job = make_job(acme, manager)
+        PipelineStage.objects.create(job=self.job, name="Screening", order=0)
+        PipelineStage.objects.create(job=self.job, name="Interview", order=1)
+        self.stages = list(self.job.stages.order_by("order"))
+        cand1 = Candidate.objects.create(first_name="A", last_name="B", email="a@x.com", phone="1001")
+        cand2 = Candidate.objects.create(first_name="C", last_name="D", email="c@x.com", phone="1002")
+        self.s1 = Submittal.objects.create(candidate=cand1, job=self.job, submitted_by=self.recruiter,
+                                            current_stage=self.stages[0])
+        self.s2 = Submittal.objects.create(candidate=cand2, job=self.job, submitted_by=self.recruiter,
+                                            current_stage=self.stages[1])
+        self.url = reverse("job-pipeline-report", args=[self.job.id])
+
+    def test_report_returns_200(self):
+        res = self.client.get(self.url)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data["job"]["id"], self.job.id)
+
+    def test_stage_counts_are_correct(self):
+        res = self.client.get(self.url)
+        stage_map = {s["name"]: s["count"] for s in res.data["stages"]}
+        self.assertEqual(stage_map[self.stages[0].name], 1)
+        self.assertEqual(stage_map[self.stages[1].name], 1)
+
+    def test_total_matches_submittal_count(self):
+        res = self.client.get(self.url)
+        self.assertEqual(res.data["total"], 2)
+
+    def test_outcomes_breakdown(self):
+        self.s1.status = "rejected"
+        self.s1.save()
+        res = self.client.get(self.url)
+        self.assertEqual(res.data["outcomes"]["rejected"], 1)
+        self.assertEqual(res.data["outcomes"]["active"], 1)

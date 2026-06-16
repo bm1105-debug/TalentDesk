@@ -2,6 +2,7 @@ from rest_framework import viewsets, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from django.db.models import Count
 
 from .models import Job, PipelineStage
 from .serializers import JobSerializer, PipelineStageSerializer
@@ -77,6 +78,44 @@ class JobViewSet(viewsets.ModelViewSet):
 
         serializer = JobSerializer(job, context={"request": request})
         return Response(serializer.data)
+
+    @action(detail=True, methods=["get"], url_path="pipeline-report")
+    def pipeline_report(self, request, pk=None):
+        """
+        GET /jobs/{id}/pipeline-report/
+        Returns candidate counts per pipeline stage plus outcome breakdown.
+        """
+        from submittals.models import Submittal
+
+        job = self.get_object()
+        stages = job.stages.order_by("order")
+
+        stage_data = [
+            {"name": s.name, "count": Submittal.objects.filter(job=job, current_stage=s).count()}
+            for s in stages
+        ]
+
+        outcomes = {
+            o["status"]: o["count"]
+            for o in Submittal.objects.filter(job=job).values("status").annotate(count=Count("id"))
+        }
+
+        return Response({
+            "job": {
+                "id":     job.id,
+                "title":  job.title,
+                "client": job.client.name,
+                "status": job.status,
+            },
+            "stages":   stage_data,
+            "outcomes": {
+                "active":    outcomes.get("active",    0),
+                "placed":    outcomes.get("placed",    0),
+                "rejected":  outcomes.get("rejected",  0),
+                "withdrawn": outcomes.get("withdrawn", 0),
+            },
+            "total": Submittal.objects.filter(job=job).count(),
+        })
 
     @action(detail=True, methods=["post"], url_path="assign")
     def assign(self, request, pk=None):

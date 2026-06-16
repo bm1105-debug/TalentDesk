@@ -14,6 +14,7 @@ import Interviews from '@/pages/Interviews'
 import Communications from '@/pages/Communications'
 import Search from '@/pages/Search'
 import CandidateDetail from '@/pages/CandidateDetail'
+import Reports from '@/pages/Reports'
 
 export default function App() {
   return (
@@ -38,6 +39,7 @@ export default function App() {
         <Route path="interviews"     element={<Interviews />} />
         <Route path="communications" element={<Communications />} />
         <Route path="search"         element={<Search />} />
+        <Route path="reports"        element={<Reports />} />
       </Route>
 
       {/* Catch-all */}
