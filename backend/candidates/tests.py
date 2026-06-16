@@ -219,3 +219,44 @@ class CandidateSkillActionTests(APITestCase):
         url = reverse("candidate-remove-skill", args=[self.candidate.id])
         res = self.client.post(url, {"name": "cobol"}, format="json")
         self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
+
+
+class BulkStatusUpdateTests(APITestCase):
+
+    def setUp(self):
+        self.recruiter = make_user("rec_bulk")
+        auth(self.client, self.recruiter)
+        self.c1 = make_candidate(email="b1@x.com", phone="8001", status="active")
+        self.c2 = make_candidate(email="b2@x.com", phone="8002", status="active")
+        self.c3 = make_candidate(email="b3@x.com", phone="8003", status="active")
+        self.url = reverse("candidate-bulk-status")
+
+    def test_bulk_update_changes_status(self):
+        res = self.client.patch(self.url, {
+            "ids": [self.c1.id, self.c2.id],
+            "status": "passive",
+        }, format="json")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data["updated"], 2)
+        self.c1.refresh_from_db()
+        self.c2.refresh_from_db()
+        self.assertEqual(self.c1.status, "passive")
+        self.assertEqual(self.c2.status, "passive")
+
+    def test_unselected_candidate_not_changed(self):
+        self.client.patch(self.url, {"ids": [self.c1.id], "status": "placed"}, format="json")
+        self.c3.refresh_from_db()
+        self.assertEqual(self.c3.status, "active")
+
+    def test_invalid_status_rejected(self):
+        res = self.client.patch(self.url, {"ids": [self.c1.id], "status": "retired"}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_empty_ids_rejected(self):
+        res = self.client.patch(self.url, {"ids": [], "status": "passive"}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_unauthenticated_rejected(self):
+        self.client.credentials()
+        res = self.client.patch(self.url, {"ids": [self.c1.id], "status": "passive"}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)

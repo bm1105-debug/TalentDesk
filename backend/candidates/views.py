@@ -78,11 +78,31 @@ class CandidateViewSet(viewsets.ModelViewSet):
         return super().create(request, *args, **kwargs)
 
     def get_permissions(self):
-        # Only Account Managers and above can delete candidates
         if self.action == "destroy":
             return [IsAccountManagerOrAbove()]
-        # All staff roles can read/create/update
         return [IsRecruiterOrAbove()]
+
+    @action(detail=False, methods=["patch"], url_path="bulk-status")
+    def bulk_status(self, request):
+        """
+        PATCH /candidates/bulk-status/
+        Body: {"ids": [1, 2, 3], "status": "passive"}
+        Updates status for all listed candidates in one query.
+        """
+        ids        = request.data.get("ids", [])
+        new_status = request.data.get("status", "")
+
+        valid_statuses = [s for s, _ in Candidate.Status.choices]
+        if new_status not in valid_statuses:
+            return Response(
+                {"detail": f"Invalid status. Choose from: {', '.join(valid_statuses)}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not ids or not isinstance(ids, list):
+            return Response({"detail": "ids must be a non-empty list."}, status=status.HTTP_400_BAD_REQUEST)
+
+        updated = Candidate.objects.filter(pk__in=ids).update(status=new_status)
+        return Response({"updated": updated})
 
     @action(detail=True, methods=["post"], url_path="add-skill")
     def add_skill(self, request, pk=None):

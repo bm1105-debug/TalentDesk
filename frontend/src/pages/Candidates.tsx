@@ -289,11 +289,14 @@ function AddCandidateForm({ onSuccess }: { onSuccess: () => void }) {
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function Candidates() {
-  const [search,    setSearch]    = useState('')
-  const [status,    setStatus]    = useState('')
-  const [page,      setPage]      = useState(1)
+  const [search,     setSearch]     = useState('')
+  const [status,     setStatus]     = useState('')
+  const [page,       setPage]       = useState(1)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [selected,   setSelected]   = useState<Set<number>>(new Set())
+  const [bulkStatus, setBulkStatus] = useState('passive')
   const navigate = useNavigate()
+  const qc = useQueryClient()
 
   const { data, isLoading } = useQuery<PaginatedResponse>({
     queryKey: ['candidates', search, status, page],
@@ -309,6 +312,36 @@ export default function Candidates() {
   })
 
   const totalPages = data ? Math.ceil(data.count / 10) : 1
+
+  const pageIds = data?.results.map(c => c.id) ?? []
+  const allPageSelected = pageIds.length > 0 && pageIds.every(id => selected.has(id))
+
+  function toggleAll() {
+    if (allPageSelected) {
+      setSelected(prev => { const s = new Set(prev); pageIds.forEach(id => s.delete(id)); return s })
+    } else {
+      setSelected(prev => new Set([...prev, ...pageIds]))
+    }
+  }
+
+  function toggleOne(id: number) {
+    setSelected(prev => {
+      const s = new Set(prev)
+      s.has(id) ? s.delete(id) : s.add(id)
+      return s
+    })
+  }
+
+  const applyBulk = useMutation({
+    mutationFn: () => api.patch('/candidates/bulk-status/', {
+      ids: [...selected],
+      status: bulkStatus,
+    }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['candidates'] })
+      setSelected(new Set())
+    },
+  })
 
   return (
     <div className="space-y-4">
@@ -362,6 +395,14 @@ export default function Candidates() {
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
+              <th className="px-4 py-3 w-10">
+                <input
+                  type="checkbox"
+                  checked={allPageSelected}
+                  onChange={toggleAll}
+                  className="rounded border-gray-300"
+                />
+              </th>
               <th className="text-left px-4 py-3 font-medium text-gray-600">Name</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600">Title / Company</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600">Contact</th>
@@ -372,17 +413,25 @@ export default function Candidates() {
           <tbody className="divide-y divide-gray-100">
             {isLoading && (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-gray-400">Loading…</td>
+                <td colSpan={6} className="px-4 py-8 text-center text-gray-400">Loading…</td>
               </tr>
             )}
             {!isLoading && data?.results.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-gray-400">No candidates found</td>
+                <td colSpan={6} className="px-4 py-8 text-center text-gray-400">No candidates found</td>
               </tr>
             )}
             {data?.results.map(c => (
               <tr key={c.id} className="hover:bg-gray-50 transition-colors cursor-pointer"
                 onClick={() => navigate(`/candidates/${c.id}`)}>
+                <td className="px-4 py-3 w-10" onClick={e => e.stopPropagation()}>
+                  <input
+                    type="checkbox"
+                    checked={selected.has(c.id)}
+                    onChange={() => toggleOne(c.id)}
+                    className="rounded border-gray-300"
+                  />
+                </td>
                 <td className="px-4 py-3 font-medium text-gray-900">
                   {c.first_name} {c.last_name}
                 </td>
@@ -427,6 +476,37 @@ export default function Candidates() {
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
+        </div>
+      )}
+
+      {/* ── Bulk action bar ── */}
+      {selected.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-gray-900 text-white px-4 py-3 rounded-xl shadow-xl">
+          <span className="text-sm font-medium">{selected.size} selected</span>
+          <span className="text-gray-500">·</span>
+          <select
+            value={bulkStatus}
+            onChange={e => setBulkStatus(e.target.value)}
+            className="bg-gray-800 border border-gray-700 rounded-md px-2 py-1 text-sm text-white"
+          >
+            <option value="active">Active</option>
+            <option value="passive">Passive</option>
+            <option value="placed">Placed</option>
+            <option value="blacklisted">Blacklisted</option>
+          </select>
+          <Button
+            size="sm"
+            disabled={applyBulk.isPending}
+            onClick={() => applyBulk.mutate()}
+          >
+            {applyBulk.isPending ? 'Applying…' : 'Apply'}
+          </Button>
+          <button
+            className="text-gray-400 hover:text-white text-sm"
+            onClick={() => setSelected(new Set())}
+          >
+            Deselect all
+          </button>
         </div>
       )}
 
