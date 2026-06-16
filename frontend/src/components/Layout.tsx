@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Users, Briefcase, FileText,
-  Calendar, Mail, Search, LogOut, KeyRound, BarChart2,
+  Calendar, Mail, Search, LogOut, KeyRound, BarChart2, TrendingUp,
 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/button'
@@ -123,6 +123,7 @@ const NAV_ITEMS = [
   { to: '/communications', label: 'Communications', icon: Mail },
   { to: '/search',         label: 'Search',         icon: Search },
   { to: '/reports',        label: 'Reports',        icon: BarChart2 },
+  { to: '/analytics',      label: 'Analytics',      icon: TrendingUp },
 ]
 
 export default function Layout() {

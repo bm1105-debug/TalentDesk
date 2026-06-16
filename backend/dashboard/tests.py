@@ -250,3 +250,345 @@ class StaleSubmittalTests(APITestCase):
         res = self.client.get(URL)
         ids = [s["id"] for s in res.data["stale_submittals"]]
         self.assertNotIn(self.fresh.id, ids)
+
+
+# ── Analytics Scaffold Tests ──────────────────────────────────────────────────
+
+class AnalyticsScaffoldTests(APITestCase):
+
+    def setUp(self):
+        self.user = make_user("rec@analytics.com")
+        auth(self.client, self.user)
+        self.url = reverse("dashboard-analytics")
+
+    def test_returns_200_with_all_seven_keys(self):
+        res = self.client.get(self.url)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        for key in [
+            "candidate_pool", "source_effectiveness", "open_jobs",
+            "recruiter_leaderboard", "interview_outcomes",
+            "pipeline_funnel", "time_to_fill",
+        ]:
+            self.assertIn(key, res.data)
+
+    def test_unauthenticated_returns_401(self):
+        self.client.credentials()
+        res = self.client.get(self.url)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+# ── Analytics: Candidate Pool + Source Effectiveness Tests ────────────────────
+
+class AnalyticsCandidatePoolTests(APITestCase):
+
+    def setUp(self):
+        self.user = make_user("pool@analytics.com")
+        auth(self.client, self.user)
+        self.url = reverse("dashboard-analytics")
+        Candidate.objects.create(first_name="A", last_name="B", email="a@x.com", phone="1", status="active",   source="linkedin")
+        Candidate.objects.create(first_name="C", last_name="D", email="c@x.com", phone="2", status="active",   source="linkedin")
+        Candidate.objects.create(first_name="E", last_name="F", email="e@x.com", phone="3", status="passive",  source="referral")
+        Candidate.objects.create(first_name="G", last_name="H", email="g@x.com", phone="4", status="placed",   source="linkedin")
+        Candidate.objects.create(first_name="I", last_name="J", email="i@x.com", phone="5", status="blacklisted", source="other")
+
+    def test_candidate_pool_counts(self):
+        res = self.client.get(self.url)
+        pool = res.data["candidate_pool"]
+        self.assertEqual(pool["active"],      2)
+        self.assertEqual(pool["passive"],     1)
+        self.assertEqual(pool["placed"],      1)
+        self.assertEqual(pool["blacklisted"], 1)
+
+    def test_source_effectiveness_candidates_count(self):
+        res = self.client.get(self.url)
+        sources = {s["source"]: s for s in res.data["source_effectiveness"]}
+        self.assertEqual(sources["linkedin"]["candidates"], 3)
+        self.assertEqual(sources["referral"]["candidates"], 1)
+
+    def test_source_effectiveness_placements_count(self):
+        res = self.client.get(self.url)
+        sources = {s["source"]: s for s in res.data["source_effectiveness"]}
+        self.assertEqual(sources["linkedin"]["placements"], 1)
+        self.assertEqual(sources["referral"]["placements"], 0)
+
+    def test_source_with_no_candidates_excluded(self):
+        res = self.client.get(self.url)
+        present = {s["source"] for s in res.data["source_effectiveness"]}
+        # job_board has no candidates, so must not appear
+        self.assertNotIn("job_board", present)
+
+    def test_empty_pool_returns_zeros(self):
+        Candidate.objects.all().delete()
+        res = self.client.get(self.url)
+        pool = res.data["candidate_pool"]
+        self.assertEqual(pool["active"], 0)
+        self.assertEqual(pool["placed"], 0)
+        self.assertEqual(res.data["source_effectiveness"], [])
+
+
+# ── Analytics: Open Jobs Breakdown Tests ──────────────────────────────────────
+
+class AnalyticsOpenJobsTests(APITestCase):
+
+    def setUp(self):
+        self.user = make_user("openjobs@analytics.com")
+        auth(self.client, self.user)
+        self.url = reverse("dashboard-analytics")
+        client_obj = make_client_obj()
+        make_job(client_obj, self.user, status="open",     priority="urgent")
+        make_job(client_obj, self.user, status="open",     priority="high")
+        make_job(client_obj, self.user, status="on_hold",  priority="medium")
+        make_job(client_obj, self.user, status="draft",    priority="low")
+        make_job(client_obj, self.user, status="cancelled", priority="low")  # must be excluded
+
+    def test_by_status_excludes_cancelled(self):
+        res = self.client.get(self.url)
+        by_status = res.data["open_jobs"]["by_status"]
+        self.assertEqual(by_status["open"],    2)
+        self.assertEqual(by_status["on_hold"], 1)
+        self.assertEqual(by_status["draft"],   1)
+
+    def test_cancelled_not_counted_in_any_bucket(self):
+        res = self.client.get(self.url)
+        by_status = res.data["open_jobs"]["by_status"]
+        total = sum(by_status.values())
+        self.assertEqual(total, 4)  # 5 jobs created, 1 cancelled excluded
+
+    def test_by_priority_counts(self):
+        res = self.client.get(self.url)
+        by_priority = res.data["open_jobs"]["by_priority"]
+        self.assertEqual(by_priority["urgent"], 1)
+        self.assertEqual(by_priority["high"],   1)
+        self.assertEqual(by_priority["medium"], 1)
+        self.assertEqual(by_priority["low"],    1)
+
+    def test_empty_returns_zeros(self):
+        Job.objects.all().delete()
+        res = self.client.get(self.url)
+        by_status = res.data["open_jobs"]["by_status"]
+        self.assertTrue(all(v == 0 for v in by_status.values()))
+
+
+# ── Analytics: Recruiter Leaderboard Tests ────────────────────────────────────
+
+class AnalyticsLeaderboardTests(APITestCase):
+
+    def setUp(self):
+        self.me = make_user("me@analytics.com")
+        self.other = make_user("other@analytics.com")
+        auth(self.client, self.me)
+        self.url = reverse("dashboard-analytics")
+
+        client_obj = make_client_obj()
+        job = make_job(client_obj, self.me)
+        cand = lambda e, p: Candidate.objects.create(
+            first_name="X", last_name="Y", email=e, phone=p
+        )
+
+        # me: 1 placed, 2 active
+        Submittal.objects.create(candidate=cand("c1@x.com","1"), job=job, submitted_by=self.me, status="placed")
+        Submittal.objects.create(candidate=cand("c2@x.com","2"), job=job, submitted_by=self.me, status="active")
+        Submittal.objects.create(candidate=cand("c3@x.com","3"), job=job, submitted_by=self.me, status="active")
+
+        # other: 3 placed, 0 active — should rank first
+        job2 = make_job(client_obj, self.other)
+        Submittal.objects.create(candidate=cand("c4@x.com","4"), job=job2, submitted_by=self.other, status="placed")
+        Submittal.objects.create(candidate=cand("c5@x.com","5"), job=job2, submitted_by=self.other, status="placed")
+        Submittal.objects.create(candidate=cand("c6@x.com","6"), job=job2, submitted_by=self.other, status="placed")
+
+    def test_sorted_by_placements_descending(self):
+        res = self.client.get(self.url)
+        lb = res.data["recruiter_leaderboard"]
+        self.assertEqual(lb[0]["placements"], 3)
+        self.assertEqual(lb[1]["placements"], 1)
+
+    def test_counts_are_correct(self):
+        res = self.client.get(self.url)
+        lb = {row["id"]: row for row in res.data["recruiter_leaderboard"]}
+        self.assertEqual(lb[self.me.id]["active"],     2)
+        self.assertEqual(lb[self.me.id]["placements"], 1)
+        self.assertEqual(lb[self.other.id]["active"],     0)
+        self.assertEqual(lb[self.other.id]["placements"], 3)
+
+    def test_empty_returns_empty_list(self):
+        Submittal.objects.all().delete()
+        res = self.client.get(self.url)
+        self.assertEqual(res.data["recruiter_leaderboard"], [])
+
+
+# ── Analytics: Interview Outcomes Tests ───────────────────────────────────────
+
+from interviews.models import Interview
+from django.utils import timezone as tz
+
+def make_interview(submittal, created_by, status="completed", score=None):
+    return Interview.objects.create(
+        submittal=submittal,
+        interview_type="phone",
+        scheduled_at=tz.now(),
+        status=status,
+        score=score,
+        created_by=created_by,
+    )
+
+
+class AnalyticsInterviewOutcomesTests(APITestCase):
+
+    def setUp(self):
+        self.user = make_user("iv@analytics.com")
+        auth(self.client, self.user)
+        self.url = reverse("dashboard-analytics")
+        client_obj = make_client_obj()
+        job = make_job(client_obj, self.user)
+        cand = make_candidate()
+        sub = make_submittal(cand, job, self.user)
+        make_interview(sub, self.user, status="completed", score=80)
+        make_interview(sub, self.user, status="completed", score=60)
+        make_interview(sub, self.user, status="cancelled")
+        make_interview(sub, self.user, status="no_show")
+
+    def test_status_counts(self):
+        res = self.client.get(self.url)
+        outcomes = res.data["interview_outcomes"]
+        self.assertEqual(outcomes["completed"], 2)
+        self.assertEqual(outcomes["cancelled"],  1)
+        self.assertEqual(outcomes["no_show"],    1)
+
+    def test_avg_score_excludes_null_scores(self):
+        res = self.client.get(self.url)
+        # Only the 2 completed interviews have scores (80 + 60) / 2 = 70.0
+        self.assertEqual(res.data["interview_outcomes"]["avg_score"], 70.0)
+
+    def test_avg_score_is_null_when_no_scores_recorded(self):
+        Interview.objects.all().update(score=None)
+        res = self.client.get(self.url)
+        self.assertIsNone(res.data["interview_outcomes"]["avg_score"])
+
+    def test_empty_returns_zeros_and_null_score(self):
+        Interview.objects.all().delete()
+        res = self.client.get(self.url)
+        outcomes = res.data["interview_outcomes"]
+        self.assertEqual(outcomes["completed"], 0)
+        self.assertIsNone(outcomes["avg_score"])
+
+
+# ── Analytics: Pipeline Funnel Tests ─────────────────────────────────────────
+
+class AnalyticsPipelineFunnelTests(APITestCase):
+
+    def setUp(self):
+        self.user = make_user("funnel@analytics.com")
+        auth(self.client, self.user)
+        self.url = reverse("dashboard-analytics")
+        client_obj = make_client_obj()
+        job = make_job(client_obj, self.user)
+
+        # make_job already creates a "Screening" stage at order=0; fetch it and add "Interview"
+        self.s1 = PipelineStage.objects.get(job=job, name="Screening")
+        self.s2 = PipelineStage.objects.create(job=job, name="Interview", order=1)
+
+        cand = lambda e, p: Candidate.objects.create(
+            first_name="X", last_name="Y", email=e, phone=p
+        )
+
+        # 2 active at Screening, 1 active at Interview
+        sub1 = make_submittal(cand("f1@x.com", "101"), job, self.user)
+        sub1.current_stage = self.s1; sub1.save()
+        sub2 = make_submittal(cand("f2@x.com", "102"), job, self.user)
+        sub2.current_stage = self.s1; sub2.save()
+        sub3 = make_submittal(cand("f3@x.com", "103"), job, self.user)
+        sub3.current_stage = self.s2; sub3.save()
+
+        # Placed submittal at s1 — must NOT appear (only active counted)
+        sub4 = make_submittal(cand("f4@x.com", "104"), job, self.user, status="placed")
+        sub4.current_stage = self.s1; sub4.save()
+
+        # Active submittal with no stage — must NOT appear
+        make_submittal(cand("f5@x.com", "105"), job, self.user)
+
+    def test_counts_are_correct(self):
+        res = self.client.get(self.url)
+        funnel = {row["stage"]: row["count"] for row in res.data["pipeline_funnel"]}
+        self.assertEqual(funnel["Screening"], 2)
+        self.assertEqual(funnel["Interview"], 1)
+
+    def test_ordered_by_stage_order(self):
+        res = self.client.get(self.url)
+        stages = [row["stage"] for row in res.data["pipeline_funnel"]]
+        self.assertEqual(stages, ["Screening", "Interview"])
+
+    def test_non_active_submittals_excluded(self):
+        res = self.client.get(self.url)
+        # Placed submittal was at Screening — count should still be 2, not 3
+        funnel = {row["stage"]: row["count"] for row in res.data["pipeline_funnel"]}
+        self.assertEqual(funnel["Screening"], 2)
+
+    def test_null_stage_submittals_excluded(self):
+        res = self.client.get(self.url)
+        # Only 2 stages should appear; the stageless active submittal must not create a null entry
+        self.assertEqual(len(res.data["pipeline_funnel"]), 2)
+
+    def test_empty_returns_empty_list(self):
+        Submittal.objects.all().delete()
+        res = self.client.get(self.url)
+        self.assertEqual(res.data["pipeline_funnel"], [])
+
+
+# ── Analytics: Time to Fill Tests ────────────────────────────────────────────
+
+class AnalyticsTimeToFillTests(APITestCase):
+
+    def setUp(self):
+        self.user = make_user("ttf@analytics.com")
+        auth(self.client, self.user)
+        self.url = reverse("dashboard-analytics")
+        client_obj = make_client_obj()
+
+        now = timezone.now()
+
+        # Job A opened 30 days ago, placed 10 days ago → 20 days to fill
+        self.job_a = make_job(client_obj, self.user)
+        Job.objects.filter(pk=self.job_a.pk).update(created_at=now - timedelta(days=30))
+        self.job_a.refresh_from_db()
+        cand_a = make_candidate(n=10)
+        sub_a = make_submittal(cand_a, self.job_a, self.user, status="placed")
+        Submittal.objects.filter(pk=sub_a.pk).update(updated_at=now - timedelta(days=10))
+
+        # Job B opened 40 days ago, placed 0 days ago → 40 days to fill
+        self.job_b = make_job(client_obj, self.user)
+        Job.objects.filter(pk=self.job_b.pk).update(created_at=now - timedelta(days=40))
+        self.job_b.refresh_from_db()
+        cand_b = make_candidate(n=11)
+        sub_b = make_submittal(cand_b, self.job_b, self.user, status="placed")
+        Submittal.objects.filter(pk=sub_b.pk).update(updated_at=now)
+
+    def test_avg_days_is_correct(self):
+        res = self.client.get(self.url)
+        # (20 + 40) / 2 = 30
+        self.assertEqual(res.data["time_to_fill"]["avg_days"], 30)
+
+    def test_by_job_sorted_by_days_descending(self):
+        res = self.client.get(self.url)
+        by_job = res.data["time_to_fill"]["by_job"]
+        self.assertEqual(len(by_job), 2)
+        self.assertGreaterEqual(by_job[0]["days"], by_job[1]["days"])
+
+    def test_by_job_days_values(self):
+        res = self.client.get(self.url)
+        days_set = {r["days"] for r in res.data["time_to_fill"]["by_job"]}
+        self.assertIn(20, days_set)
+        self.assertIn(40, days_set)
+
+    def test_unfilled_job_excluded(self):
+        # Add a job with only an active submittal — must not appear in by_job
+        job_c = make_job(make_client_obj(), self.user)
+        make_submittal(make_candidate(n=12), job_c, self.user, status="active")
+        res = self.client.get(self.url)
+        ids = {r["id"] for r in res.data["time_to_fill"]["by_job"]}
+        self.assertNotIn(job_c.id, ids)
+
+    def test_avg_days_null_when_no_placements(self):
+        Submittal.objects.filter(status="placed").update(status="active")
+        res = self.client.get(self.url)
+        self.assertIsNone(res.data["time_to_fill"]["avg_days"])
+        self.assertEqual(res.data["time_to_fill"]["by_job"], [])

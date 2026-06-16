@@ -1,15 +1,19 @@
 from datetime import timedelta
 from django.utils import timezone
-from django.db.models import Q
+from django.db.models import Q, Count
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
+from django.db.models import Avg
 from jobs.models import Job
 from submittals.models import Submittal
 from jobs.serializers import JobSerializer
 from submittals.serializers import SubmittalSerializer
 from users.models import Role
+from users.permissions import IsRecruiterOrAbove
+from candidates.models import Candidate
+from interviews.models import Interview
 
 
 # Submittals with no movement for this many days are flagged as stale
@@ -83,4 +87,162 @@ class MyDayView(APIView):
             "urgent_jobs":       JobSerializer(urgent_jobs,       many=True, context=ctx).data,
             "overdue_jobs":      JobSerializer(overdue_jobs,      many=True, context=ctx).data,
             "stale_submittals":  SubmittalSerializer(stale_submittals, many=True, context=ctx).data,
+        })
+
+
+class AnalyticsView(APIView):
+    """
+    GET /api/dashboard/analytics/
+    Returns all seven analytics widget payloads. Each section starts as a
+    null/empty stub; subsequent issues fill in the real aggregations one by one.
+    """
+    permission_classes = [IsRecruiterOrAbove]
+
+    def get(self, request):
+        # ── Candidate pool ────────────────────────────────────────────────────
+        pool_qs = (
+            Candidate.objects
+            .values("status")
+            .annotate(count=Count("id"))
+        )
+        pool_map = {row["status"]: row["count"] for row in pool_qs}
+        candidate_pool = {
+            "active":      pool_map.get("active",      0),
+            "passive":     pool_map.get("passive",     0),
+            "placed":      pool_map.get("placed",      0),
+            "blacklisted": pool_map.get("blacklisted", 0),
+        }
+
+        # ── Source effectiveness ───────────────────────────────────────────────
+        source_qs = (
+            Candidate.objects
+            .values("source")
+            .annotate(
+                candidates=Count("id"),
+                placements=Count("id", filter=Q(status="placed")),
+            )
+            .order_by("-candidates")
+        )
+        source_effectiveness = [
+            {
+                "source":     row["source"],
+                "candidates": row["candidates"],
+                "placements": row["placements"],
+            }
+            for row in source_qs
+        ]
+
+        # ── Open jobs breakdown ───────────────────────────────────────────────
+        non_cancelled_qs = Job.objects.exclude(status="cancelled")
+
+        status_qs = non_cancelled_qs.values("status").annotate(count=Count("id"))
+        status_map = {row["status"]: row["count"] for row in status_qs}
+
+        priority_qs = non_cancelled_qs.values("priority").annotate(count=Count("id"))
+        priority_map = {row["priority"]: row["count"] for row in priority_qs}
+
+        open_jobs = {
+            "by_status": {
+                "open":    status_map.get("open",    0),
+                "on_hold": status_map.get("on_hold", 0),
+                "draft":   status_map.get("draft",   0),
+                "filled":  status_map.get("filled",  0),
+            },
+            "by_priority": {
+                "urgent": priority_map.get("urgent", 0),
+                "high":   priority_map.get("high",   0),
+                "medium": priority_map.get("medium", 0),
+                "low":    priority_map.get("low",    0),
+            },
+        }
+
+        # ── Recruiter leaderboard ─────────────────────────────────────────────
+        leaderboard_qs = (
+            Submittal.objects
+            .exclude(submitted_by__isnull=True)
+            .values("submitted_by", "submitted_by__first_name", "submitted_by__last_name")
+            .annotate(
+                active=Count("id", filter=Q(status="active")),
+                placements=Count("id", filter=Q(status="placed")),
+            )
+            .order_by("-placements")
+        )
+        recruiter_leaderboard = [
+            {
+                "id":         row["submitted_by"],
+                "name":       f"{row['submitted_by__first_name']} {row['submitted_by__last_name']}".strip(),
+                "active":     row["active"],
+                "placements": row["placements"],
+            }
+            for row in leaderboard_qs
+        ]
+
+        # ── Interview outcomes ────────────────────────────────────────────────
+        outcome_qs = (
+            Interview.objects
+            .values("status")
+            .annotate(count=Count("id"))
+        )
+        outcome_map = {row["status"]: row["count"] for row in outcome_qs}
+
+        raw_avg = Interview.objects.filter(score__isnull=False).aggregate(avg=Avg("score"))["avg"]
+        avg_score = round(raw_avg, 1) if raw_avg is not None else None
+
+        interview_outcomes = {
+            "completed": outcome_map.get("completed", 0),
+            "cancelled":  outcome_map.get("cancelled",  0),
+            "no_show":    outcome_map.get("no_show",    0),
+            "avg_score":  avg_score,
+        }
+
+        # ── Pipeline funnel ───────────────────────────────────────────────────
+        funnel_qs = (
+            Submittal.objects
+            .filter(status="active", current_stage__isnull=False)
+            .values("current_stage__name", "current_stage__order")
+            .annotate(count=Count("id"))
+            .order_by("current_stage__order")
+        )
+        pipeline_funnel = [
+            {"stage": row["current_stage__name"], "count": row["count"]}
+            for row in funnel_qs
+        ]
+
+        # ── Time to fill ──────────────────────────────────────────────────────
+        # For each job with a placed submittal, find the earliest placement date
+        from django.db.models import Min
+
+        placed_qs = (
+            Submittal.objects
+            .filter(status="placed")
+            .values("job_id")
+            .annotate(first_placed_at=Min("updated_at"))
+        )
+        job_ids = [row["job_id"] for row in placed_qs]
+        job_lookup = {
+            j.id: j
+            for j in Job.objects.filter(id__in=job_ids).select_related("client")
+        }
+
+        by_job = []
+        for row in placed_qs:
+            job = job_lookup.get(row["job_id"])
+            if not job:
+                continue
+            days = max((row["first_placed_at"] - job.created_at).days, 0)
+            by_job.append({"id": job.id, "title": job.title, "client": job.client.name, "days": days})
+
+        by_job.sort(key=lambda x: x["days"], reverse=True)
+        avg_days = round(sum(r["days"] for r in by_job) / len(by_job)) if by_job else None
+
+        time_to_fill = {"avg_days": avg_days, "by_job": by_job}
+
+        return Response({
+            "candidate_pool":        candidate_pool,
+            "source_effectiveness":  source_effectiveness,
+            "open_jobs":             open_jobs,
+            "recruiter_leaderboard": recruiter_leaderboard,
+            "interview_outcomes":    interview_outcomes,
+            "pipeline_funnel":       pipeline_funnel,
+            "time_to_fill":          time_to_fill,
         })
