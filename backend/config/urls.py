@@ -31,6 +31,7 @@ urlpatterns = [
 
     path("api/", include("cvgen.urls")),
     path("api/", include("attachments.urls")),
+    path("api/", include("notifications.urls")),
 ]
 
 # Serve uploaded files (resumes, docs) in development only

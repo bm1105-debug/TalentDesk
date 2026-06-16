@@ -13,6 +13,7 @@ from rest_framework.response import Response
 from .models import Interview
 from .serializers import InterviewSerializer, InterviewStatusUpdateSerializer
 from users.permissions import IsAccountManagerOrAbove, IsRecruiterOrAbove
+from notifications.utils import notify
 
 class InterviewViewSet(viewsets.ModelViewSet):
     serializer_class  = InterviewSerializer
@@ -45,6 +46,15 @@ class InterviewViewSet(viewsets.ModelViewSet):
             qs = qs.filter(interview_type=interview_type)
 
         return qs
+
+    def perform_create(self, serializer):
+        interview = serializer.save()
+        candidate = interview.submittal.candidate
+        notify(
+            recipient=interview.submittal.submitted_by,
+            message=f"Interview ({interview.get_interview_type_display()}) scheduled for {candidate.first_name} {candidate.last_name} — {interview.submittal.job.title}",
+            candidate=candidate,
+        )
 
     def get_permissions(self):
         # Recruiters can schedule and view interviews

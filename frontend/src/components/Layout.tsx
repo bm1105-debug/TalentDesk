@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import api from '@/api/client'
+import NotificationBell from '@/components/NotificationBell'
 
 function ChangePasswordDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [fields, setFields] = useState({ old_password: '', new_password: '', new_password2: '' })
@@ -190,9 +191,9 @@ export default function Layout() {
       <div className="flex-1 flex flex-col overflow-hidden">
 
         {/* Top header bar */}
-        <header className="h-14 flex items-center px-6 bg-white border-b border-gray-200">
-          {/* Page title rendered by each page via document.title or a context — placeholder for now */}
+        <header className="h-14 flex items-center justify-between px-6 bg-white border-b border-gray-200">
           <span className="text-sm text-gray-400">TalentDesk ATS</span>
+          <NotificationBell />
         </header>
 
         {/* Scrollable page content */}

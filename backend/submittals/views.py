@@ -10,6 +10,7 @@ from .serializers import (
     StatusChangeSerializer,
 )
 from users.permissions import IsAccountManagerOrAbove, IsRecruiterOrAbove
+from notifications.utils import notify
 
 
 class SubmittalViewSet(viewsets.ModelViewSet):
@@ -79,6 +80,13 @@ class SubmittalViewSet(viewsets.ModelViewSet):
         # Update the live stage pointer on the submittal
         submittal.current_stage = new_stage
         submittal.save(update_fields=["current_stage", "updated_at"])
+
+        candidate = submittal.candidate
+        notify(
+            recipient=submittal.submitted_by,
+            message=f"{candidate.first_name} {candidate.last_name} advanced to '{new_stage.name}' for {submittal.job.title}",
+            candidate=candidate,
+        )
 
         return Response(SubmittalSerializer(submittal, context={"request": request}).data)
 
