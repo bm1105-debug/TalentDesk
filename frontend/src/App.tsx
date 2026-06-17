@@ -19,6 +19,7 @@ import Analytics from '@/pages/Analytics'
 import Scorecard from '@/pages/Scorecard'
 import ActivityLog from '@/pages/ActivityLog'
 import Offers from '@/pages/Offers'
+import JobDetail from '@/pages/JobDetail'
 
 export default function App() {
   return (
@@ -39,6 +40,7 @@ export default function App() {
         <Route path="candidates"     element={<Candidates />} />
         <Route path="candidates/:id" element={<CandidateDetail />} />
         <Route path="jobs"           element={<Jobs />} />
+        <Route path="jobs/:id"       element={<JobDetail />} />
         <Route path="submittals"     element={<Submittals />} />
         <Route path="interviews"     element={<Interviews />} />
         <Route path="communications" element={<Communications />} />

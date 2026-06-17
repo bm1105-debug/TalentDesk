@@ -8,6 +8,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Search, Plus, ChevronLeft, ChevronRight, Users } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import api from '@/api/client'
 import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/button'
@@ -297,7 +298,9 @@ export default function Jobs() {
             {data?.results.map(j => (
               <tr key={j.id} className="hover:bg-gray-50 transition-colors">
                 <td className="px-4 py-3 font-medium text-gray-900">
-                  {j.title}
+                  <Link to={`/jobs/${j.id}`} className="hover:text-blue-600 hover:underline">
+                    {j.title}
+                  </Link>
                   {j.location && <span className="block text-xs text-gray-400 font-normal">{j.location}</span>}
                 </td>
                 <td className="px-4 py-3 text-gray-600">{j.client_name}</td>

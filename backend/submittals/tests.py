@@ -4,11 +4,12 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from communications.models import EmailTemplate
 from users.models import User, Role
 from clients.models import Client
-from candidates.models import Candidate
+from candidates.models import Candidate, SkillTag
 from jobs.models import Job, PipelineStage
-from .models import Submittal, SubmittalEvent
+from .models import Submittal, SubmittalEvent, calculate_match_score
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -240,3 +241,229 @@ class SubmittalStatusTests(APITestCase):
         url = reverse("submittal-change-status", args=[self.submittal.id])
         res = self.client.post(url, {"status": "nonsense"}, format="json")
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+# ── Shortlist Flag Tests ──────────────────────────────────────────────────────
+
+class ShortlistFlagTests(APITestCase):
+
+    def setUp(self):
+        self.recruiter = make_user("rec@test.com", role=Role.RECRUITER)
+        self.manager   = make_user("mgr@test.com", role=Role.ACCOUNT_MANAGER)
+        acme           = make_client()
+        job            = make_job(acme, self.manager)
+        c1             = make_candidate(email="a@x.com", phone="9001")
+        c2             = make_candidate(email="b@x.com", phone="9002")
+        self.s1 = make_submittal(c1, job, self.recruiter)
+        self.s2 = make_submittal(c2, job, self.recruiter)
+        auth(self.client, self.recruiter)
+
+    def _patch(self, submittal, payload):
+        return self.client.patch(
+            reverse("submittal-detail", args=[submittal.id]),
+            payload, format="json",
+        )
+
+    def test_is_shortlisted_defaults_false(self):
+        res = self.client.get(reverse("submittal-list"))
+        self.assertFalse(res.data["results"][0]["is_shortlisted"])
+
+    def test_patch_toggles_shortlist_on(self):
+        res = self._patch(self.s1, {"is_shortlisted": True})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertTrue(res.data["is_shortlisted"])
+        self.s1.refresh_from_db()
+        self.assertTrue(self.s1.is_shortlisted)
+
+    def test_patch_toggles_shortlist_off(self):
+        self.s1.is_shortlisted = True
+        self.s1.save(update_fields=["is_shortlisted", "updated_at"])
+        res = self._patch(self.s1, {"is_shortlisted": False})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertFalse(res.data["is_shortlisted"])
+
+    def test_filter_shortlisted_true_returns_only_shortlisted(self):
+        self.s1.is_shortlisted = True
+        self.s1.save(update_fields=["is_shortlisted", "updated_at"])
+        res = self.client.get(reverse("submittal-list"), {"shortlisted": "true"})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data["count"], 1)
+        self.assertEqual(res.data["results"][0]["id"], self.s1.id)
+
+    def test_filter_shortlisted_returns_empty_when_none_shortlisted(self):
+        res = self.client.get(reverse("submittal-list"), {"shortlisted": "true"})
+        self.assertEqual(res.data["count"], 0)
+
+    def test_manager_can_toggle_shortlist(self):
+        auth(self.client, self.manager)
+        res = self._patch(self.s1, {"is_shortlisted": True})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertTrue(res.data["is_shortlisted"])
+
+    def test_unauthenticated_patch_rejected(self):
+        self.client.credentials()
+        res = self._patch(self.s1, {"is_shortlisted": True})
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+# ── Rejection Prompt Tests ────────────────────────────────────────────────────
+
+class RejectionPromptTests(APITestCase):
+
+    def setUp(self):
+        self.manager   = make_user("manager@test.com", role=Role.ACCOUNT_MANAGER)
+        acme           = make_client()
+        job            = make_job(acme, self.manager)
+        candidate      = make_candidate()
+        self.submittal = make_submittal(candidate, job, self.manager)
+        auth(self.client, self.manager)
+
+    def _change_status(self, new_status, notes=""):
+        url = reverse("submittal-change-status", args=[self.submittal.id])
+        return self.client.post(url, {"status": new_status, "notes": notes}, format="json")
+
+    def _make_rejection_template(self):
+        return EmailTemplate.objects.create(
+            name="Standard Rejection",
+            template_type=EmailTemplate.TemplateType.REJECTION,
+            subject="Thank you for your application",
+            body="Unfortunately we will not be moving forward.",
+        )
+
+    def test_rejected_status_includes_prompt_when_template_exists(self):
+        self._make_rejection_template()
+        res = self._change_status("rejected")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertTrue(res.data.get("rejection_template_available"))
+        self.assertIn("candidate_email", res.data)
+        self.assertIn("rejection_template_id", res.data)
+
+    def test_withdrawn_status_includes_prompt_when_template_exists(self):
+        self._make_rejection_template()
+        res = self._change_status("withdrawn")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertTrue(res.data.get("rejection_template_available"))
+
+    def test_placed_status_does_not_include_prompt(self):
+        self._make_rejection_template()
+        res = self._change_status("placed")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertNotIn("rejection_template_available", res.data)
+
+    def test_rejected_without_template_does_not_include_prompt(self):
+        # No rejection template in DB — flag must be absent
+        res = self._change_status("rejected")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertNotIn("rejection_template_available", res.data)
+
+    def test_unauthenticated_returns_401(self):
+        self.client.credentials()
+        url = reverse("submittal-change-status", args=[self.submittal.id])
+        res = self.client.post(url, {"status": "rejected"}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+# ── Match Score Tests ─────────────────────────────────────────────────────────
+
+class MatchScoreTests(APITestCase):
+
+    def setUp(self):
+        self.recruiter = make_user("recruiter@test.com")
+        self.manager   = make_user("manager@test.com", role=Role.ACCOUNT_MANAGER)
+        auth(self.client, self.recruiter)
+        self.acme = make_client()
+
+    def _job_with_salary(self, requirements=""):
+        job = Job.objects.create(
+            title="Dev", client=self.acme, status="open", created_by=self.manager,
+            requirements=requirements,
+            salary_min=50000, salary_max=70000,
+        )
+        PipelineStage.objects.create(job=job, name="Screening", order=0)
+        return job
+
+    def _job_no_salary(self, requirements=""):
+        job = Job.objects.create(
+            title="Dev", client=self.acme, status="open", created_by=self.manager,
+            requirements=requirements,
+        )
+        PipelineStage.objects.create(job=job, name="Screening", order=0)
+        return job
+
+    def _candidate_with_skills(self, *skill_names):
+        candidate = make_candidate()
+        for name in skill_names:
+            tag, _ = SkillTag.objects.get_or_create(name=name)
+            candidate.skills.add(tag)
+        return candidate
+
+    # ── Unit tests on the pure function ──────────────────────────────────────
+
+    def test_full_skills_overlap_with_salary(self):
+        job       = self._job_with_salary(requirements="python django rest")
+        candidate = self._candidate_with_skills("python", "django")
+        score = calculate_match_score(candidate, job)
+        self.assertEqual(score, 100)   # 60 (all skills match) + 40 (salary defined)
+
+    def test_partial_skills_overlap(self):
+        job       = self._job_with_salary(requirements="python sql")
+        candidate = self._candidate_with_skills("python", "java")  # 1 of 2 match
+        score = calculate_match_score(candidate, job)
+        # 1/2 * 60 = 30, + 40 salary = 70
+        self.assertEqual(score, 70)
+
+    def test_zero_skills_overlap_with_salary(self):
+        job       = self._job_with_salary(requirements="python")
+        candidate = self._candidate_with_skills("java")
+        score = calculate_match_score(candidate, job)
+        self.assertEqual(score, 40)   # 0 skills + 40 salary
+
+    def test_zero_skills_no_salary(self):
+        job       = self._job_no_salary(requirements="python")
+        candidate = self._candidate_with_skills("java")
+        score = calculate_match_score(candidate, job)
+        self.assertEqual(score, 0)
+
+    def test_no_candidate_skills_gives_only_salary(self):
+        job       = self._job_with_salary(requirements="python")
+        candidate = make_candidate()   # no skills
+        score = calculate_match_score(candidate, job)
+        self.assertEqual(score, 40)
+
+    # ── Integration: score auto-set on submittal creation ────────────────────
+
+    def test_create_submittal_auto_sets_match_score(self):
+        job       = self._job_with_salary(requirements="python django")
+        candidate = self._candidate_with_skills("python", "django")
+        res = self.client.post(
+            reverse("submittal-list"),
+            {"candidate": candidate.id, "job": job.id},
+            format="json",
+        )
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(res.data["match_score"], 100)
+
+    def test_patch_overrides_match_score(self):
+        job       = self._job_no_salary()
+        candidate = make_candidate()
+        submittal = make_submittal(candidate, job, self.recruiter)
+        res = self.client.patch(
+            reverse("submittal-detail", args=[submittal.id]),
+            {"match_score": 85},
+            format="json",
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data["match_score"], 85)
+
+    def test_ordering_by_match_score(self):
+        job = self._job_no_salary()
+        c1  = make_candidate(email="c1@x.com", phone="1001")
+        c2  = make_candidate(email="c2@x.com", phone="1002")
+        s1  = make_submittal(c1, job, self.recruiter)
+        s2  = make_submittal(c2, job, self.recruiter)
+        Submittal.objects.filter(pk=s1.pk).update(match_score=30)
+        Submittal.objects.filter(pk=s2.pk).update(match_score=80)
+        res = self.client.get(reverse("submittal-list"), {"ordering": "-match_score"})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        ids = [r["id"] for r in res.data["results"]]
+        self.assertLess(ids.index(s2.id), ids.index(s1.id))

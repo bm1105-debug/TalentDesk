@@ -1,0 +1,505 @@
+import { useState } from 'react'
+import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { ArrowLeft, ArrowRight, StickyNote, HandCoins, Star } from 'lucide-react'
+import api from '@/api/client'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Label } from '@/components/ui/label'
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+
+// ── Types ──────────────────────────────────────────────────────────────────────
+
+interface PipelineStage { id: number; name: string; order: number }
+
+interface Job {
+  id: number
+  title: string
+  client_name: string
+  status: string
+  priority: string
+  salary_min: string | null
+  salary_max: string | null
+  target_date: string | null
+  openings: number
+  stages: PipelineStage[]
+  description: string
+  requirements: string
+}
+
+interface Submittal {
+  id: number
+  candidate: number
+  candidate_name: string
+  job: number
+  job_title: string
+  current_stage: number | null
+  current_stage_name: string | null
+  status: string
+  cover_note: string
+  is_shortlisted: boolean
+  match_score: number | null
+  candidate_last_contacted_at: string | null
+  submitted_by: string
+}
+
+interface PaginatedSubmittals {
+  results: Submittal[]
+  count: number
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
+const STATUS_VARIANT: Record<string, 'success' | 'default' | 'secondary' | 'destructive' | 'warning'> = {
+  open: 'success', draft: 'secondary', on_hold: 'warning', filled: 'default', cancelled: 'destructive',
+}
+const PRIORITY_VARIANT: Record<string, 'destructive' | 'warning' | 'default' | 'secondary'> = {
+  urgent: 'destructive', high: 'warning', medium: 'default', low: 'secondary',
+}
+
+function fmtSalary(min: string | null, max: string | null): string {
+  if (!min && !max) return '—'
+  const fmt = (v: string) => `$${Number(v).toLocaleString()}`
+  if (min && max) return `${fmt(min)} – ${fmt(max)}`
+  return fmt((min ?? max)!)
+}
+
+function fmtLastContacted(dt: string | null): string {
+  if (!dt) return 'Never'
+  const days = Math.floor((Date.now() - new Date(dt).getTime()) / 86_400_000)
+  return days === 0 ? 'Today' : `${days}d ago`
+}
+
+// ── Match Score Badge ──────────────────────────────────────────────────────────
+
+function MatchBadge({ score }: { score: number | null }) {
+  if (score === null) return <span className="text-gray-300 text-xs">—</span>
+  const cls =
+    score >= 70 ? 'bg-emerald-100 text-emerald-700' :
+    score >= 40 ? 'bg-amber-100 text-amber-700' :
+                  'bg-red-100 text-red-700'
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${cls}`}>
+      {score}
+    </span>
+  )
+}
+
+// ── Star Toggle ────────────────────────────────────────────────────────────────
+
+function StarButton({ submittal }: { submittal: Submittal }) {
+  const qc = useQueryClient()
+  const toggle = useMutation({
+    mutationFn: () => api.patch(`/submittals/${submittal.id}/`, { is_shortlisted: !submittal.is_shortlisted }),
+    onSuccess:  () => qc.invalidateQueries({ queryKey: ['job-submittals', submittal.job] }),
+  })
+  return (
+    <button onClick={() => toggle.mutate()} disabled={toggle.isPending}
+      title={submittal.is_shortlisted ? 'Remove from shortlist' : 'Add to shortlist'}
+      className="p-1 rounded hover:bg-amber-50 transition-colors disabled:opacity-40">
+      <Star className={`h-4 w-4 transition-colors ${
+        submittal.is_shortlisted ? 'fill-amber-400 stroke-amber-400' : 'stroke-gray-300 hover:stroke-amber-400'
+      }`} />
+    </button>
+  )
+}
+
+// ── Advance Stage Dialog ───────────────────────────────────────────────────────
+
+function AdvanceStageDialog({ submittal, stages }: { submittal: Submittal; stages: PipelineStage[] }) {
+  const [open,    setOpen]    = useState(false)
+  const [stageId, setStageId] = useState<number | ''>('')
+  const [notes,   setNotes]   = useState('')
+  const qc = useQueryClient()
+
+  const advance = useMutation({
+    mutationFn: () => api.post(`/submittals/${submittal.id}/advance/`, { stage_id: stageId, notes }),
+    onSuccess:  () => {
+      qc.invalidateQueries({ queryKey: ['job-submittals', submittal.job] })
+      setOpen(false); setStageId(''); setNotes('')
+    },
+  })
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs text-blue-600 hover:text-blue-700">
+          <ArrowRight className="h-3.5 w-3.5" /> Advance
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-sm">
+        <DialogHeader><DialogTitle>Advance Stage</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <p className="text-sm text-gray-500">{submittal.candidate_name}</p>
+          <p className="text-xs text-gray-400">Current: {submittal.current_stage_name ?? 'Not started'}</p>
+          <div className="space-y-1">
+            <Label>Move to stage</Label>
+            <select value={stageId} onChange={e => setStageId(Number(e.target.value))}
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm">
+              <option value="">— pick stage —</option>
+              {stages.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </div>
+          <div className="space-y-1">
+            <Label>Notes <span className="text-gray-400 font-normal">(optional)</span></Label>
+            <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2}
+              className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button size="sm" disabled={!stageId || advance.isPending} onClick={() => advance.mutate()}>
+              {advance.isPending ? 'Saving…' : 'Confirm'}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// ── Add Note Dialog ────────────────────────────────────────────────────────────
+
+function AddNoteDialog({ submittal }: { submittal: Submittal }) {
+  const [open, setOpen] = useState(false)
+  const [note, setNote] = useState('')
+  const qc = useQueryClient()
+
+  const addNote = useMutation({
+    mutationFn: () => api.post(`/submittals/${submittal.id}/add-note/`, { notes: note }),
+    onSuccess:  () => {
+      qc.invalidateQueries({ queryKey: ['job-submittals', submittal.job] })
+      setOpen(false); setNote('')
+    },
+  })
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs text-gray-500 hover:text-gray-700">
+          <StickyNote className="h-3.5 w-3.5" /> Note
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-sm">
+        <DialogHeader><DialogTitle>Add Note</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <p className="text-sm text-gray-500">{submittal.candidate_name}</p>
+          <textarea value={note} onChange={e => setNote(e.target.value)} rows={3}
+            placeholder="Client feedback, interview outcome…"
+            className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" />
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button size="sm" disabled={!note.trim() || addNote.isPending} onClick={() => addNote.mutate()}>
+              {addNote.isPending ? 'Saving…' : 'Save Note'}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// ── Make Offer Dialog ──────────────────────────────────────────────────────────
+
+const offerSchema = z.object({
+  salary:      z.coerce.number().positive('Required'),
+  currency:    z.string().min(3).max(3).default('USD'),
+  offer_date:  z.string().min(1, 'Required'),
+  expiry_date: z.string().optional(),
+  start_date:  z.string().optional(),
+  notes:       z.string().optional(),
+})
+type OfferFormValues = z.infer<typeof offerSchema>
+
+function MakeOfferDialog({ submittal }: { submittal: Submittal }) {
+  const [open, setOpen] = useState(false)
+  const qc = useQueryClient()
+
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<OfferFormValues>({
+    resolver: zodResolver(offerSchema),
+    defaultValues: { currency: 'USD' },
+  })
+
+  const create = useMutation({
+    mutationFn: (payload: OfferFormValues) =>
+      api.post('/offers/', { ...payload, submittal: submittal.id }).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['job-submittals', submittal.job] })
+      qc.invalidateQueries({ queryKey: ['offers'] })
+      reset(); setOpen(false)
+    },
+  })
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs text-emerald-600 hover:text-emerald-700">
+          <HandCoins className="h-3.5 w-3.5" /> Offer
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-sm">
+        <DialogHeader><DialogTitle>Make Offer — {submittal.candidate_name}</DialogTitle></DialogHeader>
+        <form onSubmit={handleSubmit(v => create.mutateAsync(v))} className="space-y-3">
+          <div className="flex gap-2">
+            <div className="flex-1 space-y-1">
+              <Label>Salary *</Label>
+              <input {...register('salary')} type="number" placeholder="75000"
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm" />
+              {errors.salary && <p className="text-xs text-red-500">{errors.salary.message}</p>}
+            </div>
+            <div className="w-20 space-y-1">
+              <Label>Currency</Label>
+              <input {...register('currency')} maxLength={3}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm uppercase" />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <Label>Offer date *</Label>
+            <input {...register('offer_date')} type="date"
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm" />
+            {errors.offer_date && <p className="text-xs text-red-500">{errors.offer_date.message}</p>}
+          </div>
+          <div className="flex gap-2">
+            <div className="flex-1 space-y-1">
+              <Label>Expiry <span className="text-gray-400 font-normal">(opt)</span></Label>
+              <input {...register('expiry_date')} type="date"
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm" />
+            </div>
+            <div className="flex-1 space-y-1">
+              <Label>Start <span className="text-gray-400 font-normal">(opt)</span></Label>
+              <input {...register('start_date')} type="date"
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm" />
+            </div>
+          </div>
+          {create.isError && (
+            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
+              Failed. There may already be a pending offer.
+            </p>
+          )}
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button type="submit" size="sm" disabled={create.isPending}>
+              {create.isPending ? 'Saving…' : 'Create Offer'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// ── Page ───────────────────────────────────────────────────────────────────────
+
+export default function JobDetail() {
+  const { id }    = useParams<{ id: string }>()
+  const navigate  = useNavigate()
+  const [stageFilter, setStageFilter] = useState<number | null>(null)
+
+  const { data: job, isLoading: jobLoading, isError } = useQuery<Job>({
+    queryKey: ['job', id],
+    queryFn:  () => api.get(`/jobs/${id}/`).then(r => r.data),
+  })
+
+  const { data: submittalsData, isLoading: subsLoading } = useQuery<PaginatedSubmittals>({
+    queryKey: ['job-submittals', Number(id)],
+    queryFn:  () => api.get('/submittals/', { params: { job: id, page_size: 200 } }).then(r => r.data),
+    enabled:  !!id,
+  })
+
+  const allSubmittals = submittalsData?.results ?? []
+
+  // Count active submittals per stage for the funnel
+  const stageCounts = (job?.stages ?? []).reduce<Record<number, number>>((acc, stage) => {
+    acc[stage.id] = allSubmittals.filter(
+      s => s.status === 'active' && s.current_stage === stage.id
+    ).length
+    return acc
+  }, {})
+  const maxCount = Math.max(...Object.values(stageCounts), 1)
+
+  // Apply stage filter to the candidate list
+  const displayed = stageFilter
+    ? allSubmittals.filter(s => s.current_stage === stageFilter)
+    : allSubmittals
+
+  if (isError) return (
+    <div className="space-y-4">
+      <Button variant="ghost" size="sm" onClick={() => navigate('/jobs')}>
+        <ArrowLeft className="h-4 w-4 mr-1" /> Back to Jobs
+      </Button>
+      <p className="text-red-500">Job not found.</p>
+    </div>
+  )
+
+  return (
+    <div className="space-y-6">
+
+      {/* ── Back link ── */}
+      <Button variant="ghost" size="sm" className="gap-1 -ml-2 text-gray-500" onClick={() => navigate('/jobs')}>
+        <ArrowLeft className="h-4 w-4" /> Jobs
+      </Button>
+
+      {/* ── Header ── */}
+      {jobLoading ? (
+        <div className="animate-pulse space-y-2">
+          <div className="h-7 bg-gray-200 rounded w-1/3" />
+          <div className="h-4 bg-gray-100 rounded w-1/4" />
+        </div>
+      ) : job && (
+        <div className="bg-white border border-gray-200 rounded-xl p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">{job.title}</h1>
+              <p className="text-gray-500 mt-1">{job.client_name}</p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Badge variant={STATUS_VARIANT[job.status] ?? 'secondary'}>
+                {job.status.replace('_', ' ')}
+              </Badge>
+              <Badge variant={PRIORITY_VARIANT[job.priority] ?? 'secondary'}>
+                {job.priority}
+              </Badge>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-6 mt-6 pt-6 border-t border-gray-100 text-sm">
+            <div>
+              <p className="text-gray-400 text-xs uppercase tracking-wide mb-1">Salary</p>
+              <p className="font-medium text-gray-900">{fmtSalary(job.salary_min, job.salary_max)}</p>
+            </div>
+            <div>
+              <p className="text-gray-400 text-xs uppercase tracking-wide mb-1">Target date</p>
+              <p className="font-medium text-gray-900">
+                {job.target_date ? new Date(job.target_date).toLocaleDateString() : '—'}
+              </p>
+            </div>
+            <div>
+              <p className="text-gray-400 text-xs uppercase tracking-wide mb-1">Openings</p>
+              <p className="font-medium text-gray-900">{job.openings}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Pipeline Funnel ── */}
+      {job && (
+        <div className="bg-white border border-gray-200 rounded-xl p-6">
+          <h2 className="text-sm font-semibold text-gray-700 mb-4">Pipeline</h2>
+          {job.stages.length === 0 ? (
+            <p className="text-sm text-gray-400">No pipeline stages defined.</p>
+          ) : (
+            <div className="space-y-2">
+              {job.stages.map(stage => {
+                const count   = stageCounts[stage.id] ?? 0
+                const pct     = Math.round((count / maxCount) * 100)
+                const active  = stageFilter === stage.id
+                return (
+                  <button
+                    key={stage.id}
+                    onClick={() => setStageFilter(active ? null : stage.id)}
+                    className={`w-full flex items-center gap-3 group rounded-lg px-2 py-1.5 transition-colors ${
+                      active ? 'bg-blue-50' : 'hover:bg-gray-50'
+                    }`}
+                  >
+                    <span className={`text-xs w-32 text-left truncate ${active ? 'text-blue-700 font-medium' : 'text-gray-500'}`}>
+                      {stage.name}
+                    </span>
+                    <div className="flex-1 bg-gray-100 rounded-full h-5 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${active ? 'bg-blue-500' : 'bg-blue-300 group-hover:bg-blue-400'}`}
+                        style={{ width: count === 0 ? '0%' : `${Math.max(pct, 3)}%` }}
+                      />
+                    </div>
+                    <span className={`text-xs w-8 text-right font-medium ${active ? 'text-blue-700' : 'text-gray-500'}`}>
+                      {count}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+          {stageFilter && (
+            <button
+              onClick={() => setStageFilter(null)}
+              className="mt-3 text-xs text-blue-600 hover:underline"
+            >
+              Clear stage filter
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* ── Candidate List ── */}
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-gray-700">
+            Candidates
+            {stageFilter && job && (
+              <span className="ml-2 font-normal text-gray-400">
+                · {job.stages.find(s => s.id === stageFilter)?.name}
+              </span>
+            )}
+          </h2>
+          <span className="text-xs text-gray-400">{displayed.length} submittal{displayed.length !== 1 ? 's' : ''}</span>
+        </div>
+
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th className="px-3 py-3 w-8" />
+              <th className="text-left px-4 py-3 font-medium text-gray-600">Candidate</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600">Fit</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600">Stage</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600">Last contacted</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {(jobLoading || subsLoading) && (
+              <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-400">Loading…</td></tr>
+            )}
+            {!jobLoading && !subsLoading && displayed.length === 0 && (
+              <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-400">No candidates in this view</td></tr>
+            )}
+            {displayed.map(s => (
+              <tr key={s.id} className={`transition-colors hover:bg-gray-50 ${s.is_shortlisted ? 'bg-amber-50/40' : ''}`}>
+                <td className="px-3 py-3"><StarButton submittal={s} /></td>
+                <td className="px-4 py-3">
+                  <Link
+                    to={`/candidates/${s.candidate}`}
+                    className="font-medium text-gray-900 hover:text-blue-600 hover:underline"
+                    onClick={e => e.stopPropagation()}
+                  >
+                    {s.candidate_name}
+                  </Link>
+                </td>
+                <td className="px-4 py-3"><MatchBadge score={s.match_score} /></td>
+                <td className="px-4 py-3 text-gray-600">
+                  {s.current_stage_name
+                    ? <span className="text-blue-700 font-medium">{s.current_stage_name}</span>
+                    : <span className="text-gray-400">Not started</span>
+                  }
+                </td>
+                <td className="px-4 py-3 text-xs text-gray-400 whitespace-nowrap">
+                  {fmtLastContacted(s.candidate_last_contacted_at)}
+                </td>
+                <td className="px-4 py-3">
+                  {s.status === 'active' && job && (
+                    <div className="flex items-center gap-1">
+                      <AdvanceStageDialog submittal={s} stages={job.stages} />
+                      <AddNoteDialog submittal={s} />
+                      <MakeOfferDialog submittal={s} />
+                    </div>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  )
+}

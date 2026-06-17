@@ -37,6 +37,12 @@ class Submittal(models.Model):
         default=SubmittalStatus.ACTIVE,
     )
 
+    # Recruiter marks this submittal as a top pick for the role (per-submittal, not per-candidate)
+    is_shortlisted = models.BooleanField(default=False, db_index=True)
+
+    # 0-100 fit indicator: auto-set on creation, manually overridable via PATCH
+    match_score = models.PositiveSmallIntegerField(null=True, blank=True, db_index=True)
+
     # Free-text cover note the recruiter adds when first submitting the candidate
     cover_note = models.TextField(blank=True)
 
@@ -107,3 +113,24 @@ class SubmittalEvent(models.Model):
 
     def __str__(self):
         return f"{self.submittal} | {self.event_type} @ {self.created_at:%Y-%m-%d %H:%M}"
+
+
+def calculate_match_score(candidate, job):
+    """
+    Returns a 0-100 score for how well a candidate fits a job.
+      Skills overlap  : up to 60 pts — proportion of candidate's skills found in job.requirements text
+      Salary defined  : 40 pts flat  — job has both salary_min and salary_max set
+    """
+    # Skills component (0-60)
+    total_skills = candidate.skills.count()
+    if total_skills and job.requirements:
+        req_lower = job.requirements.lower()
+        matching  = sum(1 for skill in candidate.skills.all() if skill.name in req_lower)
+        skills_score = round((matching / total_skills) * 60)
+    else:
+        skills_score = 0
+
+    # Salary component (0-40)
+    salary_score = 40 if (job.salary_min is not None and job.salary_max is not None) else 0
+
+    return min(skills_score + salary_score, 100)

@@ -1,8 +1,11 @@
+from django.db.models import OuterRef, Subquery
+
 from rest_framework import viewsets, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from .models import Submittal, SubmittalEvent
+from communications.models import EmailTemplate, SentEmail
+from .models import Submittal, SubmittalEvent, calculate_match_score
 from .serializers import (
     SubmittalSerializer,
     StageAdvanceSerializer,
@@ -16,16 +19,24 @@ from notifications.utils import notify
 class SubmittalViewSet(viewsets.ModelViewSet):
     serializer_class = SubmittalSerializer
     filter_backends  = [filters.OrderingFilter]
-    ordering_fields  = ["created_at", "status"]
+    ordering_fields  = ["created_at", "status", "match_score"]
     ordering         = ["-created_at"]
 
     # Disable PUT — partial updates via PATCH only, and only for cover_note
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
 
     def get_queryset(self):
+        last_email = (
+            SentEmail.objects
+            .filter(related_candidate=OuterRef("candidate"))
+            .order_by("-sent_at")
+            .values("sent_at")[:1]
+        )
         qs = Submittal.objects.select_related(
             "candidate", "job", "current_stage", "submitted_by"
-        ).prefetch_related("events__from_stage", "events__to_stage", "events__created_by")
+        ).prefetch_related(
+            "events__from_stage", "events__to_stage", "events__created_by"
+        ).annotate(candidate_last_contacted_at=Subquery(last_email))
 
         # Filter by job or candidate via query params — e.g. ?job=3 or ?candidate=7
         job_id       = self.request.query_params.get("job")
@@ -38,6 +49,8 @@ class SubmittalViewSet(viewsets.ModelViewSet):
             qs = qs.filter(candidate_id=candidate_id)
         if status_param:
             qs = qs.filter(status=status_param)
+        if self.request.query_params.get("shortlisted") == "true":
+            qs = qs.filter(is_shortlisted=True)
 
         return qs
 
@@ -47,6 +60,11 @@ class SubmittalViewSet(viewsets.ModelViewSet):
         if self.action in ("destroy", "change_status"):
             return [IsAccountManagerOrAbove()]
         return [IsRecruiterOrAbove()]
+
+    def perform_create(self, serializer):
+        candidate = serializer.validated_data["candidate"]
+        job       = serializer.validated_data["job"]
+        serializer.save(match_score=calculate_match_score(candidate, job))
 
     @action(detail=True, methods=["post"], url_path="advance")
     def advance(self, request, pk=None):
@@ -135,4 +153,19 @@ class SubmittalViewSet(viewsets.ModelViewSet):
         submittal.status = new_status
         submittal.save(update_fields=["status", "updated_at"])
 
-        return Response(SubmittalSerializer(submittal, context={"request": request}).data)
+        response_data = SubmittalSerializer(submittal, context={"request": request}).data
+
+        # Hint the frontend to offer a rejection email when closing negatively
+        if new_status in ("rejected", "withdrawn"):
+            rejection_template = EmailTemplate.objects.filter(
+                template_type=EmailTemplate.TemplateType.REJECTION
+            ).first()
+            if rejection_template:
+                return Response({
+                    **response_data,
+                    "rejection_template_available": True,
+                    "rejection_template_id":        rejection_template.id,
+                    "candidate_email":              submittal.candidate.email,
+                })
+
+        return Response(response_data)

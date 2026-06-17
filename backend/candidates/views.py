@@ -1,8 +1,14 @@
+from datetime import timedelta
+
+from django.db.models import Count, OuterRef, Q, Subquery
+from django.utils import timezone
+
 from rest_framework import viewsets, filters, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from communications.models import SentEmail
 from .models import Candidate, SkillTag
 from .serializers import CandidateSerializer, SkillTagSerializer
 from users.permissions import IsAccountManagerOrAbove, IsRecruiterOrAbove
@@ -48,19 +54,44 @@ class CandidateViewSet(viewsets.ModelViewSet):
     ordering = ["-created_at"]
 
     def get_queryset(self):
-        qs = Candidate.objects.select_related("created_by").prefetch_related("skills")
+        # Subquery: most recent sent_at for emails linked to each candidate
+        last_email = (
+            SentEmail.objects
+            .filter(related_candidate=OuterRef("pk"))
+            .order_by("-sent_at")
+            .values("sent_at")[:1]
+        )
 
-        # Allow filtering by status and source via query params e.g. ?status=active
-        status = self.request.query_params.get("status")
-        source = self.request.query_params.get("source")
-        skill   = self.request.query_params.get("skill")   # e.g. ?skill=python
+        qs = (
+            Candidate.objects
+            .select_related("created_by")
+            .prefetch_related("skills")
+            .annotate(
+                last_contacted_at=Subquery(last_email),
+                active_submittals_count=Count(
+                    "submittals",
+                    filter=Q(submittals__status="active"),
+                    distinct=True,
+                ),
+            )
+        )
 
-        if status:
-            qs = qs.filter(status=status)
+        status_param         = self.request.query_params.get("status")
+        source               = self.request.query_params.get("source")
+        skill                = self.request.query_params.get("skill")
+        not_contacted_days   = self.request.query_params.get("not_contacted_days")
+
+        if status_param:
+            qs = qs.filter(status=status_param)
         if source:
             qs = qs.filter(source=source)
         if skill:
             qs = qs.filter(skills__name=skill.strip().lower())
+        if not_contacted_days:
+            cutoff = timezone.now() - timedelta(days=int(not_contacted_days))
+            qs = qs.filter(
+                Q(last_contacted_at__isnull=True) | Q(last_contacted_at__lt=cutoff)
+            )
 
         return qs
 

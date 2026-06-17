@@ -7,7 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Search, Plus, ChevronLeft, ChevronRight, FileUp, Loader2 } from 'lucide-react'
+import { Search, Plus, ChevronLeft, ChevronRight, FileUp, Loader2, LayoutGrid, List } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useRef } from 'react'
 import api from '@/api/client'
@@ -37,6 +37,8 @@ interface Candidate {
   source: string
   skills: Skill[]
   created_at: string
+  last_contacted_at: string | null
+  active_submittals_count: number
 }
 
 interface PaginatedResponse {
@@ -65,6 +67,13 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
+
+function fmtLastContacted(dt: string | null): string {
+  if (!dt) return 'Never'
+  const days = Math.floor((Date.now() - new Date(dt).getTime()) / 86_400_000)
+  if (days === 0) return 'Today'
+  return `${days}d ago`
+}
 
 const STATUS_VARIANTS: Record<string, 'success' | 'default' | 'secondary' | 'destructive' | 'warning'> = {
   active:      'success',
@@ -286,24 +295,106 @@ function AddCandidateForm({ onSuccess }: { onSuccess: () => void }) {
   )
 }
 
+// ── Card View Components ───────────────────────────────────────────────────────
+
+function CardSkeleton() {
+  return (
+    <div className="bg-white border border-gray-200 rounded-xl p-4 animate-pulse">
+      <div className="flex justify-between mb-2">
+        <div className="space-y-1.5 flex-1">
+          <div className="h-4 bg-gray-200 rounded w-3/4" />
+          <div className="h-3 bg-gray-100 rounded w-1/2" />
+        </div>
+        <div className="h-5 bg-gray-100 rounded w-14 ml-2" />
+      </div>
+      <div className="h-4 bg-gray-100 rounded w-1/4 mb-3" />
+      <div className="flex gap-1 mb-4">
+        {[12, 16, 10].map(w => (
+          <div key={w} className={`h-5 bg-gray-100 rounded w-${w}`} />
+        ))}
+      </div>
+      <div className="border-t border-gray-100 pt-3 flex justify-between">
+        <div className="h-3 bg-gray-100 rounded w-24" />
+        <div className="h-3 bg-gray-100 rounded w-16" />
+      </div>
+    </div>
+  )
+}
+
+function CandidateCard({ candidate }: { candidate: Candidate }) {
+  const navigate = useNavigate()
+  return (
+    <div
+      onClick={() => navigate(`/candidates/${candidate.id}`)}
+      className="bg-white border border-gray-200 rounded-xl p-4 cursor-pointer hover:shadow-md hover:border-gray-300 transition-all flex flex-col"
+    >
+      <div className="flex items-start justify-between mb-1">
+        <div className="min-w-0 flex-1 mr-2">
+          <p className="font-semibold text-gray-900 truncate">
+            {candidate.first_name} {candidate.last_name}
+          </p>
+          <p className="text-sm text-gray-500 truncate">{candidate.current_title || '—'}</p>
+        </div>
+        <Badge variant={STATUS_VARIANTS[candidate.status] ?? 'secondary'} className="shrink-0 text-xs">
+          {candidate.status}
+        </Badge>
+      </div>
+
+      <span className="inline-block self-start text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded mb-3 capitalize">
+        {candidate.source.replace('_', ' ')}
+      </span>
+
+      <div className="flex flex-wrap gap-1 mb-auto">
+        {candidate.skills.slice(0, 4).map(s => (
+          <Badge key={s.id} variant="secondary" className="text-xs">{s.name}</Badge>
+        ))}
+        {candidate.skills.length > 4 && (
+          <Badge variant="secondary" className="text-xs">+{candidate.skills.length - 4}</Badge>
+        )}
+        {candidate.skills.length === 0 && (
+          <span className="text-xs text-gray-300">No skills</span>
+        )}
+      </div>
+
+      <div className="flex items-center justify-between text-xs text-gray-400 border-t border-gray-100 pt-3 mt-3">
+        <span>
+          {candidate.active_submittals_count} active submittal{candidate.active_submittals_count !== 1 ? 's' : ''}
+        </span>
+        <span>{fmtLastContacted(candidate.last_contacted_at)}</span>
+      </div>
+    </div>
+  )
+}
+
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function Candidates() {
-  const [search,     setSearch]     = useState('')
-  const [status,     setStatus]     = useState('')
-  const [page,       setPage]       = useState(1)
-  const [dialogOpen, setDialogOpen] = useState(false)
-  const [selected,   setSelected]   = useState<Set<number>>(new Set())
-  const [bulkStatus, setBulkStatus] = useState('passive')
+  const [viewMode,          setViewMode]          = useState<'table' | 'card'>(
+    () => (localStorage.getItem('candidates_view_mode') as 'table' | 'card') ?? 'table'
+  )
+  const [search,            setSearch]            = useState('')
+  const [status,            setStatus]            = useState('')
+  const [notContactedOnly,  setNotContactedOnly]  = useState(false)
+  const [page,              setPage]              = useState(1)
+  const [dialogOpen,        setDialogOpen]        = useState(false)
+  const [selected,          setSelected]          = useState<Set<number>>(new Set())
+  const [bulkStatus,        setBulkStatus]        = useState('passive')
+
+  function toggleViewMode() {
+    const next = viewMode === 'table' ? 'card' : 'table'
+    setViewMode(next)
+    localStorage.setItem('candidates_view_mode', next)
+  }
   const navigate = useNavigate()
   const qc = useQueryClient()
 
   const { data, isLoading } = useQuery<PaginatedResponse>({
-    queryKey: ['candidates', search, status, page],
+    queryKey: ['candidates', search, status, notContactedOnly, page],
     queryFn:  () => api.get('/candidates/', {
       params: {
-        search:  search || undefined,
-        status:  status || undefined,
+        search:               search || undefined,
+        status:               status || undefined,
+        not_contacted_days:   notContactedOnly ? 30 : undefined,
         page,
       },
     }).then(r => r.data),
@@ -350,19 +441,32 @@ export default function Candidates() {
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-gray-900">Candidates</h1>
 
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm" className="gap-1.5">
-              <Plus className="h-4 w-4" /> Add Candidate
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add Candidate</DialogTitle>
-            </DialogHeader>
-            <AddCandidateForm onSuccess={() => setDialogOpen(false)} />
-          </DialogContent>
-        </Dialog>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggleViewMode}
+            title={viewMode === 'table' ? 'Switch to card view' : 'Switch to table view'}
+            className="p-2 rounded-md border border-input text-gray-500 hover:bg-gray-50 transition-colors"
+          >
+            {viewMode === 'table'
+              ? <LayoutGrid className="h-4 w-4" />
+              : <List className="h-4 w-4" />
+            }
+          </button>
+
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="gap-1.5">
+                <Plus className="h-4 w-4" /> Add Candidate
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add Candidate</DialogTitle>
+              </DialogHeader>
+              <AddCandidateForm onSuccess={() => setDialogOpen(false)} />
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* ── Filters ── */}
@@ -388,79 +492,107 @@ export default function Candidates() {
           <option value="placed">Placed</option>
           <option value="blacklisted">Blacklisted</option>
         </select>
+
+        <button
+          onClick={() => { setNotContactedOnly(v => !v); setPage(1) }}
+          className={`h-9 px-3 rounded-md border text-sm transition-colors ${
+            notContactedOnly
+              ? 'border-orange-400 bg-orange-50 text-orange-700 font-medium'
+              : 'border-input bg-transparent text-gray-600 hover:bg-gray-50'
+          }`}
+        >
+          Not contacted in 30d
+        </button>
       </div>
 
-      {/* ── Table ── */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th className="px-4 py-3 w-10">
-                <input
-                  type="checkbox"
-                  checked={allPageSelected}
-                  onChange={toggleAll}
-                  className="rounded border-gray-300"
-                />
-              </th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Name</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Title / Company</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Contact</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Skills</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Status</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {isLoading && (
+      {/* ── Card view ── */}
+      {viewMode === 'card' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {isLoading && Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)}
+          {!isLoading && data?.results.length === 0 && (
+            <p className="col-span-3 py-12 text-center text-gray-400">No candidates found</p>
+          )}
+          {data?.results.map(c => <CandidateCard key={c.id} candidate={c} />)}
+        </div>
+      )}
+
+      {/* ── Table view ── */}
+      {viewMode === 'table' && (
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-gray-400">Loading…</td>
-              </tr>
-            )}
-            {!isLoading && data?.results.length === 0 && (
-              <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-gray-400">No candidates found</td>
-              </tr>
-            )}
-            {data?.results.map(c => (
-              <tr key={c.id} className="hover:bg-gray-50 transition-colors cursor-pointer"
-                onClick={() => navigate(`/candidates/${c.id}`)}>
-                <td className="px-4 py-3 w-10" onClick={e => e.stopPropagation()}>
+                <th className="px-4 py-3 w-10">
                   <input
                     type="checkbox"
-                    checked={selected.has(c.id)}
-                    onChange={() => toggleOne(c.id)}
+                    checked={allPageSelected}
+                    onChange={toggleAll}
                     className="rounded border-gray-300"
                   />
-                </td>
-                <td className="px-4 py-3 font-medium text-gray-900">
-                  {c.first_name} {c.last_name}
-                </td>
-                <td className="px-4 py-3 text-gray-600">
-                  {c.current_title || '—'}
-                  {c.current_company && <span className="text-gray-400"> · {c.current_company}</span>}
-                </td>
-                <td className="px-4 py-3 text-gray-600">
-                  <div>{c.email}</div>
-                  <div className="text-gray-400">{c.phone}</div>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex flex-wrap gap-1">
-                    {c.skills.slice(0, 3).map(s => (
-                      <Badge key={s.id} variant="secondary">{s.name}</Badge>
-                    ))}
-                    {c.skills.length > 3 && (
-                      <Badge variant="secondary">+{c.skills.length - 3}</Badge>
-                    )}
-                  </div>
-                </td>
-                <td className="px-4 py-3">
-                  <Badge variant={STATUS_VARIANTS[c.status] ?? 'secondary'}>{c.status}</Badge>
-                </td>
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">Name</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">Title / Company</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">Contact</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">Skills</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">Last contacted</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">Status</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {isLoading && (
+                <tr>
+                  <td colSpan={7} className="px-4 py-8 text-center text-gray-400">Loading…</td>
+                </tr>
+              )}
+              {!isLoading && data?.results.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="px-4 py-8 text-center text-gray-400">No candidates found</td>
+                </tr>
+              )}
+              {data?.results.map(c => (
+                <tr key={c.id} className="hover:bg-gray-50 transition-colors cursor-pointer"
+                  onClick={() => navigate(`/candidates/${c.id}`)}>
+                  <td className="px-4 py-3 w-10" onClick={e => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={selected.has(c.id)}
+                      onChange={() => toggleOne(c.id)}
+                      className="rounded border-gray-300"
+                    />
+                  </td>
+                  <td className="px-4 py-3 font-medium text-gray-900">
+                    {c.first_name} {c.last_name}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600">
+                    {c.current_title || '—'}
+                    {c.current_company && <span className="text-gray-400"> · {c.current_company}</span>}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600">
+                    <div>{c.email}</div>
+                    <div className="text-gray-400">{c.phone}</div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-wrap gap-1">
+                      {c.skills.slice(0, 3).map(s => (
+                        <Badge key={s.id} variant="secondary">{s.name}</Badge>
+                      ))}
+                      {c.skills.length > 3 && (
+                        <Badge variant="secondary">+{c.skills.length - 3}</Badge>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-gray-400 text-xs whitespace-nowrap">
+                    {fmtLastContacted(c.last_contacted_at)}
+                  </td>
+                  <td className="px-4 py-3">
+                    <Badge variant={STATUS_VARIANTS[c.status] ?? 'secondary'}>{c.status}</Badge>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* ── Pagination ── */}
       {data && data.count > 10 && (

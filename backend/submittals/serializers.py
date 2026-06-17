@@ -27,6 +27,9 @@ class SubmittalSerializer(serializers.ModelSerializer):
     # Read: full event timeline embedded in the submittal detail response
     events = SubmittalEventSerializer(many=True, read_only=True)
 
+    # Annotated in get_queryset — most recent email date for this submittal's candidate
+    candidate_last_contacted_at = serializers.DateTimeField(read_only=True, allow_null=True, default=None)
+
     # Read: human-readable names so the frontend doesn't need extra lookups
     candidate_name    = serializers.SerializerMethodField()
     job_title         = serializers.CharField(source="job.title",          read_only=True)
@@ -39,8 +42,9 @@ class SubmittalSerializer(serializers.ModelSerializer):
             "id", "candidate", "candidate_name",
             "job", "job_title",
             "current_stage", "current_stage_name",
-            "status", "cover_note",
+            "status", "cover_note", "is_shortlisted", "match_score",
             "submitted_by", "created_at", "updated_at",
+            "candidate_last_contacted_at",
             "events",
         ]
         read_only_fields = [

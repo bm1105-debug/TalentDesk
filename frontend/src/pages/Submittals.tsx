@@ -7,7 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, ChevronLeft, ChevronRight, ArrowRight, StickyNote, HandCoins } from 'lucide-react'
+import { Plus, ChevronLeft, ChevronRight, ArrowRight, StickyNote, HandCoins, Star, XCircle } from 'lucide-react'
 import api from '@/api/client'
 import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/button'
@@ -27,6 +27,8 @@ interface Submittal {
   current_stage_name: string | null
   status: string
   cover_note: string
+  is_shortlisted: boolean
+  match_score: number | null
   submitted_by: string
   created_at: string
   updated_at: string
@@ -357,20 +359,188 @@ function AddNoteDialog({ submittal, onDone }: { submittal: Submittal; onDone: ()
   )
 }
 
+// ── Rejection Email Prompt ─────────────────────────────────────────────────────
+
+interface RejectionHint {
+  candidate_name:         string
+  candidate_email:        string
+  candidate:              number   // candidate ID
+  rejection_template_id:  number
+}
+
+function RejectionEmailPrompt({ hint, onClose }: { hint: RejectionHint; onClose: () => void }) {
+  const send = useMutation({
+    mutationFn: () => api.post('/communications/send/', {
+      template_id:       hint.rejection_template_id,
+      to_email:          hint.candidate_email,
+      to_name:           hint.candidate_name,
+      related_candidate: hint.candidate,
+      context:           { candidate_name: hint.candidate_name },
+    }),
+    onSettled: onClose,
+  })
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center pb-8 pointer-events-none">
+      <div className="pointer-events-auto bg-white border border-gray-200 rounded-xl shadow-2xl p-5 max-w-sm w-full mx-4">
+        <p className="text-sm font-medium text-gray-900 mb-1">Send rejection email?</p>
+        <p className="text-xs text-gray-500 mb-4">
+          To: <span className="font-medium">{hint.candidate_name}</span> ({hint.candidate_email})
+        </p>
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" size="sm" onClick={onClose} disabled={send.isPending}>
+            Skip
+          </Button>
+          <Button size="sm" disabled={send.isPending} onClick={() => send.mutate()}>
+            {send.isPending ? 'Sending…' : 'Send Email'}
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Change Status Dialog ───────────────────────────────────────────────────────
+
+function ChangeStatusDialog({
+  submittal,
+  onDone,
+}: {
+  submittal: Submittal
+  onDone: (hint?: RejectionHint) => void
+}) {
+  const [open,   setOpen]   = useState(false)
+  const [value,  setValue]  = useState<'rejected' | 'withdrawn'>('rejected')
+  const [notes,  setNotes]  = useState('')
+  const qc = useQueryClient()
+
+  const change = useMutation({
+    mutationFn: () =>
+      api.post(`/submittals/${submittal.id}/change-status/`, { status: value, notes }).then(r => r.data),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ['submittals'] })
+      setOpen(false)
+      setNotes('')
+      if (data.rejection_template_available) {
+        onDone({
+          candidate_name:        data.candidate_name,
+          candidate_email:       data.candidate_email,
+          candidate:             data.candidate,
+          rejection_template_id: data.rejection_template_id,
+        })
+      } else {
+        onDone()
+      }
+    },
+  })
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs text-red-500 hover:text-red-700">
+          <XCircle className="h-3.5 w-3.5" /> Close
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-sm">
+        <DialogHeader><DialogTitle>Close Submittal</DialogTitle></DialogHeader>
+        <div className="space-y-3">
+          <p className="text-sm text-gray-500">
+            {submittal.candidate_name} · <span className="font-medium">{submittal.job_title}</span>
+          </p>
+
+          <div className="space-y-1">
+            <Label>Reason</Label>
+            <select value={value} onChange={e => setValue(e.target.value as 'rejected' | 'withdrawn')}
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm">
+              <option value="rejected">Rejected by client</option>
+              <option value="withdrawn">Candidate withdrew</option>
+            </select>
+          </div>
+
+          <div className="space-y-1">
+            <Label>Notes <span className="text-gray-400 font-normal">(optional)</span></Label>
+            <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2}
+              placeholder="Reason for closing…"
+              className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" />
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button size="sm" variant="destructive" disabled={change.isPending}
+              onClick={() => change.mutate()}>
+              {change.isPending ? 'Saving…' : 'Confirm Close'}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// ── Match Score Badge ──────────────────────────────────────────────────────────
+
+function MatchBadge({ score }: { score: number | null }) {
+  if (score === null) return <span className="text-gray-300 text-xs">—</span>
+  const cls =
+    score >= 70 ? 'bg-emerald-100 text-emerald-700' :
+    score >= 40 ? 'bg-amber-100 text-amber-700' :
+                  'bg-red-100 text-red-700'
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${cls}`}>
+      {score}
+    </span>
+  )
+}
+
+// ── Star (Shortlist) Toggle ────────────────────────────────────────────────────
+
+function StarButton({ submittal }: { submittal: Submittal }) {
+  const qc = useQueryClient()
+
+  const toggle = useMutation({
+    mutationFn: () =>
+      api.patch(`/submittals/${submittal.id}/`, { is_shortlisted: !submittal.is_shortlisted }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['submittals'] }),
+  })
+
+  return (
+    <button
+      onClick={() => toggle.mutate()}
+      disabled={toggle.isPending}
+      title={submittal.is_shortlisted ? 'Remove from shortlist' : 'Add to shortlist'}
+      className="p-1 rounded hover:bg-amber-50 transition-colors disabled:opacity-40"
+    >
+      <Star
+        className={`h-4 w-4 transition-colors ${
+          submittal.is_shortlisted
+            ? 'fill-amber-400 stroke-amber-400'
+            : 'stroke-gray-300 hover:stroke-amber-400'
+        }`}
+      />
+    </button>
+  )
+}
+
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function Submittals() {
   const { user } = useAuth()
   const isManager = user?.role !== 'recruiter'
 
-  const [status,     setStatus]     = useState('')
-  const [page,       setPage]       = useState(1)
-  const [dialogOpen, setDialogOpen] = useState(false)
+  const [status,          setStatus]          = useState('')
+  const [showShortlisted, setShowShortlisted] = useState(false)
+  const [page,            setPage]            = useState(1)
+  const [dialogOpen,      setDialogOpen]      = useState(false)
+  const [rejectionHint,   setRejectionHint]   = useState<RejectionHint | null>(null)
 
   const { data, isLoading } = useQuery<PaginatedSubmittals>({
-    queryKey: ['submittals', status, page],
+    queryKey: ['submittals', status, showShortlisted, page],
     queryFn:  () => api.get('/submittals/', {
-      params: { status: status || undefined, page },
+      params: {
+        status:      status || undefined,
+        shortlisted: showShortlisted ? 'true' : undefined,
+        page,
+      },
     }).then(r => r.data),
     placeholderData: prev => prev,
   })
@@ -397,7 +567,7 @@ export default function Submittals() {
         </Dialog>
       </div>
 
-      {/* ── Status filter ── */}
+      {/* ── Filters ── */}
       <div className="flex items-center gap-3">
         <select value={status} onChange={e => { setStatus(e.target.value); setPage(1) }}
           className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
@@ -407,6 +577,18 @@ export default function Submittals() {
           <option value="rejected">Rejected</option>
           <option value="withdrawn">Withdrawn</option>
         </select>
+
+        <button
+          onClick={() => { setShowShortlisted(v => !v); setPage(1) }}
+          className={`flex items-center gap-1.5 h-9 px-3 rounded-md border text-sm transition-colors ${
+            showShortlisted
+              ? 'border-amber-400 bg-amber-50 text-amber-700 font-medium'
+              : 'border-input bg-transparent text-gray-600 hover:bg-gray-50'
+          }`}
+        >
+          <Star className={`h-3.5 w-3.5 ${showShortlisted ? 'fill-amber-400 stroke-amber-400' : 'stroke-gray-400'}`} />
+          Shortlisted
+        </button>
       </div>
 
       {/* ── Table ── */}
@@ -414,9 +596,11 @@ export default function Submittals() {
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
+              <th className="px-3 py-3 w-8"></th>
               <th className="text-left px-4 py-3 font-medium text-gray-600">Candidate</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600">Job</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600">Stage</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600">Fit</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600">Status</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600">Submitted by</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600">Actions</th>
@@ -424,13 +608,14 @@ export default function Submittals() {
           </thead>
           <tbody className="divide-y divide-gray-100">
             {isLoading && (
-              <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-400">Loading…</td></tr>
+              <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-400">Loading…</td></tr>
             )}
             {!isLoading && data?.results.length === 0 && (
-              <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-400">No submittals found</td></tr>
+              <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-400">No submittals found</td></tr>
             )}
             {data?.results.map(s => (
-              <tr key={s.id} className="hover:bg-gray-50 transition-colors">
+              <tr key={s.id} className={`hover:bg-gray-50 transition-colors ${s.is_shortlisted ? 'bg-amber-50/50' : ''}`}>
+                <td className="px-3 py-3"><StarButton submittal={s} /></td>
                 <td className="px-4 py-3 font-medium text-gray-900">{s.candidate_name}</td>
                 <td className="px-4 py-3 text-gray-600">{s.job_title}</td>
                 <td className="px-4 py-3 text-gray-600">
@@ -439,6 +624,7 @@ export default function Submittals() {
                     : <span className="text-gray-400">Not started</span>
                   }
                 </td>
+                <td className="px-4 py-3"><MatchBadge score={s.match_score} /></td>
                 <td className="px-4 py-3">
                   <Badge variant={STATUS_VARIANT[s.status] ?? 'secondary'}>{s.status}</Badge>
                 </td>
@@ -450,6 +636,12 @@ export default function Submittals() {
                       <AdvanceStageDialog submittal={s} onDone={() => {}} />
                       <AddNoteDialog submittal={s} onDone={() => {}} />
                       <MakeOfferDialog submittal={s} onDone={() => {}} />
+                      {isManager && (
+                        <ChangeStatusDialog
+                          submittal={s}
+                          onDone={hint => setRejectionHint(hint ?? null)}
+                        />
+                      )}
                     </div>
                   )}
                   {/* Managers can change status on non-active submittals too */}
@@ -476,6 +668,14 @@ export default function Submittals() {
             </Button>
           </div>
         </div>
+      )}
+
+      {/* ── Rejection email prompt ── */}
+      {rejectionHint && (
+        <RejectionEmailPrompt
+          hint={rejectionHint}
+          onClose={() => setRejectionHint(null)}
+        />
       )}
 
     </div>
