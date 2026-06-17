@@ -4,9 +4,12 @@
 # resource types (candidates, jobs, clients). Verifies relevance filtering,
 # type narrowing, empty query handling, and permission enforcement.
 
+from django.test import SimpleTestCase
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
+
+from .boolean_parser import _tokenize, has_boolean_operators, _ast_to_string, _Parser
 
 from users.models import User, Role
 from clients.models import Client
@@ -248,3 +251,104 @@ class SearchTypeFilterTests(APITestCase):
         self.assertTrue(len(res.data["clients"]) > 0)
         self.assertEqual(res.data["candidates"], [])
         self.assertEqual(res.data["jobs"],       [])
+
+
+# ── Boolean Parser Unit Tests (no DB) ────────────────────────────────────────
+
+def _parse_to_str(query: str) -> str:
+    """Helper: parse query → AST → normalised string."""
+    tokens = _tokenize(query)
+    ast    = _Parser(tokens).parse()
+    return _ast_to_string(ast)
+
+
+class BooleanParserTests(SimpleTestCase):
+    """Unit tests for the standalone parser — no database required."""
+
+    def test_single_term(self):
+        self.assertEqual(_parse_to_str("python"), "python")
+
+    def test_explicit_and(self):
+        self.assertEqual(_parse_to_str("python AND react"), "python AND react")
+
+    def test_explicit_or(self):
+        self.assertIn("OR", _parse_to_str("python OR react"))
+
+    def test_not_term(self):
+        self.assertEqual(_parse_to_str("NOT contractor"), "NOT contractor")
+
+    def test_and_not(self):
+        result = _parse_to_str("python AND NOT contractor")
+        self.assertIn("python", result)
+        self.assertIn("NOT contractor", result)
+
+    def test_nested_parentheses(self):
+        result = _parse_to_str("python AND (react OR vue)")
+        self.assertIn("python", result)
+        self.assertIn("react", result)
+        self.assertIn("vue", result)
+
+    def test_case_insensitive_operators(self):
+        # "and" in lowercase should be recognised as an AND operator
+        result_lower = _parse_to_str("python and react")
+        result_upper = _parse_to_str("python AND react")
+        self.assertEqual(result_lower, result_upper)
+
+    def test_implicit_and_between_adjacent_terms(self):
+        result = _parse_to_str("python react")
+        self.assertIn("python", result)
+        self.assertIn("react", result)
+        self.assertIn("AND", result)
+
+    def test_has_boolean_operators_detects_and(self):
+        self.assertTrue(has_boolean_operators("python AND react"))
+
+    def test_has_boolean_operators_false_for_plain_query(self):
+        self.assertFalse(has_boolean_operators("python developer"))
+
+    def test_has_boolean_operators_detects_not(self):
+        self.assertTrue(has_boolean_operators("python NOT contractor"))
+
+    def test_has_boolean_operators_detects_parens(self):
+        self.assertTrue(has_boolean_operators("(python OR react)"))
+
+
+# ── Boolean Search Integration Tests ─────────────────────────────────────────
+
+class BooleanSearchIntegrationTests(APITestCase):
+    """Verify the search endpoint returns parsed_query and respects boolean ops."""
+
+    def setUp(self):
+        self.user  = make_user("bool@test.com")
+        auth(self.client, self.user)
+        self.alice = make_candidate(
+            first="Alice", last="Dev",
+            email="adev@bool.com", phone="8100",
+            title="Python Developer", company="TechCo",
+        )
+        self.bob = make_candidate(
+            first="Bob", last="Contractor",
+            email="bcon@bool.com", phone="8101",
+            title="Contractor Python",
+        )
+
+    def test_response_includes_parsed_query_for_boolean_input(self):
+        res = self.client.get(URL, {"q": "Alice AND Dev"})
+        self.assertEqual(res.status_code, 200)
+        self.assertIn("parsed_query", res.data)
+        self.assertIsNotNone(res.data["parsed_query"])
+
+    def test_parsed_query_is_none_for_plain_input(self):
+        res = self.client.get(URL, {"q": "Alice"})
+        self.assertIsNone(res.data["parsed_query"])
+
+    def test_empty_query_parsed_query_is_none(self):
+        res = self.client.get(URL)
+        self.assertIsNone(res.data["parsed_query"])
+
+    def test_and_narrows_to_matching_candidates(self):
+        res = self.client.get(URL, {"q": "Alice AND Developer"})
+        self.assertEqual(res.status_code, 200)
+        # Alice matches; Bob has Python but not "Alice"
+        ids = [c["id"] for c in res.data["candidates"]]
+        self.assertIn(self.alice.id, ids)

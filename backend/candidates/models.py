@@ -52,6 +52,8 @@ class Candidate(models.Model):
     # Skills — many candidates share skills, many skills belong to many candidates
     skills = models.ManyToManyField(SkillTag, blank=True, related_name="candidates")
 
+    years_of_experience = models.PositiveSmallIntegerField(null=True, blank=True, db_index=True)
+
     # Audit fields
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,

@@ -22,9 +22,10 @@ interface ClientResult {
   id: number; name: string; industry: string; status: string
 }
 interface SearchResults {
-  candidates: CandidateResult[]
-  jobs:       JobResult[]
-  clients:    ClientResult[]
+  candidates:   CandidateResult[]
+  jobs:         JobResult[]
+  clients:      ClientResult[]
+  parsed_query: string | null
 }
 
 // ── Result card components ─────────────────────────────────────────────────────
@@ -121,6 +122,13 @@ export default function Search() {
           <span className="absolute right-3 top-3 text-xs text-gray-400">Searching…</span>
         )}
       </div>
+
+      {/* Boolean parsed_query hint */}
+      {data?.parsed_query && (
+        <p className="text-xs text-blue-600 bg-blue-50 border border-blue-100 rounded-md px-3 py-1.5 max-w-lg">
+          Interpreted as: <span className="font-mono font-medium">{data.parsed_query}</span>
+        </p>
+      )}
 
       {/* Prompt before search */}
       {trimmed.length < 2 && (

@@ -16,6 +16,7 @@ from candidates.models import Candidate
 from jobs.models import Job
 from clients.models import Client
 from users.permissions import IsRecruiterOrAbove
+from .boolean_parser import has_boolean_operators, parse_boolean_query
 
 # ── Lightweight result serializers ────────────────────────────────────────────
 # We don't reuse the full serializers (they carry nested events, stages, etc.)
@@ -64,13 +65,19 @@ class SearchView(APIView):
 
         # Return empty results immediately — don't full-scan all three tables for nothing
         if not query:
-            return Response({"candidates": [], "jobs": [], "clients": []})
+            return Response({"candidates": [], "jobs": [], "clients": [], "parsed_query": None})
 
-        # websearch mode: supports "quoted phrases", -exclusions, OR operators
-        # Same syntax recruiters already know from Google search
-        search_query = SearchQuery(query, search_type="websearch")
+        # Boolean mode when query contains explicit AND/OR/NOT/()
+        # Otherwise fall back to websearch (same as before)
+        parsed_query_str = None
+        if has_boolean_operators(query):
+            search_query, parsed_query_str = parse_boolean_query(query)
+            if search_query is None:
+                search_query = SearchQuery(query, search_type="websearch")
+        else:
+            search_query = SearchQuery(query, search_type="websearch")
 
-        results = {"candidates": [], "jobs": [], "clients": []}
+        results = {"candidates": [], "jobs": [], "clients": [], "parsed_query": parsed_query_str}
 
         if res_type in ("all", "candidates"):
             # Weight A = highest relevance boost, C = lowest

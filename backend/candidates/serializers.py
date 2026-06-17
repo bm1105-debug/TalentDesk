@@ -32,6 +32,7 @@ class CandidateSerializer(serializers.ModelSerializer):
             "id", "first_name", "last_name", "email", "phone",
             "current_title", "current_company", "location", "linkedin_url",
             "status", "source", "notes",
+            "years_of_experience",
             "skills", "skill_names",
             "created_by", "created_at", "updated_at",
             "last_contacted_at", "active_submittals_count",

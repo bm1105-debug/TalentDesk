@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { cn } from '@/lib/utils'
 import api from '@/api/client'
 import NotificationBell from '@/components/NotificationBell'
+import CommandBar from '@/components/CommandBar'
 
 function ChangePasswordDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [fields, setFields] = useState({ old_password: '', new_password: '', new_password2: '' })
@@ -222,6 +223,9 @@ export default function Layout() {
           <Outlet />
         </main>
       </div>
+
+      {/* Command bar — mounts once in the shell, listens for Ctrl+K globally */}
+      <CommandBar />
 
     </div>
   )

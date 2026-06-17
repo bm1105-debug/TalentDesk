@@ -4,12 +4,17 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { ArrowLeft, ArrowRight, StickyNote, HandCoins, Star } from 'lucide-react'
+import { ArrowLeft, ArrowRight, StickyNote, HandCoins, Star, LayoutGrid, List } from 'lucide-react'
+import {
+  DndContext, DragEndEvent, PointerSensor, useSensor, useSensors,
+  useDraggable, useDroppable,
+} from '@dnd-kit/core'
 import api from '@/api/client'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import InitialsAvatar from '@/components/InitialsAvatar'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -290,12 +295,163 @@ function MakeOfferDialog({ submittal }: { submittal: Submittal }) {
   )
 }
 
+// ── Kanban View ───────────────────────────────────────────────────────────────
+
+function KanbanCard({ submittal, isError }: { submittal: Submittal; isError: boolean }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: submittal.id })
+  return (
+    <div
+      ref={setNodeRef} {...listeners} {...attributes}
+      className={`bg-white border rounded-lg p-3 cursor-grab active:cursor-grabbing select-none transition-all ${
+        isDragging ? 'opacity-40 shadow-lg scale-95' : ''
+      } ${isError ? 'border-red-400 bg-red-50' : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'}`}
+    >
+      <div className="flex items-start gap-2">
+        <InitialsAvatar id={submittal.candidate} firstName={submittal.candidate_name.split(' ')[0]} lastName={submittal.candidate_name.split(' ')[1] ?? ''} size="sm" />
+        <div className="min-w-0 flex-1">
+          <Link
+            to={`/candidates/${submittal.candidate}`}
+            onClick={e => e.stopPropagation()}
+            className="text-sm font-medium text-gray-900 hover:text-blue-600 hover:underline block truncate"
+          >
+            {submittal.candidate_name}
+          </Link>
+          <p className="text-xs text-gray-400 mt-0.5">{submittal.current_stage_name ?? 'Not started'}</p>
+        </div>
+        <StarButton submittal={submittal} />
+      </div>
+      <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
+        <MatchBadge score={submittal.match_score} />
+        <span className="text-[10px] text-gray-400">{fmtLastContacted(submittal.candidate_last_contacted_at)}</span>
+      </div>
+      {isError && <p className="text-[10px] text-red-500 mt-1">Failed to move — reverted</p>}
+    </div>
+  )
+}
+
+function KanbanColumn({ stageId, stageName, submittals, errorId }: {
+  stageId: number; stageName: string; submittals: Submittal[]; errorId: number | null
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: stageId })
+  return (
+    <div
+      ref={setNodeRef}
+      className={`flex-shrink-0 w-56 flex flex-col rounded-xl border transition-colors ${
+        isOver ? 'border-blue-300 bg-blue-50/60' : 'border-gray-200 bg-gray-50'
+      }`}
+    >
+      <div className="px-3 py-2.5 border-b border-gray-200">
+        <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">{stageName}</span>
+        <span className="ml-2 text-xs text-gray-400">{submittals.length}</span>
+      </div>
+      <div className="flex-1 p-2 space-y-2 min-h-[120px]">
+        {submittals.map(s => (
+          <KanbanCard key={s.id} submittal={s} isError={errorId === s.id} />
+        ))}
+        {submittals.length === 0 && (
+          <div className={`h-16 rounded-lg border-2 border-dashed flex items-center justify-center text-xs text-gray-300 ${isOver ? 'border-blue-300' : 'border-gray-200'}`}>
+            Drop here
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function KanbanClosedColumn({ submittals }: { submittals: Submittal[] }) {
+  return (
+    <div className="flex-shrink-0 w-56 flex flex-col rounded-xl border border-gray-200 bg-gray-50 opacity-60">
+      <div className="px-3 py-2.5 border-b border-gray-200">
+        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Closed</span>
+        <span className="ml-2 text-xs text-gray-400">{submittals.length}</span>
+      </div>
+      <div className="flex-1 p-2 space-y-2">
+        {submittals.map(s => (
+          <div key={s.id} className="bg-white border border-gray-200 rounded-lg p-3">
+            <p className="text-sm font-medium text-gray-500 truncate">{s.candidate_name}</p>
+            <p className="text-xs text-gray-400 capitalize mt-0.5">{s.status}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function KanbanView({ job, allSubmittals }: { job: Job; allSubmittals: Submittal[] }) {
+  const qc = useQueryClient()
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
+  const [optimisticMoves, setOptimisticMoves] = useState<Record<number, number>>({})
+  const [errorId, setErrorId] = useState<number | null>(null)
+
+  const advance = useMutation({
+    mutationFn: ({ id, stageId }: { id: number; stageId: number }) =>
+      api.post(`/submittals/${id}/advance/`, { stage_id: stageId }),
+    onSuccess: (_, vars) => {
+      setOptimisticMoves(prev => { const n = { ...prev }; delete n[vars.id]; return n })
+      qc.invalidateQueries({ queryKey: ['job-submittals', job.id] })
+    },
+    onError: (_, vars) => {
+      setOptimisticMoves(prev => { const n = { ...prev }; delete n[vars.id]; return n })
+      setErrorId(vars.id)
+      setTimeout(() => setErrorId(null), 3000)
+    },
+  })
+
+  function onDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    if (!over) return
+    const submittalId  = active.id as number
+    const targetStageId = over.id as number
+    const submittal = allSubmittals.find(s => s.id === submittalId)
+    if (!submittal || submittal.current_stage === targetStageId) return
+    setOptimisticMoves(prev => ({ ...prev, [submittalId]: targetStageId }))
+    advance.mutate({ id: submittalId, stageId: targetStageId })
+  }
+
+  const columns = job.stages.map(stage => ({
+    stage,
+    submittals: allSubmittals.filter(s => {
+      if (s.status !== 'active') return false
+      const movedTo = optimisticMoves[s.id]
+      return movedTo !== undefined ? movedTo === stage.id : s.current_stage === stage.id
+    }),
+  }))
+
+  const closedSubmittals = allSubmittals.filter(s => s.status === 'rejected' || s.status === 'withdrawn')
+
+  return (
+    <DndContext sensors={sensors} onDragEnd={onDragEnd}>
+      <div className="flex gap-3 overflow-x-auto pb-4">
+        {columns.map(col => (
+          <KanbanColumn
+            key={col.stage.id}
+            stageId={col.stage.id}
+            stageName={col.stage.name}
+            submittals={col.submittals}
+            errorId={errorId}
+          />
+        ))}
+        <KanbanClosedColumn submittals={closedSubmittals} />
+      </div>
+    </DndContext>
+  )
+}
+
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function JobDetail() {
   const { id }    = useParams<{ id: string }>()
   const navigate  = useNavigate()
   const [stageFilter, setStageFilter] = useState<number | null>(null)
+  const [viewMode, setViewMode] = useState<'list' | 'kanban'>(
+    () => (localStorage.getItem('job_detail_view_mode') as 'list' | 'kanban') ?? 'list'
+  )
+
+  function toggleViewMode() {
+    const next = viewMode === 'list' ? 'kanban' : 'list'
+    setViewMode(next)
+    localStorage.setItem('job_detail_view_mode', next)
+  }
 
   const { data: job, isLoading: jobLoading, isError } = useQuery<Job>({
     queryKey: ['job', id],
@@ -383,50 +539,66 @@ export default function JobDetail() {
         </div>
       )}
 
-      {/* ── Pipeline Funnel ── */}
+      {/* ── Pipeline / Kanban ── */}
       {job && (
         <div className="bg-white border border-gray-200 rounded-xl p-6">
-          <h2 className="text-sm font-semibold text-gray-700 mb-4">Pipeline</h2>
-          {job.stages.length === 0 ? (
-            <p className="text-sm text-gray-400">No pipeline stages defined.</p>
-          ) : (
-            <div className="space-y-2">
-              {job.stages.map(stage => {
-                const count   = stageCounts[stage.id] ?? 0
-                const pct     = Math.round((count / maxCount) * 100)
-                const active  = stageFilter === stage.id
-                return (
-                  <button
-                    key={stage.id}
-                    onClick={() => setStageFilter(active ? null : stage.id)}
-                    className={`w-full flex items-center gap-3 group rounded-lg px-2 py-1.5 transition-colors ${
-                      active ? 'bg-blue-50' : 'hover:bg-gray-50'
-                    }`}
-                  >
-                    <span className={`text-xs w-32 text-left truncate ${active ? 'text-blue-700 font-medium' : 'text-gray-500'}`}>
-                      {stage.name}
-                    </span>
-                    <div className="flex-1 bg-gray-100 rounded-full h-5 overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all ${active ? 'bg-blue-500' : 'bg-blue-300 group-hover:bg-blue-400'}`}
-                        style={{ width: count === 0 ? '0%' : `${Math.max(pct, 3)}%` }}
-                      />
-                    </div>
-                    <span className={`text-xs w-8 text-right font-medium ${active ? 'text-blue-700' : 'text-gray-500'}`}>
-                      {count}
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
-          )}
-          {stageFilter && (
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold text-gray-700">Pipeline</h2>
             <button
-              onClick={() => setStageFilter(null)}
-              className="mt-3 text-xs text-blue-600 hover:underline"
+              onClick={toggleViewMode}
+              title={viewMode === 'list' ? 'Switch to Kanban view' : 'Switch to list view'}
+              className="p-1.5 rounded-md border border-input text-gray-500 hover:bg-gray-50 transition-colors"
             >
-              Clear stage filter
+              {viewMode === 'list' ? <LayoutGrid className="h-4 w-4" /> : <List className="h-4 w-4" />}
             </button>
+          </div>
+
+          {viewMode === 'kanban' ? (
+            <KanbanView job={job} allSubmittals={allSubmittals} />
+          ) : (
+            <>
+              {job.stages.length === 0 ? (
+                <p className="text-sm text-gray-400">No pipeline stages defined.</p>
+              ) : (
+                <div className="space-y-2">
+                  {job.stages.map(stage => {
+                    const count  = stageCounts[stage.id] ?? 0
+                    const pct    = Math.round((count / maxCount) * 100)
+                    const active = stageFilter === stage.id
+                    return (
+                      <button
+                        key={stage.id}
+                        onClick={() => setStageFilter(active ? null : stage.id)}
+                        className={`w-full flex items-center gap-3 group rounded-lg px-2 py-1.5 transition-colors ${
+                          active ? 'bg-blue-50' : 'hover:bg-gray-50'
+                        }`}
+                      >
+                        <span className={`text-xs w-32 text-left truncate ${active ? 'text-blue-700 font-medium' : 'text-gray-500'}`}>
+                          {stage.name}
+                        </span>
+                        <div className="flex-1 bg-gray-100 rounded-full h-5 overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all ${active ? 'bg-blue-500' : 'bg-blue-300 group-hover:bg-blue-400'}`}
+                            style={{ width: count === 0 ? '0%' : `${Math.max(pct, 3)}%` }}
+                          />
+                        </div>
+                        <span className={`text-xs w-8 text-right font-medium ${active ? 'text-blue-700' : 'text-gray-500'}`}>
+                          {count}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+              {stageFilter && (
+                <button
+                  onClick={() => setStageFilter(null)}
+                  className="mt-3 text-xs text-blue-600 hover:underline"
+                >
+                  Clear stage filter
+                </button>
+              )}
+            </>
           )}
         </div>
       )}

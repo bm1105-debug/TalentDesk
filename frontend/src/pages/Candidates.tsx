@@ -8,6 +8,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Search, Plus, ChevronLeft, ChevronRight, FileUp, Loader2, LayoutGrid, List } from 'lucide-react'
+import InitialsAvatar from '@/components/InitialsAvatar'
 import { useNavigate } from 'react-router-dom'
 import { useRef } from 'react'
 import api from '@/api/client'
@@ -39,6 +40,7 @@ interface Candidate {
   created_at: string
   last_contacted_at: string | null
   active_submittals_count: number
+  years_of_experience: number | null
 }
 
 interface PaginatedResponse {
@@ -60,8 +62,9 @@ const schema = z.object({
   location:        z.string().optional(),
   status:          z.enum(['active', 'passive', 'placed', 'blacklisted']).default('active'),
   source:          z.enum(['referral', 'job_board', 'linkedin', 'direct', 'other']).default('other'),
-  notes:           z.string().optional(),
-  skill_names:     z.string().optional(),   // comma-separated, split before sending
+  notes:              z.string().optional(),
+  skill_names:        z.string().optional(),
+  years_of_experience: z.coerce.number().int().min(0).max(60).optional().nullable(),
 })
 
 type FormValues = z.infer<typeof schema>
@@ -248,6 +251,11 @@ function AddCandidateForm({ onSuccess }: { onSuccess: () => void }) {
       </div>
 
       <div className="space-y-1">
+        <Label>Years of experience</Label>
+        <Input {...register('years_of_experience')} type="number" min={0} max={60} placeholder="e.g. 5" />
+      </div>
+
+      <div className="space-y-1">
         <Label>Skills <span className="text-gray-400 font-normal">(comma-separated)</span></Label>
         <Input {...register('skill_names')} placeholder="python, django, react" />
       </div>
@@ -328,12 +336,18 @@ function CandidateCard({ candidate }: { candidate: Candidate }) {
       onClick={() => navigate(`/candidates/${candidate.id}`)}
       className="bg-white border border-gray-200 rounded-xl p-4 cursor-pointer hover:shadow-md hover:border-gray-300 transition-all flex flex-col"
     >
-      <div className="flex items-start justify-between mb-1">
-        <div className="min-w-0 flex-1 mr-2">
+      <div className="flex items-start gap-3 mb-1">
+        <InitialsAvatar id={candidate.id} firstName={candidate.first_name} lastName={candidate.last_name} size="md" />
+        <div className="min-w-0 flex-1">
           <p className="font-semibold text-gray-900 truncate">
             {candidate.first_name} {candidate.last_name}
           </p>
-          <p className="text-sm text-gray-500 truncate">{candidate.current_title || '—'}</p>
+          <p className="text-sm text-gray-500 truncate">
+            {candidate.current_title || '—'}
+            {candidate.years_of_experience != null && (
+              <span className="ml-1 text-gray-400">· {candidate.years_of_experience} yrs</span>
+            )}
+          </p>
         </div>
         <Badge variant={STATUS_VARIANTS[candidate.status] ?? 'secondary'} className="shrink-0 text-xs">
           {candidate.status}

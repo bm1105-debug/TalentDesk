@@ -320,3 +320,52 @@ class LastContactedTests(APITestCase):
         res = self.client.get(reverse("candidate-list"), {"not_contacted_days": 30})
         ids = [r["id"] for r in res.data["results"]]
         self.assertIn(c_old.id, ids)
+
+
+class YearsOfExperienceTests(APITestCase):
+    def setUp(self):
+        self.user = make_user("exp_recruiter@x.com")
+        auth(self.client, self.user)
+
+    def test_years_of_experience_created_with_value(self):
+        res = self.client.post(reverse("candidate-list"), {
+            "first_name": "Alice", "last_name": "Smith",
+            "email": "alice@exp.com", "phone": "8001",
+            "years_of_experience": 5,
+        }, format="json")
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(res.data["years_of_experience"], 5)
+
+    def test_years_of_experience_nullable_on_create(self):
+        # Omitting the field must not raise a validation error
+        res = self.client.post(reverse("candidate-list"), {
+            "first_name": "Bob", "last_name": "Jones",
+            "email": "bob@exp.com", "phone": "8002",
+        }, format="json")
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        self.assertIsNone(res.data["years_of_experience"])
+
+    def test_years_of_experience_updated_via_patch(self):
+        c = make_candidate(email="patch@exp.com", phone="8003", years_of_experience=3)
+        res = self.client.patch(
+            reverse("candidate-detail", args=[c.id]),
+            {"years_of_experience": 8},
+            format="json",
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data["years_of_experience"], 8)
+
+    def test_min_experience_filter_returns_matching(self):
+        make_candidate(email="senior@exp.com", phone="8004", years_of_experience=10)
+        make_candidate(email="junior@exp.com", phone="8005", years_of_experience=2)
+        res = self.client.get(reverse("candidate-list"), {"min_experience": 5})
+        emails = [r["email"] for r in res.data["results"]]
+        self.assertIn("senior@exp.com", emails)
+        self.assertNotIn("junior@exp.com", emails)
+
+    def test_min_experience_filter_excludes_null(self):
+        # Candidates with null years_of_experience must not appear in min_experience filter
+        make_candidate(email="nullexp@exp.com", phone="8006")
+        res = self.client.get(reverse("candidate-list"), {"min_experience": 1})
+        emails = [r["email"] for r in res.data["results"]]
+        self.assertNotIn("nullexp@exp.com", emails)

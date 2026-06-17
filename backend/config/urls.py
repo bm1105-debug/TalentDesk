@@ -33,6 +33,7 @@ urlpatterns = [
     path("api/", include("attachments.urls")),
     path("api/", include("notifications.urls")),
     path("api/", include("offers.urls")),
+    path("api/", include("tasks.urls")),
 ]
 
 # Serve uploaded files (resumes, docs) in development only

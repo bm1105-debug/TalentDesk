@@ -80,6 +80,7 @@ class CandidateViewSet(viewsets.ModelViewSet):
         source               = self.request.query_params.get("source")
         skill                = self.request.query_params.get("skill")
         not_contacted_days   = self.request.query_params.get("not_contacted_days")
+        min_experience       = self.request.query_params.get("min_experience")
 
         if status_param:
             qs = qs.filter(status=status_param)
@@ -92,6 +93,8 @@ class CandidateViewSet(viewsets.ModelViewSet):
             qs = qs.filter(
                 Q(last_contacted_at__isnull=True) | Q(last_contacted_at__lt=cutoff)
             )
+        if min_experience:
+            qs = qs.filter(years_of_experience__gte=int(min_experience))
 
         return qs
 

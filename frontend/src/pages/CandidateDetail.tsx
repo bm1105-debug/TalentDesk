@@ -6,6 +6,7 @@ import api from '@/api/client'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/context/AuthContext'
+import InitialsAvatar from '@/components/InitialsAvatar'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -25,6 +26,7 @@ interface Candidate {
   source: string
   notes: string
   skills: Skill[]
+  years_of_experience: number | null
   created_at: string
 }
 
@@ -219,6 +221,7 @@ export default function CandidateDetail() {
         <Button variant="ghost" size="sm" onClick={() => navigate('/candidates')} className="mt-0.5">
           <ArrowLeft className="h-4 w-4" />
         </Button>
+        <InitialsAvatar id={candidate.id} firstName={candidate.first_name} lastName={candidate.last_name} size="lg" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-xl font-semibold text-gray-900">
@@ -318,6 +321,12 @@ export default function CandidateDetail() {
                 <dt className="text-gray-400 w-20 shrink-0">Added</dt>
                 <dd className="text-gray-900">{new Date(candidate.created_at).toLocaleDateString()}</dd>
               </div>
+              {candidate.years_of_experience != null && (
+                <div className="flex gap-2">
+                  <dt className="text-gray-400 w-20 shrink-0">Experience</dt>
+                  <dd className="text-gray-900">{candidate.years_of_experience} yr{candidate.years_of_experience !== 1 ? 's' : ''}</dd>
+                </div>
+              )}
             </dl>
           </div>
 

@@ -1,13 +1,20 @@
 // Dashboard — "My Day" with gradient stat cards, performance sidebar, and rich action panels.
 
-import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useForm } from 'react-hook-form'
 import { Link } from 'react-router-dom'
 import {
   Briefcase, FileText, AlertTriangle, Clock,
   HandCoins, CheckCircle, ChevronRight, TrendingUp, Trophy, Users,
+  ListTodo, Plus, ChevronDown, ChevronUp,
 } from 'lucide-react'
 import api from '@/api/client'
 import { useAuth } from '@/context/AuthContext'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -414,6 +421,154 @@ function AllClear() {
   )
 }
 
+// ── Task Panel ────────────────────────────────────────────────────────────────
+
+interface TaskItem {
+  id: number
+  title: string
+  due_date: string | null
+  status: string
+  related_candidate: number | null
+  candidate_name: string | null
+  related_job: number | null
+  job_title: string | null
+}
+
+interface PaginatedTasks { count: number; results: TaskItem[] }
+
+function isOverdue(due: string | null) {
+  if (!due) return false
+  return new Date(due) < new Date(new Date().toDateString())
+}
+
+function AddTaskDialog({ onAdded }: { onAdded: () => void }) {
+  const [open, setOpen] = useState(false)
+  const { register, handleSubmit, reset, formState: { isSubmitting } } = useForm<{
+    title: string; due_date?: string
+  }>()
+
+  const create = useMutation({
+    mutationFn: (data: object) => api.post('/tasks/', data).then(r => r.data),
+    onSuccess: () => { reset(); setOpen(false); onAdded() },
+  })
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs">
+          <Plus className="h-3 w-3" /> Add Task
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-sm">
+        <DialogHeader><DialogTitle>Add Task</DialogTitle></DialogHeader>
+        <form onSubmit={handleSubmit(v => create.mutateAsync(v))} className="space-y-3">
+          <div className="space-y-1">
+            <Label>Title *</Label>
+            <Input {...register('title', { required: true })} placeholder="e.g. Follow up with Alice" />
+          </div>
+          <div className="space-y-1">
+            <Label>Due date <span className="text-gray-400 font-normal">(optional)</span></Label>
+            <Input {...register('due_date')} type="date" />
+          </div>
+          {create.isError && (
+            <p className="text-xs text-red-500">Failed to create task.</p>
+          )}
+          <div className="flex justify-end pt-1">
+            <Button type="submit" size="sm" disabled={isSubmitting || create.isPending}>
+              {create.isPending ? 'Saving…' : 'Add Task'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function TaskPanel() {
+  const qc = useQueryClient()
+  const [collapsed, setCollapsed] = useState(false)
+
+  const { data, isLoading } = useQuery<PaginatedTasks>({
+    queryKey: ['tasks', 'open'],
+    queryFn: () => api.get('/tasks/', { params: { status: 'open', page_size: 50 } }).then(r => r.data),
+  })
+
+  const markDone = useMutation({
+    mutationFn: (id: number) => api.patch(`/tasks/${id}/`, { status: 'done' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['tasks'] }),
+  })
+
+  const tasks = data?.results ?? []
+  const overdueCount = tasks.filter(t => isOverdue(t.due_date)).length
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 bg-blue-50 rounded-lg">
+            <ListTodo className="h-4 w-4 text-blue-600" />
+          </div>
+          <span className="text-sm font-semibold text-gray-800">My Tasks</span>
+          {overdueCount > 0 && (
+            <span className="text-xs font-semibold bg-red-100 text-red-600 rounded-full px-2 py-0.5">
+              {overdueCount} overdue
+            </span>
+          )}
+          {tasks.length > 0 && overdueCount === 0 && (
+            <span className="text-xs text-gray-400">{tasks.length} open</span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <AddTaskDialog onAdded={() => qc.invalidateQueries({ queryKey: ['tasks'] })} />
+          <button onClick={() => setCollapsed(c => !c)} className="text-gray-400 hover:text-gray-600">
+            {collapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+          </button>
+        </div>
+      </div>
+
+      {!collapsed && (
+        <div>
+          {isLoading && (
+            <p className="px-4 py-4 text-sm text-gray-400">Loading…</p>
+          )}
+          {!isLoading && tasks.length === 0 && (
+            <div className="px-4 py-6 text-center text-sm text-gray-400">
+              No open tasks — you're all caught up!
+            </div>
+          )}
+          {tasks.map(task => (
+            <div key={task.id}
+              className={`flex items-center gap-3 px-4 py-3 border-b border-gray-50 last:border-0 ${isOverdue(task.due_date) ? 'bg-red-50/50' : ''}`}
+            >
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border-gray-300 text-blue-600 cursor-pointer"
+                onChange={() => markDone.mutate(task.id)}
+              />
+              <div className="flex-1 min-w-0">
+                <p className={`text-sm font-medium truncate ${isOverdue(task.due_date) ? 'text-red-700' : 'text-gray-900'}`}>
+                  {task.title}
+                </p>
+                {(task.candidate_name || task.job_title) && (
+                  <p className="text-xs text-gray-400 truncate">
+                    {[task.candidate_name, task.job_title].filter(Boolean).join(' · ')}
+                  </p>
+                )}
+              </div>
+              {task.due_date && (
+                <span className={`text-xs font-medium shrink-0 ${isOverdue(task.due_date) ? 'text-red-600' : 'text-gray-400'}`}>
+                  {isOverdue(task.due_date) ? 'Overdue · ' : ''}{new Date(task.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
@@ -514,6 +669,10 @@ export default function Dashboard() {
         </div>
 
       </div>
+
+      {/* ── Task panel ── */}
+      <TaskPanel />
+
     </div>
   )
 }
