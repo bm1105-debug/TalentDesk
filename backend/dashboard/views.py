@@ -11,7 +11,7 @@ from submittals.models import Submittal
 from jobs.serializers import JobSerializer
 from submittals.serializers import SubmittalSerializer
 from users.models import Role
-from users.permissions import IsRecruiterOrAbove
+from users.permissions import IsRecruiterOrAbove, IsAccountManagerOrAbove
 from candidates.models import Candidate
 from interviews.models import Interview
 from offers.models import Offer
@@ -215,7 +215,7 @@ class AnalyticsView(APIView):
     Returns all seven analytics widget payloads. Each section starts as a
     null/empty stub; subsequent issues fill in the real aggregations one by one.
     """
-    permission_classes = [IsRecruiterOrAbove]
+    permission_classes = [IsAccountManagerOrAbove]
 
     def get(self, request):
         # ── Candidate pool ────────────────────────────────────────────────────

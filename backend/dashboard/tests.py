@@ -257,7 +257,7 @@ class StaleSubmittalTests(APITestCase):
 class AnalyticsScaffoldTests(APITestCase):
 
     def setUp(self):
-        self.user = make_user("rec@analytics.com")
+        self.user = make_user("am@analytics.com", role=Role.ACCOUNT_MANAGER)
         auth(self.client, self.user)
         self.url = reverse("dashboard-analytics")
 
@@ -276,13 +276,19 @@ class AnalyticsScaffoldTests(APITestCase):
         res = self.client.get(self.url)
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
+    def test_recruiter_cannot_access_analytics(self):
+        recruiter = make_user("rec_blocked@analytics.com", role=Role.RECRUITER)
+        auth(self.client, recruiter)
+        res = self.client.get(self.url)
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
 
 # ── Analytics: Candidate Pool + Source Effectiveness Tests ────────────────────
 
 class AnalyticsCandidatePoolTests(APITestCase):
 
     def setUp(self):
-        self.user = make_user("pool@analytics.com")
+        self.user = make_user("pool@analytics.com", role=Role.ACCOUNT_MANAGER)
         auth(self.client, self.user)
         self.url = reverse("dashboard-analytics")
         Candidate.objects.create(first_name="A", last_name="B", email="a@x.com", phone="1", status="active",   source="linkedin")
@@ -331,7 +337,7 @@ class AnalyticsCandidatePoolTests(APITestCase):
 class AnalyticsOpenJobsTests(APITestCase):
 
     def setUp(self):
-        self.user = make_user("openjobs@analytics.com")
+        self.user = make_user("openjobs@analytics.com", role=Role.ACCOUNT_MANAGER)
         auth(self.client, self.user)
         self.url = reverse("dashboard-analytics")
         client_obj = make_client_obj()
@@ -374,7 +380,7 @@ class AnalyticsOpenJobsTests(APITestCase):
 class AnalyticsLeaderboardTests(APITestCase):
 
     def setUp(self):
-        self.me = make_user("me@analytics.com")
+        self.me = make_user("me@analytics.com", role=Role.ACCOUNT_MANAGER)
         self.other = make_user("other@analytics.com")
         auth(self.client, self.me)
         self.url = reverse("dashboard-analytics")
@@ -435,7 +441,7 @@ def make_interview(submittal, created_by, status="completed", score=None):
 class AnalyticsInterviewOutcomesTests(APITestCase):
 
     def setUp(self):
-        self.user = make_user("iv@analytics.com")
+        self.user = make_user("iv@analytics.com", role=Role.ACCOUNT_MANAGER)
         auth(self.client, self.user)
         self.url = reverse("dashboard-analytics")
         client_obj = make_client_obj()
@@ -477,7 +483,7 @@ class AnalyticsInterviewOutcomesTests(APITestCase):
 class AnalyticsPipelineFunnelTests(APITestCase):
 
     def setUp(self):
-        self.user = make_user("funnel@analytics.com")
+        self.user = make_user("funnel@analytics.com", role=Role.ACCOUNT_MANAGER)
         auth(self.client, self.user)
         self.url = reverse("dashboard-analytics")
         client_obj = make_client_obj()
@@ -539,7 +545,7 @@ class AnalyticsPipelineFunnelTests(APITestCase):
 class AnalyticsTimeToFillTests(APITestCase):
 
     def setUp(self):
-        self.user = make_user("ttf@analytics.com")
+        self.user = make_user("ttf@analytics.com", role=Role.ACCOUNT_MANAGER)
         auth(self.client, self.user)
         self.url = reverse("dashboard-analytics")
         client_obj = make_client_obj()
