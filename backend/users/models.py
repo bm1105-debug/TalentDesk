@@ -25,6 +25,17 @@ class User(AbstractUser):
     )
     phone = models.CharField(max_length=20, blank=True)
 
+    # Pod relationship: a Recruiter reports to a Team Lead.
+    # SET_NULL so deleting a Team Lead account doesn't cascade to their pod.
+    reports_to = models.ForeignKey(
+        'self',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='direct_reports',
+        limit_choices_to={'role': Role.TEAM_LEAD},
+    )
+
     class Meta:
         indexes = [models.Index(fields=["role", "is_active"])]
 
@@ -48,3 +59,11 @@ class User(AbstractUser):
     def can_manage_all(self):
         """True for roles that can see all recruiters' data."""
         return self.role in (Role.CEO, Role.ACCOUNT_MANAGER)
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if self.reports_to_id and self.reports_to_id == self.pk:
+            raise ValidationError({'reports_to': 'A user cannot report to themselves.'})
+        # Prevent A → B → A circular chains (one level is enough for our model)
+        if self.reports_to_id and self.reports_to.reports_to_id == self.pk:
+            raise ValidationError({'reports_to': 'Circular reporting chain detected.'})

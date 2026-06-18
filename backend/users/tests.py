@@ -99,6 +99,84 @@ class RegisterTests(APITestCase):
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
 
+class ReportsToPodTests(APITestCase):
+    """Tests for the reports_to FK — AM can set it, validation prevents bad values."""
+
+    def setUp(self):
+        self.am = User.objects.create_user(
+            username="am", password="Str0ng!Pass", role=Role.ACCOUNT_MANAGER,
+            first_name="Alice", last_name="Manager", email="am@test.com",
+        )
+        self.team_lead = User.objects.create_user(
+            username="tl", password="Str0ng!Pass", role=Role.TEAM_LEAD,
+            first_name="Tom", last_name="Lead", email="tl@test.com",
+        )
+        self.recruiter = User.objects.create_user(
+            username="rec", password="Str0ng!Pass", role=Role.RECRUITER,
+            first_name="Rob", last_name="Rec", email="rec@test.com",
+        )
+        token_url = reverse("token_obtain")
+        res = self.client.post(token_url, {"username": "am", "password": "Str0ng!Pass"})
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {res.data['access']}")
+        self.register_url = reverse("user_register")
+
+    def test_am_can_register_user(self):
+        res = self.client.post(self.register_url, {
+            "username": "newrec2", "email": "new2@test.com",
+            "first_name": "New", "last_name": "Two",
+            "role": Role.RECRUITER,
+            "password": "Str0ng!Pass", "password2": "Str0ng!Pass",
+        })
+        self.assertEqual(res.status_code, 201)
+
+    def test_am_can_register_with_reports_to(self):
+        res = self.client.post(self.register_url, {
+            "username": "newrec3", "email": "new3@test.com",
+            "first_name": "New", "last_name": "Three",
+            "role": Role.RECRUITER,
+            "reports_to": self.team_lead.pk,
+            "password": "Str0ng!Pass", "password2": "Str0ng!Pass",
+        })
+        self.assertEqual(res.status_code, 201)
+        created = User.objects.get(username="newrec3")
+        self.assertEqual(created.reports_to_id, self.team_lead.pk)
+
+    def test_reports_to_non_team_lead_rejected(self):
+        res = self.client.post(self.register_url, {
+            "username": "newrec4", "email": "new4@test.com",
+            "first_name": "New", "last_name": "Four",
+            "role": Role.RECRUITER,
+            "reports_to": self.recruiter.pk,  # recruiter, not a team lead
+            "password": "Str0ng!Pass", "password2": "Str0ng!Pass",
+        })
+        self.assertEqual(res.status_code, 400)
+
+    def test_self_reference_rejected(self):
+        from django.core.exceptions import ValidationError
+        self.team_lead.reports_to = self.team_lead
+        with self.assertRaises(ValidationError):
+            self.team_lead.clean()
+
+    def test_circular_chain_rejected(self):
+        from django.core.exceptions import ValidationError
+        # rec reports_to team_lead; team_lead cannot then report to rec
+        self.recruiter.reports_to = self.team_lead
+        self.recruiter.save()
+        self.team_lead.reports_to = self.recruiter
+        with self.assertRaises(ValidationError):
+            self.team_lead.clean()
+
+    def test_me_returns_reports_to_name(self):
+        self.recruiter.reports_to = self.team_lead
+        self.recruiter.save()
+        token_url = reverse("token_obtain")
+        res = self.client.post(token_url, {"username": "rec", "password": "Str0ng!Pass"})
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {res.data['access']}")
+        res = self.client.get(reverse("user_me"))
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.data["reports_to_name"], "Tom Lead")
+
+
 class MeViewTests(APITestCase):
     """Tests for the /me/ endpoint."""
 

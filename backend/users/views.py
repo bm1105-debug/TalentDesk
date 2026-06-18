@@ -20,10 +20,10 @@ from users.serializers import RegisterSerializer, UserSerializer, ChangePassword
 class RegisterView(generics.CreateAPIView):
     """
     POST /api/users/register/
-    Creates a new staff user. CEO-only — recruiters cannot self-register.
+    Creates a new staff user. Account Manager and CEO only.
     """
     serializer_class = RegisterSerializer
-    permission_classes = [IsCEO]
+    permission_classes = [IsAccountManagerOrAbove]
 
 class MeView(APIView):
     """
@@ -79,24 +79,23 @@ class UserListView(generics.ListAPIView):
 class UserDetailView(generics.RetrieveUpdateAPIView):
     """
     GET   /api/users/<id>/   — retrieve a single user
-    PATCH /api/users/<id>/   — update role or is_active (CEO only)
+    PATCH /api/users/<id>/   — update role, is_active, reports_to (AM and CEO)
     """
-    permission_classes = [IsCEO]
+    permission_classes = [IsAccountManagerOrAbove]
     serializer_class = UserSerializer
 
     def get_queryset(self):
-        # Scope to all users — CEO has full access
-        return User.objects.all()
+        user = self.request.user
+        if user.is_ceo:
+            return User.objects.all()
+        # Account managers can only edit recruiters and team leads, not other managers
+        from users.models import Role
+        return User.objects.filter(role__in=[Role.RECRUITER, Role.TEAM_LEAD])
 
     def get_serializer_class(self):
-        # On write, allow role and is_active to be changed
-        # UserSerializer is read-only, so we return a writable version inline
         if self.request.method in ("PUT", "PATCH"):
-            from rest_framework import serializers as drf_serializers
-
             class WritableUserSerializer(UserSerializer):
                 class Meta(UserSerializer.Meta):
-                    # Override to allow writes on these two fields only
                     read_only_fields = (
                         "id", "username", "email", "first_name",
                         "last_name", "phone", "date_joined",

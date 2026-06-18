@@ -16,16 +16,23 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ("id", "username", "email", "first_name", "last_name", "role", "phone", "password", "password2")
-        # role is settable only by CEO — enforced in the view, not here
+        fields = (
+            "id", "username", "email", "first_name", "last_name",
+            "role", "phone", "reports_to", "password", "password2",
+        )
         extra_kwargs = {
-            "first_name": {"required": True},
-            "last_name": {"required": True},
-            "email": {"required": True},
+            "first_name":  {"required": True},
+            "last_name":   {"required": True},
+            "email":       {"required": True},
+            "reports_to":  {"required": False},
         }
 
+    def validate_reports_to(self, value):
+        if value and value.role != 'team_lead':
+            raise serializers.ValidationError("reports_to must be a Team Lead.")
+        return value
+
     def validate(self, attrs):
-        # Confirm both password fields match before touching the DB
         if attrs["password"] != attrs.pop("password2"):
             raise serializers.ValidationError({"password": "Passwords do not match."})
         return attrs
@@ -36,16 +43,22 @@ class RegisterSerializer(serializers.ModelSerializer):
         return user
 
 class UserSerializer(serializers.ModelSerializer):
-    # role_display gives the human-readable label e.g. "Account Manager"
-    role_display = serializers.CharField(source="get_role_display", read_only=True)
+    role_display    = serializers.CharField(source="get_role_display", read_only=True)
+    reports_to_name = serializers.SerializerMethodField()
+
+    def get_reports_to_name(self, obj):
+        if obj.reports_to_id:
+            tl = obj.reports_to
+            return f"{tl.first_name} {tl.last_name}".strip() or tl.username
+        return None
 
     class Meta:
         model = User
         fields = (
             "id", "username", "email", "first_name", "last_name",
             "role", "role_display", "phone", "is_active", "date_joined",
+            "reports_to", "reports_to_name",
         )
-        # All fields are read-only here — updates go through a dedicated endpoint
         read_only_fields = fields
 
 class ChangePasswordSerializer(serializers.Serializer):
