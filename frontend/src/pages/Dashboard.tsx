@@ -6,8 +6,8 @@ import { useForm } from 'react-hook-form'
 import { Link } from 'react-router-dom'
 import {
   Briefcase, FileText, AlertTriangle, Clock,
-  HandCoins, CheckCircle, ChevronRight, TrendingUp, TrendingDown,
-  CalendarDays, Trophy, Users,
+  HandCoins, TrendingUp, TrendingDown,
+  CalendarDays, Trophy,
   ListTodo, Plus, ChevronDown, ChevronUp,
 } from 'lucide-react'
 import api from '@/api/client'
@@ -20,11 +20,35 @@ import { StatusBadge } from '@/components/StatusBadge'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
-interface JobCard   { id: number; title: string; client_name: string; priority: string; target_date: string | null }
-interface SubmittalCard { id: number; candidate_name: string; job_title: string; current_stage_name: string | null; updated_at: string }
-interface OfferCard { id: number; candidate_name: string; job_title: string; client_name: string; salary: string; currency: string; offer_date: string; expiry_date: string | null }
-
 interface Trend { direction: 'up' | 'down' | 'flat'; pct: number }
+
+interface InterviewToday {
+  id: number
+  scheduled_at: string
+  interview_type: string
+  candidate_name: string
+  job_title: string
+  client_name: string
+  meeting_link: string
+  location: string
+}
+
+interface JobDueSoon {
+  id: number
+  title: string
+  client_name: string
+  priority: string
+  target_date: string
+  days_left: number
+}
+
+interface OfferExpiringSoon {
+  id: number
+  candidate_name: string
+  job_title: string
+  expiry_date: string
+  days_left: number
+}
 
 interface DashboardData {
   summary: {
@@ -43,10 +67,11 @@ interface DashboardData {
       pending_offers: Trend
     }
   }
-  urgent_jobs: JobCard[]
-  overdue_jobs: JobCard[]
-  stale_submittals: SubmittalCard[]
-  pending_offers: OfferCard[]
+  interviews_today: InterviewToday[]
+  upcoming_deadlines: {
+    jobs_due_soon: JobDueSoon[]
+    offers_expiring_soon: OfferExpiringSoon[]
+  }
 }
 
 interface ScorecardData {
@@ -57,13 +82,8 @@ interface ScorecardData {
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-function daysAgo(iso: string)     { return Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000) }
-function daysOverdue(iso: string) { return Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000) }
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
-}
-function fmtSalary(amount: string, currency: string) {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: 0 }).format(Number(amount))
 }
 function greeting(name: string) {
   const h = new Date().getHours()
@@ -99,13 +119,19 @@ function DashboardSkeleton() {
           <div className="flex justify-center"><div className="w-24 h-24 rounded-full bg-white/10 animate-pulse" /></div>
           {[1,2,3].map(i => <div key={i} className="h-3 bg-white/10 rounded animate-pulse" />)}
         </div>
-        <div className="col-span-8 grid grid-cols-2 gap-4">
-          {[1,2,3,4].map(i => (
-            <div key={i} className="panel-card overflow-hidden">
-              <div className="h-10 bg-white/5 animate-pulse" />
-              {[1,2].map(j => <div key={j} className="h-14 border-b border-white/[0.04] animate-pulse" />)}
-            </div>
-          ))}
+        <div className="col-span-8 flex flex-col gap-4">
+          <div className="grid grid-cols-2 gap-4">
+            {[1, 2].map(i => (
+              <div key={i} className="panel-card overflow-hidden">
+                <div className="h-10 bg-white/5 animate-pulse" />
+                {[1,2,3].map(j => <div key={j} className="h-12 border-b border-white/[0.04] animate-pulse" />)}
+              </div>
+            ))}
+          </div>
+          <div className="panel-card overflow-hidden">
+            <div className="h-10 bg-white/5 animate-pulse" />
+            {[1,2,3].map(j => <div key={j} className="h-14 border-b border-white/[0.04] animate-pulse" />)}
+          </div>
         </div>
       </div>
     </div>
@@ -157,7 +183,7 @@ function GradientCard({ label, value, cfg, accent = false, to, trend }:
   void accent  // retained in signature for call-site compatibility
   const inner = (
     <div
-      className={`rounded-3xl p-4 text-white relative overflow-hidden h-full ${to ? 'glass-card cursor-pointer' : ''}`}
+      className={`rounded-2xl p-3 text-white relative overflow-hidden h-full ${to ? 'glass-card cursor-pointer' : ''}`}
       style={{
         background:     cfg.gradient,
         backdropFilter: 'blur(20px)',
@@ -166,14 +192,14 @@ function GradientCard({ label, value, cfg, accent = false, to, trend }:
       }}
     >
       <div className="relative">
-        <div className="p-1.5 bg-white/10 border border-white/20 rounded-lg w-fit mb-2">
-          <Icon className="h-4 w-4" />
+        <div className="p-1 bg-white/10 border border-white/20 rounded-md w-fit mb-1.5">
+          <Icon className="h-3.5 w-3.5" />
         </div>
-        <p className="font-black leading-none text-white stat-num" style={{ fontSize: '2rem', letterSpacing: '-1px' }}>
+        <p className="font-black leading-none text-white stat-num" style={{ fontSize: '1.5rem', letterSpacing: '-1px' }}>
           {value}
         </p>
-        <div className="flex items-center justify-between mt-2">
-          <p className="text-sm text-white/75 font-medium">{label}</p>
+        <div className="flex items-center justify-between mt-1.5">
+          <p className="text-xs text-white/75 font-medium">{label}</p>
           {trend && <TrendBadge trend={trend} />}
         </div>
       </div>
@@ -339,156 +365,114 @@ function PerformanceSidebar({ data, loading }: { data: ScorecardData | undefined
   )
 }
 
-// ── Action panel ───────────────────────────────────────────────────────────────
+// ── Today's Schedule ──────────────────────────────────────────────────────
 
-interface PanelColor { iconBg: string; iconColor: string }
-
-const PANEL_COLORS: Record<string, PanelColor> = {
-  red:     { iconBg: 'bg-red-500/10',     iconColor: 'text-red-400'     },
-  orange:  { iconBg: 'bg-orange-500/10',  iconColor: 'text-orange-400'  },
-  amber:   { iconBg: 'bg-amber-500/10',   iconColor: 'text-amber-400'   },
-  emerald: { iconBg: 'bg-emerald-500/10', iconColor: 'text-emerald-400' },
+const INTERVIEW_TYPE_LABEL: Record<string, string> = {
+  phone:     'Phone Screen',
+  video:     'Video',
+  onsite:    'On-site',
+  technical: 'Technical',
+  panel:     'Panel',
 }
 
-function ActionPanel({ title, icon: Icon, color, count, children }:
-  { title: string; icon: React.ElementType; color: keyof typeof PANEL_COLORS; count: number; children: React.ReactNode }) {
-  const c = PANEL_COLORS[color]
+function TodaySchedulePanel({ interviews }: { interviews: InterviewToday[] }) {
   return (
-    <div className="panel-card overflow-hidden flex flex-col">
-      <div
-        className="flex items-center justify-between px-4 py-3"
-        style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
-      >
-        <div className="flex items-center gap-2">
-          <div className={`p-1.5 rounded-lg ${c.iconBg}`}>
-            <Icon className={`h-3.5 w-3.5 ${c.iconColor}`} />
-          </div>
-          <span style={{ color: '#e2e8f0', fontWeight: 700, fontSize: '13px' }}>{title}</span>
+    <div className="panel-card overflow-hidden">
+      <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="p-1.5 bg-indigo-500/15 rounded-lg">
+          <CalendarDays className="h-4 w-4 text-indigo-400" />
         </div>
-        {count > 0 && (
-          <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${c.iconBg} ${c.iconColor}`}>
-            {count}
+        <span style={{ color: '#e2e8f0', fontWeight: 700, fontSize: '13px' }}>Today's Schedule</span>
+        {interviews.length > 0 && (
+          <span className="ml-auto text-xs text-slate-500">
+            {interviews.length} interview{interviews.length !== 1 ? 's' : ''}
           </span>
         )}
       </div>
-      <div className="flex-1 divide-y divide-white/[0.04] px-1.5 py-1">
-        {children}
-      </div>
+
+      {interviews.length === 0 ? (
+        <div className="px-4 py-6 text-center space-y-1.5">
+          <CalendarDays className="h-5 w-5 mx-auto text-slate-600" />
+          <p className="text-sm text-slate-500">No interviews today</p>
+        </div>
+      ) : (
+        <div className="divide-y divide-white/[0.04]">
+          {interviews.map(i => {
+            const time = new Date(i.scheduled_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+            const label = INTERVIEW_TYPE_LABEL[i.interview_type] ?? i.interview_type
+            return (
+              <div key={i.id} className="flex items-center gap-3 px-4 py-3">
+                <p className="text-xs font-bold text-indigo-300 w-12 flex-shrink-0 tabular-nums">{time}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-slate-100 truncate">{i.candidate_name}</p>
+                  <p className="text-xs text-slate-500 truncate">{i.job_title}</p>
+                </div>
+                <StatusBadge status={label} />
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
 
-function EmptyRow({ message }: { message: string }) {
-  return (
-    <div className="flex items-center justify-center gap-2 py-6 text-xs italic" style={{ color: 'rgba(255,255,255,0.3)' }}>
-      <CheckCircle className="h-4 w-4" />
-      {message}
-    </div>
-  )
+// ── Upcoming Deadlines ────────────────────────────────────────────────────
+
+function DeadlineDayBadge({ days }: { days: number }) {
+  const text  = days === 0 ? 'Today' : `${days}d`
+  const color = days === 0 ? 'text-red-400' : days <= 2 ? 'text-orange-400' : 'text-amber-400'
+  return <span className={`text-xs font-bold flex-shrink-0 ${color}`}>{text}</span>
 }
 
-// ── Panel row components ───────────────────────────────────────────────────────
+function UpcomingDeadlinesPanel({ deadlines }: { deadlines: DashboardData['upcoming_deadlines'] }) {
+  const { jobs_due_soon, offers_expiring_soon } = deadlines
+  const isEmpty = jobs_due_soon.length === 0 && offers_expiring_soon.length === 0
 
-function UrgentJobRow({ job }: { job: JobCard }) {
   return (
-    <Link to={`/jobs/${job.id}`} className="flex items-center gap-3 px-2.5 py-2.5 rounded-lg hover:bg-indigo-500/10 transition-colors group">
-      <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center flex-shrink-0">
-        <Briefcase className="h-3.5 w-3.5 text-red-400" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="flex items-center gap-1.5 text-sm font-semibold text-slate-100 truncate">
-          <span className="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />
-          {job.title}
-        </p>
-        <p className="text-xs text-slate-500 truncate">{job.client_name}</p>
-      </div>
-      <div className="flex items-center flex-shrink-0">
-        <ChevronRight className="h-3.5 w-3.5 text-white/20 group-hover:text-white/50 transition-colors" />
-      </div>
-    </Link>
-  )
-}
-
-function OverdueJobRow({ job }: { job: JobCard }) {
-  const days = job.target_date ? daysOverdue(job.target_date) : 0
-  return (
-    <Link to={`/jobs/${job.id}`} className="flex items-center gap-3 px-2.5 py-2.5 rounded-lg hover:bg-indigo-500/10 transition-colors group">
-      <div className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center flex-shrink-0">
-        <Clock className="h-3.5 w-3.5 text-orange-400" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-slate-100 truncate">{job.title}</p>
-        <p className="text-xs text-slate-500 truncate">{job.client_name}</p>
-      </div>
-      <div className="flex items-center gap-1.5 flex-shrink-0">
-        <StatusBadge status="overdue" />
-        <ChevronRight className="h-3.5 w-3.5 text-white/20 group-hover:text-white/50 transition-colors" />
-      </div>
-    </Link>
-  )
-}
-
-function StaleRow({ s }: { s: SubmittalCard }) {
-  return (
-    <Link to="/submittals" className="flex items-center gap-3 px-2.5 py-2.5 rounded-lg hover:bg-indigo-500/10 transition-colors group">
-      <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0">
-        <Users className="h-3.5 w-3.5 text-amber-400" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-slate-100 truncate">{s.candidate_name}</p>
-        <p className="text-xs text-slate-500 truncate">{s.job_title}</p>
-      </div>
-      <div className="flex items-center gap-1.5 flex-shrink-0">
-        <div className="text-right">
-          <p className="text-[10px] text-slate-500">{s.current_stage_name ?? '—'}</p>
-          <p className="text-[10px] font-semibold text-amber-400">{daysAgo(s.updated_at)}d idle</p>
+    <div className="panel-card overflow-hidden">
+      <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="p-1.5 bg-amber-500/15 rounded-lg">
+          <Clock className="h-4 w-4 text-amber-400" />
         </div>
-        <ChevronRight className="h-3.5 w-3.5 text-white/20 group-hover:text-white/50 transition-colors" />
+        <span style={{ color: '#e2e8f0', fontWeight: 700, fontSize: '13px' }}>Upcoming Deadlines</span>
       </div>
-    </Link>
-  )
-}
 
-function OfferRow({ o }: { o: OfferCard }) {
-  const isExpired     = o.expiry_date ? daysOverdue(o.expiry_date) > 0  : false
-  const isExpiringSoon = o.expiry_date ? daysOverdue(o.expiry_date) >= -3 : false
-  return (
-    <Link to="/offers" className="flex items-center gap-3 px-2.5 py-2.5 rounded-lg hover:bg-indigo-500/10 transition-colors group">
-      <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
-        <HandCoins className="h-3.5 w-3.5 text-emerald-400" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-slate-100 truncate">{o.candidate_name}</p>
-        <p className="text-xs text-slate-500 truncate">{o.job_title}</p>
-      </div>
-      <div className="flex items-center gap-1.5 flex-shrink-0">
-        <div className="text-right">
-          <p className="text-[10px] font-semibold text-emerald-400">{fmtSalary(o.salary, o.currency)}</p>
-          {o.expiry_date && (
-            <p className={`text-[10px] font-medium ${isExpired ? 'text-red-400' : isExpiringSoon ? 'text-orange-400' : 'text-white/30'}`}>
-              {isExpired ? 'Expired' : `Exp ${fmtDate(o.expiry_date)}`}
-            </p>
-          )}
+      {isEmpty ? (
+        <div className="px-4 py-6 text-center space-y-1.5">
+          <Clock className="h-5 w-5 mx-auto text-slate-600" />
+          <p className="text-sm text-slate-500">No deadlines this week</p>
         </div>
-        <ChevronRight className="h-3.5 w-3.5 text-white/20 group-hover:text-white/50 transition-colors" />
-      </div>
-    </Link>
-  )
-}
-
-// ── All-clear ──────────────────────────────────────────────────────────────────
-
-function AllClear() {
-  return (
-    <div className="panel-card col-span-2 flex flex-col items-center justify-center py-16 text-center">
-      <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center mb-4"
-        style={{ boxShadow: '0 0 0 8px rgba(16,185,129,0.06)' }}>
-        <CheckCircle className="h-8 w-8 text-emerald-400" />
-      </div>
-      <p className="text-base font-semibold" style={{ color: '#e2e8f0' }}>You're all caught up</p>
-      <p className="text-sm mt-1 max-w-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>
-        No urgent jobs, overdue roles, stale submittals, or pending offers.
-      </p>
+      ) : (
+        <div className="divide-y divide-white/[0.04]">
+          {jobs_due_soon.map(j => (
+            <Link key={`job-${j.id}`} to={`/jobs/${j.id}`}
+              className="flex items-center gap-3 px-4 py-3 hover:bg-white/[0.03] transition-colors">
+              <div className="w-7 h-7 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+                <Briefcase className="h-3.5 w-3.5 text-amber-400" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-slate-100 truncate">{j.title}</p>
+                <p className="text-xs text-slate-500 truncate">{j.client_name}</p>
+              </div>
+              <DeadlineDayBadge days={j.days_left} />
+            </Link>
+          ))}
+          {offers_expiring_soon.map(o => (
+            <Link key={`offer-${o.id}`} to="/offers"
+              className="flex items-center gap-3 px-4 py-3 hover:bg-white/[0.03] transition-colors">
+              <div className="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
+                <HandCoins className="h-3.5 w-3.5 text-emerald-400" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-slate-100 truncate">{o.candidate_name}</p>
+                <p className="text-xs text-slate-500 truncate">Offer expiring · {o.job_title}</p>
+              </div>
+              <DeadlineDayBadge days={o.days_left} />
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -674,19 +658,16 @@ export default function Dashboard() {
     )
   }
 
-  const { summary, urgent_jobs, overdue_jobs, stale_submittals, pending_offers } = data
+  const { summary } = data
 
   const t = summary.trends
   const STAT_CARDS = [
     { label: 'Open Jobs',         value: summary.open_jobs_count,         cfg: CARD_STYLES[0], accent: false, to: '/jobs',                          trend: t?.open_jobs },
     { label: 'Active Submittals', value: summary.active_submittals_count, cfg: CARD_STYLES[1], accent: false, to: '/submittals',                    trend: t?.active_submittals },
     { label: 'Urgent Jobs',       value: summary.urgent_jobs_count,       cfg: CARD_STYLES[2], accent: true,  to: '/jobs?priority=urgent',          trend: t?.urgent_jobs },
-    { label: 'Overdue Jobs',      value: summary.overdue_jobs_count,      cfg: CARD_STYLES[3], accent: true,  to: '/jobs?overdue=true',             trend: t?.overdue_jobs },
+    { label: 'Overdue Jobs',      value: summary.overdue_jobs_count,      cfg: CARD_STYLES[3], accent: true,  to: '/jobs',                          trend: t?.overdue_jobs },
     { label: 'Pending Offers',    value: summary.pending_offers_count,    cfg: CARD_STYLES[4], accent: true,  to: '/offers',                        trend: t?.pending_offers },
   ]
-
-  const allClear = urgent_jobs.length === 0 && overdue_jobs.length === 0 &&
-                   stale_submittals.length === 0 && pending_offers.length === 0
 
   return (
     <div className="space-y-5">
@@ -697,8 +678,8 @@ export default function Dashboard() {
         style={{
           background:   'linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(139,92,246,0.08) 50%, rgba(6,182,212,0.06) 100%)',
           border:       '1px solid rgba(99,102,241,0.2)',
-          borderRadius: '20px',
-          padding:      '24px 28px',
+          borderRadius: '14px',
+          padding:      '14px 20px',
           boxShadow:    '0 0 40px rgba(99,102,241,0.08)',
         }}
       >
@@ -706,31 +687,31 @@ export default function Dashboard() {
         <div
           className="absolute pointer-events-none z-0"
           style={{
-            top:          '-50px',
+            top:          '-40px',
             right:        0,
-            width:        '300px',
-            height:       '300px',
+            width:        '200px',
+            height:       '200px',
             borderRadius: '50%',
             background:   'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)',
           }}
         />
 
         {/* Content layer */}
-        <div className="relative z-10 space-y-2">
+        <div className="relative z-10 space-y-1">
           <h1 style={{
-            fontSize:      '1.375rem',
+            fontSize:      '1.1rem',
             fontWeight:    700,
             color:         '#f1f5f9',
-            letterSpacing: '-0.8px',
+            letterSpacing: '-0.5px',
             textShadow:    '0 0 30px rgba(99,102,241,0.3)',
           }}>
             {greeting(user?.first_name ?? 'there')}
           </h1>
-          <p className="flex items-center gap-1.5" style={{ color: 'rgba(241,245,249,0.45)', fontSize: '13px', fontWeight: 400 }}>
-            <CalendarDays className="h-3.5 w-3.5" />
+          <p className="flex items-center gap-1.5" style={{ color: 'rgba(241,245,249,0.45)', fontSize: '12px', fontWeight: 400 }}>
+            <CalendarDays className="h-3 w-3" />
             {todayLabel()}
           </p>
-          <div className="flex items-center gap-2 flex-wrap pt-0.5">
+          <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
             {summary.urgent_jobs_count > 0
               ? <StatusPill label={`${summary.urgent_jobs_count} urgent job${summary.urgent_jobs_count > 1 ? 's' : ''} need attention`} color="red" />
               : <StatusPill label="No urgent jobs" color="red" />}
@@ -763,42 +744,12 @@ export default function Dashboard() {
         {/* Performance sidebar */}
         <PerformanceSidebar data={scorecard} loading={scLoading} />
 
-        {/* Right column: action panels + tasks */}
+        {/* Right column: schedule + deadlines + tasks */}
         <div className="col-span-8 flex flex-col gap-4">
-          {/* Action panels 2×2 */}
           <div className="grid grid-cols-2 gap-4">
-            {allClear ? (
-              <AllClear />
-            ) : (
-              <>
-                <ActionPanel title="Urgent Jobs"      icon={AlertTriangle} color="red"     count={urgent_jobs.length}>
-                  {urgent_jobs.length === 0
-                    ? <EmptyRow message="No urgent jobs" />
-                    : urgent_jobs.map(j => <UrgentJobRow key={j.id} job={j} />)}
-                </ActionPanel>
-
-                <ActionPanel title="Overdue Jobs"     icon={Clock}         color="orange"  count={overdue_jobs.length}>
-                  {overdue_jobs.length === 0
-                    ? <EmptyRow message="No overdue jobs" />
-                    : overdue_jobs.map(j => <OverdueJobRow key={j.id} job={j} />)}
-                </ActionPanel>
-
-                <ActionPanel title="Stale Submittals" icon={FileText}      color="amber"   count={stale_submittals.length}>
-                  {stale_submittals.length === 0
-                    ? <EmptyRow message="All submittals moving" />
-                    : stale_submittals.map(s => <StaleRow key={s.id} s={s} />)}
-                </ActionPanel>
-
-                <ActionPanel title="Pending Offers"   icon={HandCoins}     color="emerald" count={pending_offers.length}>
-                  {pending_offers.length === 0
-                    ? <EmptyRow message="No offers awaiting response" />
-                    : pending_offers.map(o => <OfferRow key={o.id} o={o} />)}
-                </ActionPanel>
-              </>
-            )}
+            <TodaySchedulePanel interviews={data.interviews_today} />
+            <UpcomingDeadlinesPanel deadlines={data.upcoming_deadlines} />
           </div>
-
-          {/* Tasks sit below action panels in the same right column */}
           <TaskPanel />
         </div>
 

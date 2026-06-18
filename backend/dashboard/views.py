@@ -118,23 +118,55 @@ class MyDayView(APIView):
             ),
         }
 
-        # ── Serialise ─────────────────────────────────────────────────────────
-        ctx = {"request": request}
+        # ── Today's interviews ────────────────────────────────────────────────
+        today_qs = (
+            Interview.objects
+            .filter(scheduled_at__date=now.date(), status=Interview.Status.SCHEDULED)
+            .select_related("submittal__candidate", "submittal__job__client")
+            .order_by("scheduled_at")
+        )
+        if not is_manager:
+            today_qs = today_qs.filter(
+                Q(submittal__submitted_by=user) | Q(created_by=user)
+            )
 
-        pending_offers_data = [
+        interviews_today = [
             {
-                "id":             o.id,
-                "candidate_name": f"{o.submittal.candidate.first_name} {o.submittal.candidate.last_name}",
-                "job_title":      o.submittal.job.title,
-                "client_name":    o.submittal.job.client.name,
-                "salary":         str(o.salary),
-                "currency":       o.currency,
-                "offer_date":     o.offer_date.isoformat(),
-                "expiry_date":    o.expiry_date.isoformat() if o.expiry_date else None,
+                "id":             i.id,
+                "scheduled_at":   i.scheduled_at.isoformat(),
+                "interview_type": i.interview_type,
+                "candidate_name": f"{i.submittal.candidate.first_name} {i.submittal.candidate.last_name}",
+                "job_title":      i.submittal.job.title,
+                "client_name":    i.submittal.job.client.name,
+                "meeting_link":   i.meeting_link,
+                "location":       i.location,
             }
-            for o in pending_offers_qs
+            for i in today_qs
         ]
 
+        # ── Upcoming deadlines ─────────────────────────────────────────────────
+        seven_days_out = now.date() + timedelta(days=7)
+        three_days_out = now.date() + timedelta(days=3)
+
+        jobs_due = open_jobs_qs.filter(
+            target_date__isnull=False,
+            target_date__gte=now.date(),
+            target_date__lte=seven_days_out,
+        ).order_by("target_date")[:5]
+
+        expiring_offers_qs = (
+            Offer.objects
+            .filter(
+                status=Offer.Status.PENDING,
+                expiry_date__isnull=False,
+                expiry_date__gte=now.date(),
+                expiry_date__lte=three_days_out,
+            )
+            .select_related("submittal__candidate", "submittal__job")
+            .order_by("expiry_date")[:5]
+        )
+
+        # ── Serialise ─────────────────────────────────────────────────────────
         return Response({
             "summary": {
                 "open_jobs_count":          open_jobs_qs.count(),
@@ -143,15 +175,37 @@ class MyDayView(APIView):
                 "overdue_jobs_count":       overdue_jobs.count(),
                 "stale_submittals_count":   stale_submittals.count(),
                 "pending_offers_count":     pending_offers_qs.count(),
-                "interviews_today_count":   Interview.objects.filter(
-                    scheduled_at__date=now.date()
-                ).count(),
+                "interviews_today_count":   today_qs.count(),
                 "trends":                   trends,
             },
-            "urgent_jobs":      JobSerializer(urgent_jobs,       many=True, context=ctx).data,
-            "overdue_jobs":     JobSerializer(overdue_jobs,      many=True, context=ctx).data,
-            "stale_submittals": SubmittalSerializer(stale_submittals, many=True, context=ctx).data,
-            "pending_offers":   pending_offers_data,
+            "interviews_today": interviews_today,
+            "upcoming_deadlines": {
+                "jobs_due_soon": [
+                    {
+                        "id":          j.id,
+                        "title":       j.title,
+                        "client_name": j.client.name,
+                        "priority":    j.priority,
+                        "target_date": j.target_date.isoformat(),
+                        "days_left":   (j.target_date - now.date()).days,
+                    }
+                    for j in jobs_due
+                ],
+                "offers_expiring_soon": [
+                    {
+                        "id":             o.id,
+                        "candidate_name": f"{o.submittal.candidate.first_name} {o.submittal.candidate.last_name}",
+                        "job_title":      o.submittal.job.title,
+                        "expiry_date":    o.expiry_date.isoformat(),
+                        "days_left":      (o.expiry_date - now.date()).days,
+                    }
+                    for o in expiring_offers_qs
+                ],
+            },
+            "urgent_jobs":      [],
+            "overdue_jobs":     [],
+            "stale_submittals": [],
+            "pending_offers":   [],
         })
 
 
