@@ -13,10 +13,11 @@ from .serializers import (
     StatusChangeSerializer,
 )
 from users.permissions import IsAccountManagerOrAbove, IsRecruiterOrAbove
+from users.mixins import RoleQuerysetMixin
 from notifications.utils import notify
 
 
-class SubmittalViewSet(viewsets.ModelViewSet):
+class SubmittalViewSet(RoleQuerysetMixin, viewsets.ModelViewSet):
     serializer_class = SubmittalSerializer
     filter_backends  = [filters.OrderingFilter]
     ordering_fields  = ["created_at", "status", "match_score"]
@@ -51,6 +52,10 @@ class SubmittalViewSet(viewsets.ModelViewSet):
             qs = qs.filter(status=status_param)
         if self.request.query_params.get("shortlisted") == "true":
             qs = qs.filter(is_shortlisted=True)
+
+        allowed = self.allowed_author_ids()
+        if allowed is not None:
+            qs = qs.filter(submitted_by__in=allowed)
 
         return qs
 

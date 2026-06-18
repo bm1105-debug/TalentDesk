@@ -13,9 +13,10 @@ from rest_framework.response import Response
 from .models import Interview
 from .serializers import InterviewSerializer, InterviewStatusUpdateSerializer
 from users.permissions import IsAccountManagerOrAbove, IsRecruiterOrAbove
+from users.mixins import RoleQuerysetMixin
 from notifications.utils import notify
 
-class InterviewViewSet(viewsets.ModelViewSet):
+class InterviewViewSet(RoleQuerysetMixin, viewsets.ModelViewSet):
     serializer_class  = InterviewSerializer
     filter_backends   = [filters.OrderingFilter]
     ordering_fields   = ["scheduled_at", "status", "created_at"]
@@ -51,6 +52,10 @@ class InterviewViewSet(viewsets.ModelViewSet):
             qs = qs.filter(scheduled_at__date__gte=scheduled_after)
         if scheduled_before:
             qs = qs.filter(scheduled_at__date__lte=scheduled_before)
+
+        allowed = self.allowed_author_ids()
+        if allowed is not None:
+            qs = qs.filter(created_by__in=allowed)
 
         return qs
 

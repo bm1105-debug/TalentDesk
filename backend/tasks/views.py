@@ -3,11 +3,12 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from users.models import Role
+from users.mixins import RoleQuerysetMixin
 from .models import Task
 from .serializers import TaskSerializer
 
 
-class TaskViewSet(viewsets.ModelViewSet):
+class TaskViewSet(RoleQuerysetMixin, viewsets.ModelViewSet):
     serializer_class   = TaskSerializer
     permission_classes = [IsAuthenticated]
     filter_backends    = [filters.OrderingFilter]
@@ -16,14 +17,13 @@ class TaskViewSet(viewsets.ModelViewSet):
     http_method_names  = ["get", "post", "patch", "delete", "head", "options"]
 
     def get_queryset(self):
-        user = self.request.user
-        # Managers see all tasks; recruiters see only their own
-        if user.role in (Role.ACCOUNT_MANAGER, Role.CEO):
-            qs = Task.objects.select_related("assignee", "related_candidate", "related_job")
-        else:
-            qs = Task.objects.filter(assignee=user).select_related(
+        allowed = self.allowed_author_ids()
+        if allowed is not None:
+            qs = Task.objects.filter(assignee__in=allowed).select_related(
                 "assignee", "related_candidate", "related_job"
             )
+        else:
+            qs = Task.objects.select_related("assignee", "related_candidate", "related_job")
 
         status_param = self.request.query_params.get("status")
         candidate    = self.request.query_params.get("candidate")

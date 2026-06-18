@@ -7,9 +7,10 @@ from rest_framework.response import Response
 from .models import Offer
 from .serializers import OfferSerializer, OfferActionSerializer
 from users.permissions import IsAccountManagerOrAbove, IsRecruiterOrAbove
+from users.mixins import RoleQuerysetMixin
 
 
-class OfferViewSet(viewsets.ModelViewSet):
+class OfferViewSet(RoleQuerysetMixin, viewsets.ModelViewSet):
     serializer_class = OfferSerializer
     filter_backends  = [filters.OrderingFilter]
     ordering_fields  = ["offer_date", "created_at", "status"]
@@ -34,6 +35,10 @@ class OfferViewSet(viewsets.ModelViewSet):
             qs = qs.filter(submittal__candidate_id=candidate_id)
         if status_param:
             qs = qs.filter(status=status_param)
+
+        allowed = self.allowed_author_ids()
+        if allowed is not None:
+            qs = qs.filter(created_by__in=allowed)
 
         return qs
 
