@@ -7,8 +7,9 @@ from django.db.models import Count
 from .models import Job, PipelineStage
 from .serializers import JobSerializer, PipelineStageSerializer
 from users.permissions import IsAccountManagerOrAbove, IsRecruiterOrAbove
+from users.mixins import RoleQuerysetMixin
 
-class JobViewSet(viewsets.ModelViewSet):
+class JobViewSet(RoleQuerysetMixin, viewsets.ModelViewSet):
     serializer_class = JobSerializer
     filter_backends  = [filters.SearchFilter, filters.OrderingFilter]
     search_fields    = ["title", "client__name", "location"]
@@ -34,6 +35,10 @@ class JobViewSet(viewsets.ModelViewSet):
         if assigned_param == "true":
             # Recruiters can filter to only see jobs assigned to them
             qs = qs.filter(assigned_to=self.request.user)
+
+        allowed = self.allowed_author_ids()
+        if allowed is not None:
+            qs = qs.filter(assigned_to__in=allowed).distinct()
 
         return qs
 

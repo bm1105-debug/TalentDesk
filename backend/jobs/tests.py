@@ -131,7 +131,9 @@ class JobCRUDTests(APITestCase):
 
     def test_recruiter_can_list_jobs(self):
         auth(self.client, self.manager)
-        self.client.post(self.url, {"title": "Job A", "client": self.acme.id}, format="json")
+        res = self.client.post(self.url, {"title": "Job A", "client": self.acme.id}, format="json")
+        job_id = res.data["id"]
+        self.client.post(reverse("job-assign", args=[job_id]), {"user_id": self.recruiter.id}, format="json")
 
         auth(self.client, self.recruiter)
         res = self.client.get(self.url)
@@ -200,7 +202,7 @@ class JobFilterTests(APITestCase):
         self.assertEqual(res.data["results"][0]["title"], "Python Dev")
 
     def test_search_by_title(self):
-        auth(self.client, self.recruiter)
+        auth(self.client, self.manager)
         res = self.client.get(reverse("job-list"), {"search": "React"})
         self.assertEqual(len(res.data["results"]), 1)
         self.assertEqual(res.data["results"][0]["title"], "React Dev")
@@ -250,6 +252,7 @@ class PipelineReportTests(APITestCase):
         PipelineStage.objects.create(job=self.job, name="Screening", order=0)
         PipelineStage.objects.create(job=self.job, name="Interview", order=1)
         self.stages = list(self.job.stages.order_by("order"))
+        self.job.assigned_to.add(self.recruiter)
         cand1 = Candidate.objects.create(first_name="A", last_name="B", email="a@x.com", phone="1001")
         cand2 = Candidate.objects.create(first_name="C", last_name="D", email="c@x.com", phone="1002")
         self.s1 = Submittal.objects.create(candidate=cand1, job=self.job, submitted_by=self.recruiter,
@@ -279,3 +282,52 @@ class PipelineReportTests(APITestCase):
         res = self.client.get(self.url)
         self.assertEqual(res.data["outcomes"]["rejected"], 1)
         self.assertEqual(res.data["outcomes"]["active"], 1)
+
+
+# ── Job Isolation Tests ───────────────────────────────────────────────────────
+
+class JobIsolationTests(APITestCase):
+    """Recruiter sees only assigned jobs; Team Lead sees pod-assigned; AM sees all."""
+
+    def setUp(self):
+        self.team_lead = make_user("tl@iso.com", role=Role.TEAM_LEAD)
+        self.rec_a = make_user("reca@iso.com", role=Role.RECRUITER)
+        self.rec_a.reports_to = self.team_lead
+        self.rec_a.save()
+        self.rec_b = make_user("recb@iso.com", role=Role.RECRUITER)
+        self.am = make_user("am@iso.com", role=Role.ACCOUNT_MANAGER)
+        acme = make_client()
+
+        self.j_a = make_job(acme, self.am, title="Job A")
+        self.j_a.assigned_to.add(self.rec_a)
+
+        self.j_b = make_job(acme, self.am, title="Job B")
+        self.j_b.assigned_to.add(self.rec_b)
+
+    def _titles(self, user):
+        auth(self.client, user)
+        res = self.client.get(reverse("job-list"))
+        self.assertEqual(res.status_code, 200)
+        return [r["title"] for r in res.data["results"]]
+
+    def test_recruiter_sees_assigned_job(self):
+        self.assertIn("Job A", self._titles(self.rec_a))
+
+    def test_recruiter_cannot_see_other_recruiter_job(self):
+        self.assertNotIn("Job B", self._titles(self.rec_a))
+
+    def test_recruiter_gets_404_on_other_job_detail(self):
+        auth(self.client, self.rec_a)
+        res = self.client.get(reverse("job-detail", args=[self.j_b.id]))
+        self.assertEqual(res.status_code, 404)
+
+    def test_team_lead_sees_pod_job(self):
+        self.assertIn("Job A", self._titles(self.team_lead))
+
+    def test_team_lead_cannot_see_outside_pod_job(self):
+        self.assertNotIn("Job B", self._titles(self.team_lead))
+
+    def test_am_sees_all_jobs(self):
+        titles = self._titles(self.am)
+        self.assertIn("Job A", titles)
+        self.assertIn("Job B", titles)
