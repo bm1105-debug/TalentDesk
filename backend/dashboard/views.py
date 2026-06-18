@@ -17,6 +17,7 @@ from interviews.models import Interview
 from offers.models import Offer
 
 
+
 # Submittals with no movement for this many days are flagged as stale
 STALE_DAYS = 7
 
@@ -82,6 +83,41 @@ class MyDayView(APIView):
         if not is_manager:
             pending_offers_qs = pending_offers_qs.filter(created_by=user)
 
+        # ── Trends (current 7 days vs previous 7 days) ───────────────────────
+        week_start = (now - timedelta(days=7)).date()
+        prev_start = (now - timedelta(days=14)).date()
+
+        def _trend(current: int, previous: int) -> dict:
+            if previous == 0:
+                return {"direction": "flat", "pct": 0}
+            diff = current - previous
+            pct = round(abs(diff) / previous * 100)
+            direction = "up" if diff > 0 else ("down" if diff < 0 else "flat")
+            return {"direction": direction, "pct": pct}
+
+        trends = {
+            "open_jobs": _trend(
+                open_jobs_qs.filter(created_at__date__gte=week_start).count(),
+                open_jobs_qs.filter(created_at__date__range=(prev_start, week_start)).count(),
+            ),
+            "active_submittals": _trend(
+                active_submittals_qs.filter(created_at__date__gte=week_start).count(),
+                active_submittals_qs.filter(created_at__date__range=(prev_start, week_start)).count(),
+            ),
+            "urgent_jobs": _trend(
+                urgent_jobs.filter(created_at__date__gte=week_start).count(),
+                urgent_jobs.filter(created_at__date__range=(prev_start, week_start)).count(),
+            ),
+            "overdue_jobs": _trend(
+                overdue_jobs.filter(created_at__date__gte=week_start).count(),
+                overdue_jobs.filter(created_at__date__range=(prev_start, week_start)).count(),
+            ),
+            "pending_offers": _trend(
+                pending_offers_qs.filter(created_at__date__gte=week_start).count(),
+                pending_offers_qs.filter(created_at__date__range=(prev_start, week_start)).count(),
+            ),
+        }
+
         # ── Serialise ─────────────────────────────────────────────────────────
         ctx = {"request": request}
 
@@ -107,6 +143,10 @@ class MyDayView(APIView):
                 "overdue_jobs_count":       overdue_jobs.count(),
                 "stale_submittals_count":   stale_submittals.count(),
                 "pending_offers_count":     pending_offers_qs.count(),
+                "interviews_today_count":   Interview.objects.filter(
+                    scheduled_at__date=now.date()
+                ).count(),
+                "trends":                   trends,
             },
             "urgent_jobs":      JobSerializer(urgent_jobs,       many=True, context=ctx).data,
             "overdue_jobs":     JobSerializer(overdue_jobs,      many=True, context=ctx).data,

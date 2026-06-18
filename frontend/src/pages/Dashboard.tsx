@@ -6,7 +6,8 @@ import { useForm } from 'react-hook-form'
 import { Link } from 'react-router-dom'
 import {
   Briefcase, FileText, AlertTriangle, Clock,
-  HandCoins, CheckCircle, ChevronRight, TrendingUp, Trophy, Users,
+  HandCoins, CheckCircle, ChevronRight, TrendingUp, TrendingDown,
+  CalendarDays, Trophy, Users,
   ListTodo, Plus, ChevronDown, ChevronUp,
 } from 'lucide-react'
 import api from '@/api/client'
@@ -22,6 +23,8 @@ interface JobCard   { id: number; title: string; client_name: string; priority: 
 interface SubmittalCard { id: number; candidate_name: string; job_title: string; current_stage_name: string | null; updated_at: string }
 interface OfferCard { id: number; candidate_name: string; job_title: string; client_name: string; salary: string; currency: string; offer_date: string; expiry_date: string | null }
 
+interface Trend { direction: 'up' | 'down' | 'flat'; pct: number }
+
 interface DashboardData {
   summary: {
     open_jobs_count: number
@@ -30,6 +33,14 @@ interface DashboardData {
     overdue_jobs_count: number
     stale_submittals_count: number
     pending_offers_count: number
+    interviews_today_count: number
+    trends?: {
+      open_jobs: Trend
+      active_submittals: Trend
+      urgent_jobs: Trend
+      overdue_jobs: Trend
+      pending_offers: Trend
+    }
   }
   urgent_jobs: JobCard[]
   overdue_jobs: JobCard[]
@@ -100,6 +111,21 @@ function DashboardSkeleton() {
   )
 }
 
+// ── Status pills ───────────────────────────────────────────────────────────────
+
+function StatusPill({ label, color }: { label: string; color: 'red' | 'purple' | 'cyan' }) {
+  const styles = {
+    red:    'bg-red-50 text-red-700 border border-red-200',
+    purple: 'bg-violet-50 text-violet-700 border border-violet-200',
+    cyan:   'bg-cyan-50 text-cyan-700 border border-cyan-200',
+  }
+  return (
+    <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${styles[color]}`}>
+      {label}
+    </span>
+  )
+}
+
 // ── Gradient stat cards ────────────────────────────────────────────────────────
 
 interface GradientCardConfig {
@@ -114,27 +140,47 @@ const CARD_STYLES: GradientCardConfig[] = [
   { from: 'from-emerald-500', to: 'to-teal-700',    shadow: '0 12px 28px -6px rgba(16,185,129,0.40)',  icon: HandCoins    },
 ]
 
-function GradientCard({ label, value, cfg, accent = false }:
-  { label: string; value: number; cfg: GradientCardConfig; accent?: boolean }) {
-  const Icon = cfg.icon
+function TrendBadge({ trend }: { trend: Trend }) {
+  if (trend.direction === 'flat') {
+    return (
+      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-white/15 text-white/70">
+        —
+      </span>
+    )
+  }
+  const isUp = trend.direction === 'up'
+  const Icon = isUp ? TrendingUp : TrendingDown
   return (
+    <span className="flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-white/20 text-white">
+      <Icon className="h-3 w-3" />
+      {trend.pct}%
+    </span>
+  )
+}
+
+function GradientCard({ label, value, cfg, accent = false, to, trend }:
+  { label: string; value: number; cfg: GradientCardConfig; accent?: boolean; to?: string; trend?: Trend }) {
+  const Icon = cfg.icon
+  const inner = (
     <div
-      className={`bg-gradient-to-br ${cfg.from} ${cfg.to} rounded-2xl p-5 text-white relative overflow-hidden`}
+      className={`bg-gradient-to-br ${cfg.from} ${cfg.to} rounded-2xl p-4 text-white relative overflow-hidden h-full transition-all duration-200 ${to ? 'hover:-translate-y-1 hover:shadow-2xl cursor-pointer' : ''}`}
       style={{ boxShadow: accent && value > 0 ? cfg.shadow : '0 4px 12px -2px rgba(0,0,0,0.08)' }}
     >
-      {/* Decorative background circles */}
       <div className="absolute -right-5 -top-5 w-28 h-28 rounded-full bg-white/10 pointer-events-none" />
-      <div className="absolute -right-2 -bottom-8 w-20 h-20 rounded-full bg-white/10 pointer-events-none" />
-
       <div className="relative">
-        <div className="p-2 bg-white/20 rounded-xl w-fit backdrop-blur-sm mb-4">
+        <div className="p-2 bg-white/20 border border-white/30 rounded-xl w-fit backdrop-blur-sm mb-3">
           <Icon className="h-4 w-4" />
         </div>
         <p className="text-3xl font-bold tracking-tight">{value}</p>
-        <p className="text-sm text-white/75 mt-1 font-medium">{label}</p>
+        <div className="flex items-center justify-between mt-1">
+          <p className="text-sm text-white/75 font-medium">{label}</p>
+          {trend && <TrendBadge trend={trend} />}
+        </div>
       </div>
     </div>
   )
+  if (to) return <Link to={to} className="block">{inner}</Link>
+  return inner
 }
 
 // ── SVG Conversion ring ────────────────────────────────────────────────────────
@@ -160,7 +206,7 @@ function ConversionRing({ rate }: { rate: number }) {
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="text-xl font-bold text-gray-900">{rate}%</span>
-        <span className="text-[10px] text-gray-400 font-medium -mt-0.5">rate</span>
+        <span className="text-[10px] text-gray-400 font-medium -mt-0.5">placed</span>
       </div>
     </div>
   )
@@ -192,7 +238,10 @@ function PerformanceSidebar({ data, loading }: { data: ScorecardData | undefined
       ) : (
         <>
           {/* Conversion ring */}
-          <ConversionRing rate={stats?.conversion_rate ?? 0} />
+          <div className="space-y-1">
+            <ConversionRing rate={stats?.conversion_rate ?? 0} />
+            <p className="text-[11px] text-center text-gray-400 font-medium">Placement Rate</p>
+          </div>
 
           {/* Mini stats */}
           <div className="grid grid-cols-3 gap-2">
@@ -255,7 +304,12 @@ function PerformanceSidebar({ data, loading }: { data: ScorecardData | undefined
           )}
 
           {pipeline.length === 0 && places.length === 0 && (
-            <p className="text-xs text-gray-400 text-center py-2">No activity yet</p>
+            <div className="text-center py-2 space-y-1">
+              <p className="text-xs text-gray-400">No activity yet</p>
+              <Link to="/candidates" className="text-xs text-blue-600 hover:underline">
+                Add a candidate →
+              </Link>
+            </div>
           )}
         </>
       )}
@@ -317,7 +371,7 @@ const PRIORITY_COLORS: Record<string, string> = {
 
 function UrgentJobRow({ job }: { job: JobCard }) {
   return (
-    <Link to="/jobs" className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50/80 transition-colors group">
+    <Link to={`/jobs/${job.id}`} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50/80 transition-colors group">
       <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center flex-shrink-0">
         <Briefcase className="h-3.5 w-3.5 text-red-400" />
       </div>
@@ -338,7 +392,7 @@ function UrgentJobRow({ job }: { job: JobCard }) {
 function OverdueJobRow({ job }: { job: JobCard }) {
   const days = job.target_date ? daysOverdue(job.target_date) : 0
   return (
-    <Link to="/jobs" className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50/80 transition-colors group">
+    <Link to={`/jobs/${job.id}`} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50/80 transition-colors group">
       <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center flex-shrink-0">
         <Clock className="h-3.5 w-3.5 text-orange-400" />
       </div>
@@ -533,8 +587,9 @@ function TaskPanel() {
             <p className="px-4 py-4 text-sm text-gray-400">Loading…</p>
           )}
           {!isLoading && tasks.length === 0 && (
-            <div className="px-4 py-6 text-center text-sm text-gray-400">
-              No open tasks — you're all caught up!
+            <div className="px-4 py-6 text-center text-gray-400 space-y-1.5">
+              <ListTodo className="h-5 w-5 mx-auto opacity-40" />
+              <p className="text-sm">No open tasks — you're all caught up!</p>
             </div>
           )}
           {tasks.map(task => (
@@ -597,12 +652,13 @@ export default function Dashboard() {
 
   const { summary, urgent_jobs, overdue_jobs, stale_submittals, pending_offers } = data
 
+  const t = summary.trends
   const STAT_CARDS = [
-    { label: 'Open Jobs',          value: summary.open_jobs_count,          cfg: CARD_STYLES[0], accent: false },
-    { label: 'Active Submittals',  value: summary.active_submittals_count,  cfg: CARD_STYLES[1], accent: false },
-    { label: 'Urgent Jobs',        value: summary.urgent_jobs_count,        cfg: CARD_STYLES[2], accent: true  },
-    { label: 'Overdue Jobs',       value: summary.overdue_jobs_count,       cfg: CARD_STYLES[3], accent: true  },
-    { label: 'Pending Offers',     value: summary.pending_offers_count,     cfg: CARD_STYLES[4], accent: true  },
+    { label: 'Open Jobs',         value: summary.open_jobs_count,         cfg: CARD_STYLES[0], accent: false, to: '/jobs',                          trend: t?.open_jobs },
+    { label: 'Active Submittals', value: summary.active_submittals_count, cfg: CARD_STYLES[1], accent: false, to: '/submittals',                    trend: t?.active_submittals },
+    { label: 'Urgent Jobs',       value: summary.urgent_jobs_count,       cfg: CARD_STYLES[2], accent: true,  to: '/jobs?priority=urgent',          trend: t?.urgent_jobs },
+    { label: 'Overdue Jobs',      value: summary.overdue_jobs_count,      cfg: CARD_STYLES[3], accent: true,  to: '/jobs?overdue=true',             trend: t?.overdue_jobs },
+    { label: 'Pending Offers',    value: summary.pending_offers_count,    cfg: CARD_STYLES[4], accent: true,  to: '/offers',                        trend: t?.pending_offers },
   ]
 
   const allClear = urgent_jobs.length === 0 && overdue_jobs.length === 0 &&
@@ -612,66 +668,78 @@ export default function Dashboard() {
     <div className="space-y-5">
 
       {/* ── Greeting ── */}
-      <div>
-        <h1 className="text-xl font-semibold text-gray-900">
+      <div className="space-y-2">
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900">
           {greeting(user?.first_name ?? 'there')}
         </h1>
-        <p className="text-sm text-gray-400 mt-0.5 flex items-center gap-1.5">
-          <TrendingUp className="h-3.5 w-3.5" />
+        <p className="text-sm text-gray-400 flex items-center gap-1.5">
+          <CalendarDays className="h-3.5 w-3.5" />
           {todayLabel()}
         </p>
+        <div className="flex items-center gap-2 flex-wrap pt-0.5">
+          {summary.urgent_jobs_count > 0
+            ? <StatusPill label={`${summary.urgent_jobs_count} urgent job${summary.urgent_jobs_count > 1 ? 's' : ''} need attention`} color="red" />
+            : <StatusPill label="No urgent jobs" color="red" />}
+          <StatusPill label={`${summary.active_submittals_count} active submittal${summary.active_submittals_count !== 1 ? 's' : ''}`} color="purple" />
+          {summary.interviews_today_count > 0
+            ? <StatusPill label={`${summary.interviews_today_count} interview${summary.interviews_today_count > 1 ? 's' : ''} today`} color="cyan" />
+            : <StatusPill label="No interviews today" color="cyan" />}
+        </div>
       </div>
 
       {/* ── Gradient stat cards ── */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         {STAT_CARDS.map(s => (
-          <GradientCard key={s.label} label={s.label} value={s.value} cfg={s.cfg} accent={s.accent} />
+          <GradientCard key={s.label} label={s.label} value={s.value} cfg={s.cfg} accent={s.accent} to={s.to} trend={s.trend} />
         ))}
       </div>
 
-      {/* ── Main content ── */}
+      {/* ── Main content: performance left, panels + tasks right ── */}
       <div className="grid grid-cols-12 gap-4">
 
         {/* Performance sidebar */}
         <PerformanceSidebar data={scorecard} loading={scLoading} />
 
-        {/* Action panels 2×2 */}
-        <div className="col-span-8 grid grid-cols-2 gap-4">
-          {allClear ? (
-            <AllClear />
-          ) : (
-            <>
-              <ActionPanel title="Urgent Jobs"       icon={AlertTriangle} color="red"     count={urgent_jobs.length}>
-                {urgent_jobs.length === 0
-                  ? <EmptyRow message="No urgent jobs" />
-                  : urgent_jobs.map(j => <UrgentJobRow key={j.id} job={j} />)}
-              </ActionPanel>
+        {/* Right column: action panels + tasks */}
+        <div className="col-span-8 flex flex-col gap-4">
+          {/* Action panels 2×2 */}
+          <div className="grid grid-cols-2 gap-4">
+            {allClear ? (
+              <AllClear />
+            ) : (
+              <>
+                <ActionPanel title="Urgent Jobs"      icon={AlertTriangle} color="red"     count={urgent_jobs.length}>
+                  {urgent_jobs.length === 0
+                    ? <EmptyRow message="No urgent jobs" />
+                    : urgent_jobs.map(j => <UrgentJobRow key={j.id} job={j} />)}
+                </ActionPanel>
 
-              <ActionPanel title="Overdue Jobs"      icon={Clock}         color="orange"  count={overdue_jobs.length}>
-                {overdue_jobs.length === 0
-                  ? <EmptyRow message="No overdue jobs" />
-                  : overdue_jobs.map(j => <OverdueJobRow key={j.id} job={j} />)}
-              </ActionPanel>
+                <ActionPanel title="Overdue Jobs"     icon={Clock}         color="orange"  count={overdue_jobs.length}>
+                  {overdue_jobs.length === 0
+                    ? <EmptyRow message="No overdue jobs" />
+                    : overdue_jobs.map(j => <OverdueJobRow key={j.id} job={j} />)}
+                </ActionPanel>
 
-              <ActionPanel title="Stale Submittals"  icon={FileText}      color="amber"   count={stale_submittals.length}>
-                {stale_submittals.length === 0
-                  ? <EmptyRow message="All submittals moving" />
-                  : stale_submittals.map(s => <StaleRow key={s.id} s={s} />)}
-              </ActionPanel>
+                <ActionPanel title="Stale Submittals" icon={FileText}      color="amber"   count={stale_submittals.length}>
+                  {stale_submittals.length === 0
+                    ? <EmptyRow message="All submittals moving" />
+                    : stale_submittals.map(s => <StaleRow key={s.id} s={s} />)}
+                </ActionPanel>
 
-              <ActionPanel title="Pending Offers"    icon={HandCoins}     color="emerald" count={pending_offers.length}>
-                {pending_offers.length === 0
-                  ? <EmptyRow message="No offers awaiting response" />
-                  : pending_offers.map(o => <OfferRow key={o.id} o={o} />)}
-              </ActionPanel>
-            </>
-          )}
+                <ActionPanel title="Pending Offers"   icon={HandCoins}     color="emerald" count={pending_offers.length}>
+                  {pending_offers.length === 0
+                    ? <EmptyRow message="No offers awaiting response" />
+                    : pending_offers.map(o => <OfferRow key={o.id} o={o} />)}
+                </ActionPanel>
+              </>
+            )}
+          </div>
+
+          {/* Tasks sit below action panels in the same right column */}
+          <TaskPanel />
         </div>
 
       </div>
-
-      {/* ── Task panel ── */}
-      <TaskPanel />
 
     </div>
   )

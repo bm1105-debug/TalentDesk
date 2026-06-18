@@ -6,9 +6,10 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { ArrowLeft, ArrowRight, StickyNote, HandCoins, Star, LayoutGrid, List } from 'lucide-react'
 import {
-  DndContext, DragEndEvent, PointerSensor, useSensor, useSensors,
+  DndContext, PointerSensor, useSensor, useSensors,
   useDraggable, useDroppable,
 } from '@dnd-kit/core'
+import type { DragEndEvent } from '@dnd-kit/core'
 import api from '@/api/client'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'

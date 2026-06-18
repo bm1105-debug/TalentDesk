@@ -669,3 +669,88 @@ class ScorecardTests(APITestCase):
         total_in_pipeline = sum(r["count"] for r in res.data["pipeline"])
         # 2 active but both have no stage set → pipeline is empty (null stage excluded)
         self.assertEqual(total_in_pipeline, 0)
+
+
+# ── Trends Tests ──────────────────────────────────────────────────────────────
+
+class DashboardTrendsTests(APITestCase):
+    """
+    Verify summary.trends direction and pct values for week-over-week comparison.
+    Tests create objects with back-dated created_at using update() to bypass auto_now_add.
+    """
+
+    def setUp(self):
+        self.user = make_user("trends@test.com", role=Role.ACCOUNT_MANAGER)
+        auth(self.client, self.user)
+        self.client_obj = make_client_obj()
+
+    def _backdate(self, model_class, obj_id, days_ago):
+        ts = timezone.now() - timedelta(days=days_ago)
+        model_class.objects.filter(id=obj_id).update(created_at=ts)
+
+    def test_trends_key_present_in_summary(self):
+        res = self.client.get(URL)
+        self.assertIn("trends", res.data["summary"])
+        trends = res.data["summary"]["trends"]
+        for key in ("open_jobs", "active_submittals", "urgent_jobs", "overdue_jobs", "pending_offers"):
+            self.assertIn(key, trends)
+            self.assertIn("direction", trends[key])
+            self.assertIn("pct", trends[key])
+
+    def test_open_jobs_trend_up(self):
+        # 2 jobs this week, 1 last week → up 100%
+        j1 = make_job(self.client_obj, self.user)
+        j2 = make_job(self.client_obj, self.user)
+        j3 = make_job(self.client_obj, self.user)
+        self._backdate(Job, j3.id, 10)  # move j3 to last week
+
+        res = self.client.get(URL)
+        t = res.data["summary"]["trends"]["open_jobs"]
+        self.assertEqual(t["direction"], "up")
+        self.assertEqual(t["pct"], 100)
+
+    def test_open_jobs_trend_down(self):
+        # 1 job this week, 2 last week → down 50%
+        j1 = make_job(self.client_obj, self.user)
+        j2 = make_job(self.client_obj, self.user)
+        j3 = make_job(self.client_obj, self.user)
+        self._backdate(Job, j2.id, 10)
+        self._backdate(Job, j3.id, 10)
+
+        res = self.client.get(URL)
+        t = res.data["summary"]["trends"]["open_jobs"]
+        self.assertEqual(t["direction"], "down")
+        self.assertEqual(t["pct"], 50)
+
+    def test_trend_flat_when_no_previous_week_data(self):
+        # 1 job this week, 0 last week → flat (zero-division guard)
+        make_job(self.client_obj, self.user)
+
+        res = self.client.get(URL)
+        t = res.data["summary"]["trends"]["open_jobs"]
+        self.assertEqual(t["direction"], "flat")
+        self.assertEqual(t["pct"], 0)
+
+    def test_trend_flat_when_equal(self):
+        # 1 job this week, 1 last week → flat
+        j1 = make_job(self.client_obj, self.user)
+        j2 = make_job(self.client_obj, self.user)
+        self._backdate(Job, j2.id, 10)
+
+        res = self.client.get(URL)
+        t = res.data["summary"]["trends"]["open_jobs"]
+        self.assertEqual(t["direction"], "flat")
+        self.assertEqual(t["pct"], 0)
+
+    def test_active_submittals_trend_up(self):
+        # 2 submittals this week, 1 last week → up 100%
+        j = make_job(self.client_obj, self.user)
+        s1 = make_submittal(make_candidate(99), j, self.user)
+        s2 = make_submittal(make_candidate(98), j, self.user)
+        s3 = make_submittal(make_candidate(97), j, self.user)
+        self._backdate(Submittal, s3.id, 10)
+
+        res = self.client.get(URL)
+        t = res.data["summary"]["trends"]["active_submittals"]
+        self.assertEqual(t["direction"], "up")
+        self.assertEqual(t["pct"], 100)

@@ -8,9 +8,21 @@ export default defineConfig({
   resolve: {
     alias: { '@': path.resolve(__dirname, './src') },
   },
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      'react-router-dom',
+      '@tanstack/react-query',
+      'axios',
+      'zod',
+      'react-hook-form',
+      '@hookform/resolvers/zod',
+      'lucide-react',
+    ],
+  },
   server: {
     port: 5173,
-    // Proxy API calls to Django backend during development
     proxy: {
       '/api': {
         target: 'http://localhost:8000',
