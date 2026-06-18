@@ -172,3 +172,54 @@ class ActivityLogAPITests(APITestCase):
         auth(self.client, self.manager)
         res = self.client.post(reverse("activity-list"), {}, format="json")
         self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+# ── Audit Log Isolation Tests ─────────────────────────────────────────────────
+
+class ActivityLogIsolationTests(APITestCase):
+    """Team Leads see only pod activity; AM/CEO see all; Recruiters are blocked."""
+
+    def setUp(self):
+        self.team_lead = make_user("tl@iso.com", role=Role.TEAM_LEAD)
+        self.rec_in_pod = make_user("rec_in@iso.com", role=Role.RECRUITER)
+        self.rec_in_pod.reports_to = self.team_lead
+        self.rec_in_pod.save()
+        self.rec_out = make_user("rec_out@iso.com", role=Role.RECRUITER)
+        self.am = make_user("am@iso.com", role=Role.ACCOUNT_MANAGER)
+
+        ActivityLog.objects.create(
+            user=self.rec_in_pod, action="create", method="POST",
+            endpoint="/api/candidates/", model_name="candidates",
+            object_id="", status_code=201,
+        )
+        ActivityLog.objects.create(
+            user=self.rec_out, action="create", method="POST",
+            endpoint="/api/candidates/", model_name="candidates",
+            object_id="", status_code=201,
+        )
+
+    def test_team_lead_sees_pod_activity(self):
+        auth(self.client, self.team_lead)
+        res = self.client.get(reverse("activity-list"))
+        self.assertEqual(res.status_code, 200)
+        users = [r["user"] for r in res.data["results"]]
+        self.assertIn(str(self.rec_in_pod), users)
+
+    def test_team_lead_cannot_see_outside_pod_activity(self):
+        auth(self.client, self.team_lead)
+        res = self.client.get(reverse("activity-list"))
+        users = [r["user"] for r in res.data["results"]]
+        self.assertNotIn(str(self.rec_out), users)
+
+    def test_am_sees_all_activity(self):
+        auth(self.client, self.am)
+        res = self.client.get(reverse("activity-list"))
+        self.assertEqual(res.status_code, 200)
+        users = [r["user"] for r in res.data["results"]]
+        self.assertIn(str(self.rec_in_pod), users)
+        self.assertIn(str(self.rec_out), users)
+
+    def test_recruiter_blocked(self):
+        auth(self.client, self.rec_out)
+        res = self.client.get(reverse("activity-list"))
+        self.assertEqual(res.status_code, 403)

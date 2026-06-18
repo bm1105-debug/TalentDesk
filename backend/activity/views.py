@@ -4,7 +4,8 @@ from rest_framework.viewsets import GenericViewSet
 from rest_framework import serializers
 
 from .models import ActivityLog
-from users.permissions import IsAccountManagerOrAbove
+from users.permissions import IsTeamLeadOrAbove
+from users.mixins import RoleQuerysetMixin
 
 
 class ActivityLogSerializer(serializers.ModelSerializer):
@@ -22,13 +23,14 @@ class ActivityLogSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-class ActivityLogViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
+class ActivityLogViewSet(RoleQuerysetMixin, ListModelMixin, RetrieveModelMixin, GenericViewSet):
     """
-    Read-only endpoint — managers can list and retrieve activity log entries.
+    Read-only endpoint — Team Leads and above can list and retrieve activity log entries.
+    Team Leads see only their pod's activity; AM and CEO see firm-wide.
     No create, update, or delete is exposed. Ever.
     """
     serializer_class   = ActivityLogSerializer
-    permission_classes = [IsAccountManagerOrAbove]
+    permission_classes = [IsTeamLeadOrAbove]
     filter_backends    = [filters.SearchFilter, filters.OrderingFilter]
     search_fields      = ["user__username", "model_name", "endpoint", "object_id"]
     ordering_fields    = ["created_at", "model_name", "action"]
@@ -48,5 +50,9 @@ class ActivityLogViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
             qs = qs.filter(action=action)
         if user_id:
             qs = qs.filter(user_id=user_id)
+
+        allowed = self.allowed_author_ids()
+        if allowed is not None:
+            qs = qs.filter(user__in=allowed)
 
         return qs
