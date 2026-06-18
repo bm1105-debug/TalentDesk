@@ -124,7 +124,7 @@ class CandidateCreateTests(APITestCase):
 
     def test_update_own_email_does_not_false_positive(self):
         # Updating a candidate's own email should not trigger duplicate detection
-        candidate = make_candidate(email="myown@example.com", phone="9000000007")
+        candidate = make_candidate(email="myown@example.com", phone="9000000007", created_by=self.recruiter)
         auth(self.client, self.recruiter)
         url = reverse("candidate-detail", args=[candidate.id])
         res = self.client.patch(url, {"email": "myown@example.com"}, format="json")
@@ -141,9 +141,9 @@ class CandidateReadFilterTests(APITestCase):
     def setUp(self):
         self.user = make_user("recruiter@test.com")
         auth(self.client, self.user)
-        self.c1 = make_candidate(email="a@x.com", phone="9001", status="active")
+        self.c1 = make_candidate(email="a@x.com", phone="9001", status="active", created_by=self.user)
         self.c2 = make_candidate(email="b@x.com", phone="9002", status="passive",
-                                  first_name="Bob", last_name="Builder")
+                                  first_name="Bob", last_name="Builder", created_by=self.user)
         tag = SkillTag.objects.create(name="react")
         self.c1.skills.add(tag)
 
@@ -175,7 +175,7 @@ class CandidateUpdateDeleteTests(APITestCase):
     def setUp(self):
         self.recruiter = make_user("recruiter@test.com", role=Role.RECRUITER)
         self.manager   = make_user("manager@test.com",   role=Role.ACCOUNT_MANAGER)
-        self.candidate = make_candidate()
+        self.candidate = make_candidate(created_by=self.recruiter)
 
     def test_recruiter_can_update(self):
         auth(self.client, self.recruiter)
@@ -202,7 +202,7 @@ class CandidateSkillActionTests(APITestCase):
     def setUp(self):
         self.user = make_user("recruiter@test.com")
         auth(self.client, self.user)
-        self.candidate = make_candidate()
+        self.candidate = make_candidate(created_by=self.user)
 
     def test_add_skill(self):
         url = reverse("candidate-add-skill", args=[self.candidate.id])
@@ -230,9 +230,9 @@ class BulkStatusUpdateTests(APITestCase):
     def setUp(self):
         self.recruiter = make_user("rec_bulk")
         auth(self.client, self.recruiter)
-        self.c1 = make_candidate(email="b1@x.com", phone="8001", status="active")
-        self.c2 = make_candidate(email="b2@x.com", phone="8002", status="active")
-        self.c3 = make_candidate(email="b3@x.com", phone="8003", status="active")
+        self.c1 = make_candidate(email="b1@x.com", phone="8001", status="active", created_by=self.recruiter)
+        self.c2 = make_candidate(email="b2@x.com", phone="8002", status="active", created_by=self.recruiter)
+        self.c3 = make_candidate(email="b3@x.com", phone="8003", status="active", created_by=self.recruiter)
         self.url = reverse("candidate-bulk-status")
 
     def test_bulk_update_changes_status(self):
@@ -272,7 +272,7 @@ class LastContactedTests(APITestCase):
 
     def setUp(self):
         self.user      = make_user("recruiter@test.com")
-        self.candidate = make_candidate()
+        self.candidate = make_candidate(created_by=self.user)
         auth(self.client, self.user)
 
     def _send_email(self, candidate, days_ago=0):
@@ -301,7 +301,7 @@ class LastContactedTests(APITestCase):
 
     def test_not_contacted_filter_excludes_recently_contacted(self):
         # Contacted 5 days ago — should NOT appear in a ?not_contacted_days=30 list
-        c_recent = make_candidate(email="recent@x.com", phone="7001")
+        c_recent = make_candidate(email="recent@x.com", phone="7001", created_by=self.user)
         self._send_email(c_recent, days_ago=5)
         res = self.client.get(reverse("candidate-list"), {"not_contacted_days": 30})
         ids = [r["id"] for r in res.data["results"]]
@@ -315,7 +315,7 @@ class LastContactedTests(APITestCase):
 
     def test_not_contacted_filter_includes_old_contact(self):
         # Contacted 45 days ago — should appear in ?not_contacted_days=30
-        c_old = make_candidate(email="old@x.com", phone="7002")
+        c_old = make_candidate(email="old@x.com", phone="7002", created_by=self.user)
         self._send_email(c_old, days_ago=45)
         res = self.client.get(reverse("candidate-list"), {"not_contacted_days": 30})
         ids = [r["id"] for r in res.data["results"]]
@@ -346,7 +346,7 @@ class YearsOfExperienceTests(APITestCase):
         self.assertIsNone(res.data["years_of_experience"])
 
     def test_years_of_experience_updated_via_patch(self):
-        c = make_candidate(email="patch@exp.com", phone="8003", years_of_experience=3)
+        c = make_candidate(email="patch@exp.com", phone="8003", years_of_experience=3, created_by=self.user)
         res = self.client.patch(
             reverse("candidate-detail", args=[c.id]),
             {"years_of_experience": 8},
@@ -356,15 +356,67 @@ class YearsOfExperienceTests(APITestCase):
         self.assertEqual(res.data["years_of_experience"], 8)
 
     def test_min_experience_filter_returns_matching(self):
-        make_candidate(email="senior@exp.com", phone="8004", years_of_experience=10)
-        make_candidate(email="junior@exp.com", phone="8005", years_of_experience=2)
+        make_candidate(email="senior@exp.com", phone="8004", years_of_experience=10, created_by=self.user)
+        make_candidate(email="junior@exp.com", phone="8005", years_of_experience=2, created_by=self.user)
         res = self.client.get(reverse("candidate-list"), {"min_experience": 5})
         emails = [r["email"] for r in res.data["results"]]
         self.assertIn("senior@exp.com", emails)
         self.assertNotIn("junior@exp.com", emails)
 
+
+class CandidateIsolationTests(APITestCase):
+    """Recruiter sees own candidates only; Team Lead sees pod; AM sees all."""
+
+    def setUp(self):
+        self.team_lead = make_user("tl@iso.com", role=Role.TEAM_LEAD)
+        self.rec_a = make_user("reca@iso.com", role=Role.RECRUITER)
+        self.rec_a.reports_to = self.team_lead
+        self.rec_a.save()
+        self.rec_b = make_user("recb@iso.com", role=Role.RECRUITER)  # outside pod
+        self.am = make_user("am@iso.com", role=Role.ACCOUNT_MANAGER)
+
+        self.c_a = make_candidate(
+            email="cand_a@iso.com", phone="7001", created_by=self.rec_a
+        )
+        self.c_b = make_candidate(
+            email="cand_b@iso.com", phone="7002", created_by=self.rec_b
+        )
+
+    def _emails(self, user):
+        auth(self.client, user)
+        res = self.client.get(reverse("candidate-list"))
+        self.assertEqual(res.status_code, 200)
+        return [r["email"] for r in res.data["results"]]
+
+    def test_recruiter_sees_own_candidate(self):
+        emails = self._emails(self.rec_a)
+        self.assertIn("cand_a@iso.com", emails)
+
+    def test_recruiter_cannot_see_other_recruiter_candidate(self):
+        emails = self._emails(self.rec_a)
+        self.assertNotIn("cand_b@iso.com", emails)
+
+    def test_recruiter_gets_404_on_other_candidate_detail(self):
+        auth(self.client, self.rec_a)
+        res = self.client.get(reverse("candidate-detail", args=[self.c_b.id]))
+        self.assertEqual(res.status_code, 404)
+
+    def test_team_lead_sees_pod_candidate(self):
+        emails = self._emails(self.team_lead)
+        self.assertIn("cand_a@iso.com", emails)
+
+    def test_team_lead_cannot_see_outside_pod_candidate(self):
+        emails = self._emails(self.team_lead)
+        self.assertNotIn("cand_b@iso.com", emails)
+
+    def test_am_sees_all_candidates(self):
+        emails = self._emails(self.am)
+        self.assertIn("cand_a@iso.com", emails)
+        self.assertIn("cand_b@iso.com", emails)
+
     def test_min_experience_filter_excludes_null(self):
         # Candidates with null years_of_experience must not appear in min_experience filter
+        auth(self.client, self.am)
         make_candidate(email="nullexp@exp.com", phone="8006")
         res = self.client.get(reverse("candidate-list"), {"min_experience": 1})
         emails = [r["email"] for r in res.data["results"]]

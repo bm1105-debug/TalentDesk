@@ -12,6 +12,7 @@ from communications.models import SentEmail
 from .models import Candidate, SkillTag
 from .serializers import CandidateSerializer, SkillTagSerializer
 from users.permissions import IsAccountManagerOrAbove, IsRecruiterOrAbove
+from users.mixins import RoleQuerysetMixin
 
 
 def _check_duplicate(field, value, exclude_pk=None):
@@ -46,7 +47,7 @@ class SkillTagViewSet(viewsets.ReadOnlyModelViewSet):
     search_fields = ["name"]
 
 
-class CandidateViewSet(viewsets.ModelViewSet):
+class CandidateViewSet(RoleQuerysetMixin, viewsets.ModelViewSet):
     serializer_class = CandidateSerializer
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["first_name", "last_name", "email", "phone", "current_title", "current_company"]
@@ -95,6 +96,10 @@ class CandidateViewSet(viewsets.ModelViewSet):
             )
         if min_experience:
             qs = qs.filter(years_of_experience__gte=int(min_experience))
+
+        allowed = self.allowed_author_ids()
+        if allowed is not None:
+            qs = qs.filter(created_by__in=allowed)
 
         return qs
 
