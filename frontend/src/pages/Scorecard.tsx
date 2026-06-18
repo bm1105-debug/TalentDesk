@@ -44,10 +44,10 @@ function StatCard({ label, value, sub, highlight }: {
   highlight?: boolean
 }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5">
-      <p className={`text-2xl font-bold ${highlight ? 'text-blue-700' : 'text-gray-900'}`}>{value}</p>
-      <p className="text-sm text-gray-500 mt-0.5">{label}</p>
-      {sub && <p className="text-xs text-gray-400 mt-1">{sub}</p>}
+    <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.06] p-5">
+      <p className={`text-2xl font-bold ${highlight ? 'text-indigo-400' : 'text-slate-100'}`}>{value}</p>
+      <p className="text-sm text-slate-500 mt-0.5">{label}</p>
+      {sub && <p className="text-xs text-slate-500 mt-1">{sub}</p>}
     </div>
   )
 }
@@ -67,13 +67,12 @@ export default function Scorecard() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold text-gray-900">My Scorecard</h1>
 
       {/* ── Stat cards ── */}
       {isLoading ? (
         <div className="grid grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="bg-white rounded-xl border border-gray-200 p-5 space-y-2">
+            <div key={i} className="bg-[#1a1a2e] rounded-xl border border-white/[0.06] p-5 space-y-2">
               <Skeleton className="h-8 w-16" />
               <Skeleton className="h-3 w-24" />
             </div>
@@ -98,15 +97,15 @@ export default function Scorecard() {
       <div className="grid grid-cols-2 gap-4">
 
         {/* ── Pipeline breakdown ── */}
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <h2 className="text-sm font-semibold text-gray-700 mb-4">My Pipeline</h2>
+        <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.06] p-5">
+          <h2 className="text-sm font-semibold text-slate-300 mb-4">My Pipeline</h2>
           {isLoading ? (
             <div className="space-y-2">
               <Skeleton className="h-4 w-3/4" />
               <Skeleton className="h-4 w-1/2" />
             </div>
           ) : pipeline.length === 0 ? (
-            <p className="text-sm text-gray-400">No active submittals in a stage yet</p>
+            <p className="text-sm text-slate-500">No active submittals in a stage yet</p>
           ) : (
             <div className="space-y-3">
               {pipeline.map(row => {
@@ -114,10 +113,10 @@ export default function Scorecard() {
                 return (
                   <div key={row.stage} className="space-y-1">
                     <div className="flex justify-between text-sm">
-                      <span className="font-medium text-gray-700">{row.stage}</span>
-                      <span className="text-gray-500">{row.count}</span>
+                      <span className="font-medium text-slate-300">{row.stage}</span>
+                      <span className="text-slate-500">{row.count}</span>
                     </div>
-                    <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-2 w-full bg-white/[0.06] rounded-full overflow-hidden">
                       <div
                         className="h-full bg-blue-500 rounded-full transition-all duration-500"
                         style={{ width: `${pct}%` }}
@@ -131,24 +130,24 @@ export default function Scorecard() {
         </div>
 
         {/* ── Recent placements ── */}
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <h2 className="text-sm font-semibold text-gray-700 mb-4">Recent Placements</h2>
+        <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.06] p-5">
+          <h2 className="text-sm font-semibold text-slate-300 mb-4">Recent Placements</h2>
           {isLoading ? (
             <div className="space-y-2">
               <Skeleton className="h-4 w-full" />
               <Skeleton className="h-4 w-4/5" />
             </div>
           ) : placements.length === 0 ? (
-            <p className="text-sm text-gray-400">No placements yet</p>
+            <p className="text-sm text-slate-500">No placements yet</p>
           ) : (
             <div className="space-y-3">
               {placements.map((p, i) => (
                 <div key={i} className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{p.candidate}</p>
-                    <p className="text-xs text-gray-500 truncate">{p.job}</p>
+                    <p className="text-sm font-medium text-slate-100 truncate">{p.candidate}</p>
+                    <p className="text-xs text-slate-500 truncate">{p.job}</p>
                   </div>
-                  <span className="text-xs text-gray-400 shrink-0 mt-0.5">
+                  <span className="text-xs text-slate-500 shrink-0 mt-0.5">
                     {new Date(p.placed_at).toLocaleDateString()}
                   </span>
                 </div>

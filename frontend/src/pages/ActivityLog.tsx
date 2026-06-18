@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import api from '@/api/client'
+import { StatusBadge } from '@/components/StatusBadge'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -22,12 +23,6 @@ interface PaginatedLog {
   next: string | null
   previous: string | null
   results: LogEntry[]
-}
-
-const ACTION_COLORS: Record<string, string> = {
-  create: 'text-green-700 bg-green-50 border-green-200',
-  update: 'text-amber-700 bg-amber-50 border-amber-200',
-  delete: 'text-red-700 bg-red-50 border-red-200',
 }
 
 const MODEL_OPTIONS = [
@@ -65,9 +60,8 @@ export default function ActivityLog() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-gray-900">Audit Log</h1>
         {data && (
-          <span className="text-sm text-gray-400">{data.count} entries</span>
+          <span className="text-sm text-slate-500">{data.count} entries</span>
         )}
       </div>
 
@@ -76,7 +70,7 @@ export default function ActivityLog() {
         <select
           value={model}
           onChange={handleFilterChange(setModel)}
-          className="text-sm border border-gray-200 rounded-md px-3 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="text-sm border border-white/[0.06] rounded-md px-3 py-1.5 bg-[#1a1a2e] text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
         >
           <option value="">All models</option>
           {MODEL_OPTIONS.map(m => (
@@ -87,7 +81,7 @@ export default function ActivityLog() {
         <select
           value={action}
           onChange={handleFilterChange(setAction)}
-          className="text-sm border border-gray-200 rounded-md px-3 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="text-sm border border-white/[0.06] rounded-md px-3 py-1.5 bg-[#1a1a2e] text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
         >
           <option value="">All actions</option>
           {ACTION_OPTIONS.map(a => (
@@ -97,54 +91,52 @@ export default function ActivityLog() {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.06] overflow-hidden">
         {isLoading && (
-          <div className="py-10 text-center text-sm text-gray-400">Loading…</div>
+          <div className="py-10 text-center text-sm text-slate-500">Loading…</div>
         )}
 
         {isError && (
-          <div className="py-10 text-center text-sm text-red-500">Failed to load activity log.</div>
+          <div className="py-10 text-center text-sm text-red-400">Failed to load activity log.</div>
         )}
 
         {!isLoading && !isError && data?.results.length === 0 && (
-          <div className="py-10 text-center text-sm text-gray-400">No entries found.</div>
+          <div className="py-10 text-center text-sm text-slate-500">No entries found.</div>
         )}
 
         {!isLoading && !isError && (data?.results.length ?? 0) > 0 && (
           <table className="w-full text-sm">
-            <thead className="border-b border-gray-100">
-              <tr className="text-left text-xs text-gray-400 uppercase tracking-wide">
-                <th className="px-4 py-3 font-medium">Time</th>
-                <th className="px-4 py-3 font-medium">User</th>
-                <th className="px-4 py-3 font-medium">Action</th>
-                <th className="px-4 py-3 font-medium">Model</th>
-                <th className="px-4 py-3 font-medium">Object</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium">IP</th>
+            <thead className="bg-white/[0.04] border-b border-white/[0.06]">
+              <tr className="text-left text-xs text-slate-400 tracking-wide">
+                <th className="px-4 py-3 font-semibold">Time</th>
+                <th className="px-4 py-3 font-semibold">User</th>
+                <th className="px-4 py-3 font-semibold">Action</th>
+                <th className="px-4 py-3 font-semibold">Model</th>
+                <th className="px-4 py-3 font-semibold">Object</th>
+                <th className="px-4 py-3 font-semibold">Status</th>
+                <th className="px-4 py-3 font-semibold">IP</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-white/[0.04]">
               {data?.results.map(entry => (
-                <tr key={entry.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
+                <tr key={entry.id} className="hover:bg-white/[0.03] transition-colors">
+                  <td className="px-4 py-3 text-slate-500 whitespace-nowrap">
                     {new Date(entry.created_at).toLocaleString()}
                   </td>
-                  <td className="px-4 py-3 font-medium text-gray-900">
-                    {entry.user ?? <span className="text-gray-400 font-normal">deleted</span>}
+                  <td className="px-4 py-3 font-medium text-slate-100">
+                    {entry.user ?? <span className="text-slate-500 font-normal">deleted</span>}
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded border ${ACTION_COLORS[entry.action] ?? 'text-gray-600 bg-gray-50 border-gray-200'}`}>
-                      {entry.action}
-                    </span>
+                    <StatusBadge status={entry.action} />
                   </td>
-                  <td className="px-4 py-3 text-gray-700">{entry.model_name || '—'}</td>
-                  <td className="px-4 py-3 text-gray-500">{entry.object_id || '—'}</td>
+                  <td className="px-4 py-3 text-slate-400">{entry.model_name || '—'}</td>
+                  <td className="px-4 py-3 text-slate-500">{entry.object_id || '—'}</td>
                   <td className="px-4 py-3">
-                    <span className={`text-xs font-medium ${entry.status_code < 300 ? 'text-green-700' : 'text-red-600'}`}>
+                    <span className={`text-xs font-medium ${entry.status_code < 300 ? 'text-green-400' : 'text-red-400'}`}>
                       {entry.status_code}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-gray-400 text-xs">{entry.ip_address ?? '—'}</td>
+                  <td className="px-4 py-3 text-slate-500 text-xs">{entry.ip_address ?? '—'}</td>
                 </tr>
               ))}
             </tbody>
@@ -158,15 +150,15 @@ export default function ActivityLog() {
           <button
             disabled={page === 1}
             onClick={() => setPage(p => p - 1)}
-            className="px-3 py-1.5 rounded border border-gray-200 text-gray-600 disabled:opacity-40 hover:bg-gray-50"
+            className="px-3 py-1.5 rounded border border-white/[0.06] text-slate-400 disabled:opacity-40 hover:bg-white/[0.03]"
           >
             Previous
           </button>
-          <span className="text-gray-400">Page {page} of {totalPages}</span>
+          <span className="text-slate-500">Page {page} of {totalPages}</span>
           <button
             disabled={page === totalPages}
             onClick={() => setPage(p => p + 1)}
-            className="px-3 py-1.5 rounded border border-gray-200 text-gray-600 disabled:opacity-40 hover:bg-gray-50"
+            className="px-3 py-1.5 rounded border border-white/[0.06] text-slate-400 disabled:opacity-40 hover:bg-white/[0.03]"
           >
             Next
           </button>

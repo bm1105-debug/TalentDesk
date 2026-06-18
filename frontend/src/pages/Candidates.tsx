@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
+import { StatusBadge } from '@/components/StatusBadge'
 import {
   Dialog, DialogTrigger, DialogContent,
   DialogHeader, DialogTitle,
@@ -76,13 +77,6 @@ function fmtLastContacted(dt: string | null): string {
   const days = Math.floor((Date.now() - new Date(dt).getTime()) / 86_400_000)
   if (days === 0) return 'Today'
   return `${days}d ago`
-}
-
-const STATUS_VARIANTS: Record<string, 'success' | 'default' | 'secondary' | 'destructive' | 'warning'> = {
-  active:      'success',
-  passive:     'default',
-  placed:      'secondary',
-  blacklisted: 'destructive',
 }
 
 // ── Add Candidate Form ─────────────────────────────────────────────────────────
@@ -307,23 +301,23 @@ function AddCandidateForm({ onSuccess }: { onSuccess: () => void }) {
 
 function CardSkeleton() {
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4 animate-pulse">
+    <div className="bg-[#1a1a2e] border border-white/[0.06] rounded-xl p-4 animate-pulse">
       <div className="flex justify-between mb-2">
         <div className="space-y-1.5 flex-1">
-          <div className="h-4 bg-gray-200 rounded w-3/4" />
-          <div className="h-3 bg-gray-100 rounded w-1/2" />
+          <div className="h-4 bg-white/[0.08] rounded w-3/4" />
+          <div className="h-3 bg-white/[0.05] rounded w-1/2" />
         </div>
-        <div className="h-5 bg-gray-100 rounded w-14 ml-2" />
+        <div className="h-5 bg-white/[0.05] rounded w-14 ml-2" />
       </div>
-      <div className="h-4 bg-gray-100 rounded w-1/4 mb-3" />
+      <div className="h-4 bg-white/[0.05] rounded w-1/4 mb-3" />
       <div className="flex gap-1 mb-4">
         {[12, 16, 10].map(w => (
-          <div key={w} className={`h-5 bg-gray-100 rounded w-${w}`} />
+          <div key={w} className={`h-5 bg-white/[0.05] rounded w-${w}`} />
         ))}
       </div>
-      <div className="border-t border-gray-100 pt-3 flex justify-between">
-        <div className="h-3 bg-gray-100 rounded w-24" />
-        <div className="h-3 bg-gray-100 rounded w-16" />
+      <div className="border-t border-white/[0.04] pt-3 flex justify-between">
+        <div className="h-3 bg-white/[0.05] rounded w-24" />
+        <div className="h-3 bg-white/[0.05] rounded w-16" />
       </div>
     </div>
   )
@@ -334,27 +328,25 @@ function CandidateCard({ candidate }: { candidate: Candidate }) {
   return (
     <div
       onClick={() => navigate(`/candidates/${candidate.id}`)}
-      className="bg-white border border-gray-200 rounded-xl p-4 cursor-pointer hover:shadow-md hover:border-gray-300 transition-all flex flex-col"
+      className="bg-[#1a1a2e] border border-white/[0.06] rounded-xl p-4 cursor-pointer hover:border-white/[0.12] transition-all flex flex-col"
     >
       <div className="flex items-start gap-3 mb-1">
         <InitialsAvatar id={candidate.id} firstName={candidate.first_name} lastName={candidate.last_name} size="md" />
         <div className="min-w-0 flex-1">
-          <p className="font-semibold text-gray-900 truncate">
+          <p className="font-semibold text-slate-100 truncate">
             {candidate.first_name} {candidate.last_name}
           </p>
-          <p className="text-sm text-gray-500 truncate">
+          <p className="text-sm text-slate-500 truncate">
             {candidate.current_title || '—'}
             {candidate.years_of_experience != null && (
-              <span className="ml-1 text-gray-400">· {candidate.years_of_experience} yrs</span>
+              <span className="ml-1 text-slate-500">· {candidate.years_of_experience} yrs</span>
             )}
           </p>
         </div>
-        <Badge variant={STATUS_VARIANTS[candidate.status] ?? 'secondary'} className="shrink-0 text-xs">
-          {candidate.status}
-        </Badge>
+        <StatusBadge status={candidate.status} />
       </div>
 
-      <span className="inline-block self-start text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded mb-3 capitalize">
+      <span className="inline-block self-start text-xs bg-white/[0.06] text-slate-400 px-2 py-0.5 rounded mb-3 capitalize">
         {candidate.source.replace('_', ' ')}
       </span>
 
@@ -366,11 +358,11 @@ function CandidateCard({ candidate }: { candidate: Candidate }) {
           <Badge variant="secondary" className="text-xs">+{candidate.skills.length - 4}</Badge>
         )}
         {candidate.skills.length === 0 && (
-          <span className="text-xs text-gray-300">No skills</span>
+          <span className="text-xs text-slate-600">No skills</span>
         )}
       </div>
 
-      <div className="flex items-center justify-between text-xs text-gray-400 border-t border-gray-100 pt-3 mt-3">
+      <div className="flex items-center justify-between text-xs text-slate-500 border-t border-white/[0.04] pt-3 mt-3">
         <span>
           {candidate.active_submittals_count} active submittal{candidate.active_submittals_count !== 1 ? 's' : ''}
         </span>
@@ -453,13 +445,13 @@ export default function Candidates() {
 
       {/* ── Top bar ── */}
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-gray-900">Candidates</h1>
+        <p className="text-sm text-slate-400">Manage your candidate pipeline</p>
 
         <div className="flex items-center gap-2">
           <button
             onClick={toggleViewMode}
             title={viewMode === 'table' ? 'Switch to card view' : 'Switch to table view'}
-            className="p-2 rounded-md border border-input text-gray-500 hover:bg-gray-50 transition-colors"
+            className="p-2 rounded-md border border-input text-slate-400 hover:bg-white/[0.03] transition-colors"
           >
             {viewMode === 'table'
               ? <LayoutGrid className="h-4 w-4" />
@@ -486,7 +478,7 @@ export default function Candidates() {
       {/* ── Filters ── */}
       <div className="flex items-center gap-3">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
           <Input
             className="pl-8"
             placeholder="Search name, email, title…"
@@ -498,7 +490,7 @@ export default function Candidates() {
         <select
           value={status}
           onChange={e => { setStatus(e.target.value); setPage(1) }}
-          className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm"
+          className="h-9 rounded-lg border border-white/[0.12] bg-[#1a1a2e] px-3 text-sm hover:border-white/[0.25] hover:bg-[#1e1e36] transition-colors"
         >
           <option value="">All statuses</option>
           <option value="active">Active</option>
@@ -512,7 +504,7 @@ export default function Candidates() {
           className={`h-9 px-3 rounded-md border text-sm transition-colors ${
             notContactedOnly
               ? 'border-orange-400 bg-orange-50 text-orange-700 font-medium'
-              : 'border-input bg-transparent text-gray-600 hover:bg-gray-50'
+              : 'border-input bg-transparent text-slate-400 hover:bg-white/[0.03]'
           }`}
         >
           Not contacted in 30d
@@ -524,7 +516,7 @@ export default function Candidates() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {isLoading && Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)}
           {!isLoading && data?.results.length === 0 && (
-            <p className="col-span-3 py-12 text-center text-gray-400">No candidates found</p>
+            <p className="col-span-3 py-12 text-center text-slate-500">No candidates found</p>
           )}
           {data?.results.map(c => <CandidateCard key={c.id} candidate={c} />)}
         </div>
@@ -532,58 +524,58 @@ export default function Candidates() {
 
       {/* ── Table view ── */}
       {viewMode === 'table' && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.06] overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-white/[0.04] border-b border-white/[0.06]">
               <tr>
                 <th className="px-4 py-3 w-10">
                   <input
                     type="checkbox"
                     checked={allPageSelected}
                     onChange={toggleAll}
-                    className="rounded border-gray-300"
+                    className="rounded border-white/[0.2]"
                   />
                 </th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Name</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Title / Company</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Contact</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Skills</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Last contacted</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Status</th>
+                <th className="text-left px-4 py-3 font-medium text-slate-400">Name</th>
+                <th className="text-left px-4 py-3 font-medium text-slate-400">Title / Company</th>
+                <th className="text-left px-4 py-3 font-medium text-slate-400">Contact</th>
+                <th className="text-left px-4 py-3 font-medium text-slate-400">Skills</th>
+                <th className="text-left px-4 py-3 font-medium text-slate-400">Last contacted</th>
+                <th className="text-left px-4 py-3 font-medium text-slate-400">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-white/[0.04]">
               {isLoading && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-gray-400">Loading…</td>
+                  <td colSpan={7} className="px-4 py-8 text-center text-slate-500">Loading…</td>
                 </tr>
               )}
               {!isLoading && data?.results.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-gray-400">No candidates found</td>
+                  <td colSpan={7} className="px-4 py-8 text-center text-slate-500">No candidates found</td>
                 </tr>
               )}
               {data?.results.map(c => (
-                <tr key={c.id} className="hover:bg-gray-50 transition-colors cursor-pointer"
+                <tr key={c.id} className="hover:bg-white/[0.03] transition-colors cursor-pointer"
                   onClick={() => navigate(`/candidates/${c.id}`)}>
                   <td className="px-4 py-3 w-10" onClick={e => e.stopPropagation()}>
                     <input
                       type="checkbox"
                       checked={selected.has(c.id)}
                       onChange={() => toggleOne(c.id)}
-                      className="rounded border-gray-300"
+                      className="rounded border-white/[0.2]"
                     />
                   </td>
-                  <td className="px-4 py-3 font-medium text-gray-900">
+                  <td className="px-4 py-3 font-medium text-slate-100">
                     {c.first_name} {c.last_name}
                   </td>
-                  <td className="px-4 py-3 text-gray-600">
+                  <td className="px-4 py-3 text-slate-400">
                     {c.current_title || '—'}
-                    {c.current_company && <span className="text-gray-400"> · {c.current_company}</span>}
+                    {c.current_company && <span className="text-slate-500"> · {c.current_company}</span>}
                   </td>
-                  <td className="px-4 py-3 text-gray-600">
+                  <td className="px-4 py-3 text-slate-400">
                     <div>{c.email}</div>
-                    <div className="text-gray-400">{c.phone}</div>
+                    <div className="text-slate-500">{c.phone}</div>
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-1">
@@ -595,11 +587,11 @@ export default function Candidates() {
                       )}
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-gray-400 text-xs whitespace-nowrap">
+                  <td className="px-4 py-3 text-slate-500 text-xs whitespace-nowrap">
                     {fmtLastContacted(c.last_contacted_at)}
                   </td>
                   <td className="px-4 py-3">
-                    <Badge variant={STATUS_VARIANTS[c.status] ?? 'secondary'}>{c.status}</Badge>
+                    <StatusBadge status={c.status} />
                   </td>
                 </tr>
               ))}
@@ -610,7 +602,7 @@ export default function Candidates() {
 
       {/* ── Pagination ── */}
       {data && data.count > 10 && (
-        <div className="flex items-center justify-between text-sm text-gray-600">
+        <div className="flex items-center justify-between text-sm text-slate-400">
           <span>{data.count} candidates · page {page} of {totalPages}</span>
           <div className="flex gap-1">
             <Button variant="outline" size="sm" disabled={!data.previous}

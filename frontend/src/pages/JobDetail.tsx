@@ -12,9 +12,9 @@ import {
 import type { DragEndEvent } from '@dnd-kit/core'
 import api from '@/api/client'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { StatusBadge } from '@/components/StatusBadge'
 import InitialsAvatar from '@/components/InitialsAvatar'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -59,13 +59,6 @@ interface PaginatedSubmittals {
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-const STATUS_VARIANT: Record<string, 'success' | 'default' | 'secondary' | 'destructive' | 'warning'> = {
-  open: 'success', draft: 'secondary', on_hold: 'warning', filled: 'default', cancelled: 'destructive',
-}
-const PRIORITY_VARIANT: Record<string, 'destructive' | 'warning' | 'default' | 'secondary'> = {
-  urgent: 'destructive', high: 'warning', medium: 'default', low: 'secondary',
-}
-
 function fmtSalary(min: string | null, max: string | null): string {
   if (!min && !max) return '—'
   const fmt = (v: string) => `$${Number(v).toLocaleString()}`
@@ -82,7 +75,7 @@ function fmtLastContacted(dt: string | null): string {
 // ── Match Score Badge ──────────────────────────────────────────────────────────
 
 function MatchBadge({ score }: { score: number | null }) {
-  if (score === null) return <span className="text-gray-300 text-xs">—</span>
+  if (score === null) return <span className="text-slate-600 text-xs">—</span>
   const cls =
     score >= 70 ? 'bg-emerald-100 text-emerald-700' :
     score >= 40 ? 'bg-amber-100 text-amber-700' :
@@ -139,8 +132,8 @@ function AdvanceStageDialog({ submittal, stages }: { submittal: Submittal; stage
       <DialogContent className="max-w-sm">
         <DialogHeader><DialogTitle>Advance Stage</DialogTitle></DialogHeader>
         <div className="space-y-3">
-          <p className="text-sm text-gray-500">{submittal.candidate_name}</p>
-          <p className="text-xs text-gray-400">Current: {submittal.current_stage_name ?? 'Not started'}</p>
+          <p className="text-sm text-slate-500">{submittal.candidate_name}</p>
+          <p className="text-xs text-slate-500">Current: {submittal.current_stage_name ?? 'Not started'}</p>
           <div className="space-y-1">
             <Label>Move to stage</Label>
             <select value={stageId} onChange={e => setStageId(Number(e.target.value))}
@@ -150,7 +143,7 @@ function AdvanceStageDialog({ submittal, stages }: { submittal: Submittal; stage
             </select>
           </div>
           <div className="space-y-1">
-            <Label>Notes <span className="text-gray-400 font-normal">(optional)</span></Label>
+            <Label>Notes <span className="text-slate-500 font-normal">(optional)</span></Label>
             <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2}
               className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" />
           </div>
@@ -184,14 +177,14 @@ function AddNoteDialog({ submittal }: { submittal: Submittal }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs text-gray-500 hover:text-gray-700">
+        <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs text-slate-500 hover:text-slate-300">
           <StickyNote className="h-3.5 w-3.5" /> Note
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-sm">
         <DialogHeader><DialogTitle>Add Note</DialogTitle></DialogHeader>
         <div className="space-y-3">
-          <p className="text-sm text-gray-500">{submittal.candidate_name}</p>
+          <p className="text-sm text-slate-500">{submittal.candidate_name}</p>
           <textarea value={note} onChange={e => setNote(e.target.value)} rows={3}
             placeholder="Client feedback, interview outcome…"
             className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" />
@@ -269,12 +262,12 @@ function MakeOfferDialog({ submittal }: { submittal: Submittal }) {
           </div>
           <div className="flex gap-2">
             <div className="flex-1 space-y-1">
-              <Label>Expiry <span className="text-gray-400 font-normal">(opt)</span></Label>
+              <Label>Expiry <span className="text-slate-500 font-normal">(opt)</span></Label>
               <input {...register('expiry_date')} type="date"
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm" />
             </div>
             <div className="flex-1 space-y-1">
-              <Label>Start <span className="text-gray-400 font-normal">(opt)</span></Label>
+              <Label>Start <span className="text-slate-500 font-normal">(opt)</span></Label>
               <input {...register('start_date')} type="date"
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm" />
             </div>
@@ -303,9 +296,9 @@ function KanbanCard({ submittal, isError }: { submittal: Submittal; isError: boo
   return (
     <div
       ref={setNodeRef} {...listeners} {...attributes}
-      className={`bg-white border rounded-lg p-3 cursor-grab active:cursor-grabbing select-none transition-all ${
+      className={`bg-[#1a1a2e] border rounded-lg p-3 cursor-grab active:cursor-grabbing select-none transition-all ${
         isDragging ? 'opacity-40 shadow-lg scale-95' : ''
-      } ${isError ? 'border-red-400 bg-red-50' : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'}`}
+      } ${isError ? 'border-red-400 bg-red-500/10' : 'border-white/[0.06] hover:border-white/[0.12] hover:shadow-sm'}`}
     >
       <div className="flex items-start gap-2">
         <InitialsAvatar id={submittal.candidate} firstName={submittal.candidate_name.split(' ')[0]} lastName={submittal.candidate_name.split(' ')[1] ?? ''} size="sm" />
@@ -313,17 +306,17 @@ function KanbanCard({ submittal, isError }: { submittal: Submittal; isError: boo
           <Link
             to={`/candidates/${submittal.candidate}`}
             onClick={e => e.stopPropagation()}
-            className="text-sm font-medium text-gray-900 hover:text-blue-600 hover:underline block truncate"
+            className="text-sm font-medium text-slate-100 hover:text-indigo-400 hover:underline block truncate"
           >
             {submittal.candidate_name}
           </Link>
-          <p className="text-xs text-gray-400 mt-0.5">{submittal.current_stage_name ?? 'Not started'}</p>
+          <p className="text-xs text-slate-500 mt-0.5">{submittal.current_stage_name ?? 'Not started'}</p>
         </div>
         <StarButton submittal={submittal} />
       </div>
-      <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
+      <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/[0.06]">
         <MatchBadge score={submittal.match_score} />
-        <span className="text-[10px] text-gray-400">{fmtLastContacted(submittal.candidate_last_contacted_at)}</span>
+        <span className="text-[10px] text-slate-500">{fmtLastContacted(submittal.candidate_last_contacted_at)}</span>
       </div>
       {isError && <p className="text-[10px] text-red-500 mt-1">Failed to move — reverted</p>}
     </div>
@@ -338,19 +331,19 @@ function KanbanColumn({ stageId, stageName, submittals, errorId }: {
     <div
       ref={setNodeRef}
       className={`flex-shrink-0 w-56 flex flex-col rounded-xl border transition-colors ${
-        isOver ? 'border-blue-300 bg-blue-50/60' : 'border-gray-200 bg-gray-50'
+        isOver ? 'border-indigo-500/50 bg-indigo-500/5' : 'border-white/[0.06] bg-white/[0.02]'
       }`}
     >
-      <div className="px-3 py-2.5 border-b border-gray-200">
-        <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">{stageName}</span>
-        <span className="ml-2 text-xs text-gray-400">{submittals.length}</span>
+      <div className="px-3 py-2.5 border-b border-white/[0.06]">
+        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">{stageName}</span>
+        <span className="ml-2 text-xs text-slate-500">{submittals.length}</span>
       </div>
       <div className="flex-1 p-2 space-y-2 min-h-[120px]">
         {submittals.map(s => (
           <KanbanCard key={s.id} submittal={s} isError={errorId === s.id} />
         ))}
         {submittals.length === 0 && (
-          <div className={`h-16 rounded-lg border-2 border-dashed flex items-center justify-center text-xs text-gray-300 ${isOver ? 'border-blue-300' : 'border-gray-200'}`}>
+          <div className={`h-16 rounded-lg border-2 border-dashed flex items-center justify-center text-xs text-slate-600 ${isOver ? 'border-indigo-500/50' : 'border-white/[0.06]'}`}>
             Drop here
           </div>
         )}
@@ -361,16 +354,16 @@ function KanbanColumn({ stageId, stageName, submittals, errorId }: {
 
 function KanbanClosedColumn({ submittals }: { submittals: Submittal[] }) {
   return (
-    <div className="flex-shrink-0 w-56 flex flex-col rounded-xl border border-gray-200 bg-gray-50 opacity-60">
-      <div className="px-3 py-2.5 border-b border-gray-200">
-        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Closed</span>
-        <span className="ml-2 text-xs text-gray-400">{submittals.length}</span>
+    <div className="flex-shrink-0 w-56 flex flex-col rounded-xl border border-white/[0.06] bg-white/[0.02] opacity-60">
+      <div className="px-3 py-2.5 border-b border-white/[0.06]">
+        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Closed</span>
+        <span className="ml-2 text-xs text-slate-500">{submittals.length}</span>
       </div>
       <div className="flex-1 p-2 space-y-2">
         {submittals.map(s => (
-          <div key={s.id} className="bg-white border border-gray-200 rounded-lg p-3">
-            <p className="text-sm font-medium text-gray-500 truncate">{s.candidate_name}</p>
-            <p className="text-xs text-gray-400 capitalize mt-0.5">{s.status}</p>
+          <div key={s.id} className="bg-[#1a1a2e] border border-white/[0.06] rounded-lg p-3">
+            <p className="text-sm font-medium text-slate-500 truncate">{s.candidate_name}</p>
+            <p className="text-xs text-slate-500 capitalize mt-0.5">{s.status}</p>
           </div>
         ))}
       </div>
@@ -494,47 +487,43 @@ export default function JobDetail() {
     <div className="space-y-6">
 
       {/* ── Back link ── */}
-      <Button variant="ghost" size="sm" className="gap-1 -ml-2 text-gray-500" onClick={() => navigate('/jobs')}>
+      <Button variant="ghost" size="sm" className="gap-1 -ml-2 text-slate-500" onClick={() => navigate('/jobs')}>
         <ArrowLeft className="h-4 w-4" /> Jobs
       </Button>
 
       {/* ── Header ── */}
       {jobLoading ? (
         <div className="animate-pulse space-y-2">
-          <div className="h-7 bg-gray-200 rounded w-1/3" />
-          <div className="h-4 bg-gray-100 rounded w-1/4" />
+          <div className="h-7 bg-white/[0.08] rounded w-1/3" />
+          <div className="h-4 bg-white/[0.05] rounded w-1/4" />
         </div>
       ) : job && (
-        <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <div className="bg-[#1a1a2e] border border-white/[0.06] rounded-xl p-6">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">{job.title}</h1>
-              <p className="text-gray-500 mt-1">{job.client_name}</p>
+              <h1 className="text-2xl font-bold text-slate-100">{job.title}</h1>
+              <p className="text-slate-500 mt-1">{job.client_name}</p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <Badge variant={STATUS_VARIANT[job.status] ?? 'secondary'}>
-                {job.status.replace('_', ' ')}
-              </Badge>
-              <Badge variant={PRIORITY_VARIANT[job.priority] ?? 'secondary'}>
-                {job.priority}
-              </Badge>
+              <StatusBadge status={job.status.replace('_', ' ')} />
+              <StatusBadge status={job.priority} />
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-6 mt-6 pt-6 border-t border-gray-100 text-sm">
+          <div className="grid grid-cols-3 gap-6 mt-6 pt-6 border-t border-white/[0.06] text-sm">
             <div>
-              <p className="text-gray-400 text-xs uppercase tracking-wide mb-1">Salary</p>
-              <p className="font-medium text-gray-900">{fmtSalary(job.salary_min, job.salary_max)}</p>
+              <p className="text-slate-500 text-xs uppercase tracking-wide mb-1">Salary</p>
+              <p className="font-medium text-slate-100">{fmtSalary(job.salary_min, job.salary_max)}</p>
             </div>
             <div>
-              <p className="text-gray-400 text-xs uppercase tracking-wide mb-1">Target date</p>
-              <p className="font-medium text-gray-900">
+              <p className="text-slate-500 text-xs uppercase tracking-wide mb-1">Target date</p>
+              <p className="font-medium text-slate-100">
                 {job.target_date ? new Date(job.target_date).toLocaleDateString() : '—'}
               </p>
             </div>
             <div>
-              <p className="text-gray-400 text-xs uppercase tracking-wide mb-1">Openings</p>
-              <p className="font-medium text-gray-900">{job.openings}</p>
+              <p className="text-slate-500 text-xs uppercase tracking-wide mb-1">Openings</p>
+              <p className="font-medium text-slate-100">{job.openings}</p>
             </div>
           </div>
         </div>
@@ -542,13 +531,13 @@ export default function JobDetail() {
 
       {/* ── Pipeline / Kanban ── */}
       {job && (
-        <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <div className="bg-[#1a1a2e] border border-white/[0.06] rounded-xl p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-gray-700">Pipeline</h2>
+            <h2 className="text-sm font-semibold text-slate-300">Pipeline</h2>
             <button
               onClick={toggleViewMode}
               title={viewMode === 'list' ? 'Switch to Kanban view' : 'Switch to list view'}
-              className="p-1.5 rounded-md border border-input text-gray-500 hover:bg-gray-50 transition-colors"
+              className="p-1.5 rounded-md border border-input text-slate-400 hover:bg-white/[0.03] transition-colors"
             >
               {viewMode === 'list' ? <LayoutGrid className="h-4 w-4" /> : <List className="h-4 w-4" />}
             </button>
@@ -559,7 +548,7 @@ export default function JobDetail() {
           ) : (
             <>
               {job.stages.length === 0 ? (
-                <p className="text-sm text-gray-400">No pipeline stages defined.</p>
+                <p className="text-sm text-slate-500">No pipeline stages defined.</p>
               ) : (
                 <div className="space-y-2">
                   {job.stages.map(stage => {
@@ -571,19 +560,19 @@ export default function JobDetail() {
                         key={stage.id}
                         onClick={() => setStageFilter(active ? null : stage.id)}
                         className={`w-full flex items-center gap-3 group rounded-lg px-2 py-1.5 transition-colors ${
-                          active ? 'bg-blue-50' : 'hover:bg-gray-50'
+                          active ? 'bg-indigo-500/10' : 'hover:bg-white/[0.03]'
                         }`}
                       >
-                        <span className={`text-xs w-32 text-left truncate ${active ? 'text-blue-700 font-medium' : 'text-gray-500'}`}>
+                        <span className={`text-xs w-32 text-left truncate ${active ? 'text-indigo-400 font-medium' : 'text-slate-500'}`}>
                           {stage.name}
                         </span>
-                        <div className="flex-1 bg-gray-100 rounded-full h-5 overflow-hidden">
+                        <div className="flex-1 bg-white/[0.06] rounded-full h-5 overflow-hidden">
                           <div
-                            className={`h-full rounded-full transition-all ${active ? 'bg-blue-500' : 'bg-blue-300 group-hover:bg-blue-400'}`}
+                            className={`h-full rounded-full transition-all ${active ? 'bg-indigo-500' : 'bg-indigo-400/50 group-hover:bg-indigo-400/70'}`}
                             style={{ width: count === 0 ? '0%' : `${Math.max(pct, 3)}%` }}
                           />
                         </div>
-                        <span className={`text-xs w-8 text-right font-medium ${active ? 'text-blue-700' : 'text-gray-500'}`}>
+                        <span className={`text-xs w-8 text-right font-medium ${active ? 'text-indigo-400' : 'text-slate-500'}`}>
                           {count}
                         </span>
                       </button>
@@ -605,57 +594,57 @@ export default function JobDetail() {
       )}
 
       {/* ── Candidate List ── */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-gray-700">
+      <div className="bg-[#1a1a2e] border border-white/[0.06] rounded-xl overflow-hidden">
+        <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-slate-300">
             Candidates
             {stageFilter && job && (
-              <span className="ml-2 font-normal text-gray-400">
+              <span className="ml-2 font-normal text-slate-500">
                 · {job.stages.find(s => s.id === stageFilter)?.name}
               </span>
             )}
           </h2>
-          <span className="text-xs text-gray-400">{displayed.length} submittal{displayed.length !== 1 ? 's' : ''}</span>
+          <span className="text-xs text-slate-500">{displayed.length} submittal{displayed.length !== 1 ? 's' : ''}</span>
         </div>
 
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b border-gray-200">
+          <thead className="bg-white/[0.04] border-b border-white/[0.06]">
             <tr>
               <th className="px-3 py-3 w-8" />
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Candidate</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Fit</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Stage</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Last contacted</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Actions</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-400">Candidate</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-400">Fit</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-400">Stage</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-400">Last contacted</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-400">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-white/[0.04]">
             {(jobLoading || subsLoading) && (
-              <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-400">Loading…</td></tr>
+              <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-500">Loading…</td></tr>
             )}
             {!jobLoading && !subsLoading && displayed.length === 0 && (
-              <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-400">No candidates in this view</td></tr>
+              <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-500">No candidates in this view</td></tr>
             )}
             {displayed.map(s => (
-              <tr key={s.id} className={`transition-colors hover:bg-gray-50 ${s.is_shortlisted ? 'bg-amber-50/40' : ''}`}>
+              <tr key={s.id} className={`transition-colors hover:bg-white/[0.03] ${s.is_shortlisted ? 'bg-amber-500/5' : ''}`}>
                 <td className="px-3 py-3"><StarButton submittal={s} /></td>
                 <td className="px-4 py-3">
                   <Link
                     to={`/candidates/${s.candidate}`}
-                    className="font-medium text-gray-900 hover:text-blue-600 hover:underline"
+                    className="font-medium text-slate-100 hover:text-indigo-400 hover:underline"
                     onClick={e => e.stopPropagation()}
                   >
                     {s.candidate_name}
                   </Link>
                 </td>
                 <td className="px-4 py-3"><MatchBadge score={s.match_score} /></td>
-                <td className="px-4 py-3 text-gray-600">
+                <td className="px-4 py-3 text-slate-400">
                   {s.current_stage_name
-                    ? <span className="text-blue-700 font-medium">{s.current_stage_name}</span>
-                    : <span className="text-gray-400">Not started</span>
+                    ? <span className="text-indigo-400 font-medium">{s.current_stage_name}</span>
+                    : <span className="text-slate-500">Not started</span>
                   }
                 </td>
-                <td className="px-4 py-3 text-xs text-gray-400 whitespace-nowrap">
+                <td className="px-4 py-3 text-xs text-slate-500 whitespace-nowrap">
                   {fmtLastContacted(s.candidate_last_contacted_at)}
                 </td>
                 <td className="px-4 py-3">

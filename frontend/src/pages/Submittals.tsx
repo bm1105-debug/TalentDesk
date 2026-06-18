@@ -12,8 +12,8 @@ import api from '@/api/client'
 import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { StatusBadge } from '@/components/StatusBadge'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -44,15 +44,6 @@ interface PaginatedSubmittals {
 interface PipelineStage { id: number; name: string; order: number }
 interface CandidateOption { id: number; first_name: string; last_name: string }
 interface JobOption { id: number; title: string; client_name: string }
-
-// ── Badge helpers ──────────────────────────────────────────────────────────────
-
-const STATUS_VARIANT: Record<string, 'success' | 'default' | 'secondary' | 'destructive' | 'warning'> = {
-  active:    'success',
-  placed:    'default',
-  rejected:  'destructive',
-  withdrawn: 'secondary',
-}
 
 // ── Add Submittal Form ─────────────────────────────────────────────────────────
 
@@ -382,9 +373,9 @@ function RejectionEmailPrompt({ hint, onClose }: { hint: RejectionHint; onClose:
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center pb-8 pointer-events-none">
-      <div className="pointer-events-auto bg-white border border-gray-200 rounded-xl shadow-2xl p-5 max-w-sm w-full mx-4">
-        <p className="text-sm font-medium text-gray-900 mb-1">Send rejection email?</p>
-        <p className="text-xs text-gray-500 mb-4">
+      <div className="pointer-events-auto bg-[#1a1a2e] border border-white/[0.06] rounded-xl shadow-2xl p-5 max-w-sm w-full mx-4">
+        <p className="text-sm font-medium text-slate-100 mb-1">Send rejection email?</p>
+        <p className="text-xs text-slate-500 mb-4">
           To: <span className="font-medium">{hint.candidate_name}</span> ({hint.candidate_email})
         </p>
         <div className="flex justify-end gap-2">
@@ -552,7 +543,6 @@ export default function Submittals() {
 
       {/* ── Top bar ── */}
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-gray-900">Submittals</h1>
 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
@@ -570,7 +560,7 @@ export default function Submittals() {
       {/* ── Filters ── */}
       <div className="flex items-center gap-3">
         <select value={status} onChange={e => { setStatus(e.target.value); setPage(1) }}
-          className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
+          className="h-9 rounded-lg border border-white/[0.12] bg-[#1a1a2e] px-3 text-sm hover:border-white/[0.25] hover:bg-[#1e1e36] transition-colors">
           <option value="">All statuses</option>
           <option value="active">Active</option>
           <option value="placed">Placed</option>
@@ -583,7 +573,7 @@ export default function Submittals() {
           className={`flex items-center gap-1.5 h-9 px-3 rounded-md border text-sm transition-colors ${
             showShortlisted
               ? 'border-amber-400 bg-amber-50 text-amber-700 font-medium'
-              : 'border-input bg-transparent text-gray-600 hover:bg-gray-50'
+              : 'border-input bg-transparent text-slate-400 hover:bg-white/[0.03]'
           }`}
         >
           <Star className={`h-3.5 w-3.5 ${showShortlisted ? 'fill-amber-400 stroke-amber-400' : 'stroke-gray-400'}`} />
@@ -592,45 +582,44 @@ export default function Submittals() {
       </div>
 
       {/* ── Table ── */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.06] overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b border-gray-200">
+          <thead className="bg-white/[0.04] border-b border-white/[0.06]">
             <tr>
               <th className="px-3 py-3 w-8"></th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Candidate</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Job</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Stage</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Fit</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Status</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Submitted by</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Actions</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-400">Candidate</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-400">Job</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-400">Stage</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-400">Fit</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-400">Status</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-400">Submitted by</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-400">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-white/[0.04]">
             {isLoading && (
-              <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-400">Loading…</td></tr>
+              <tr><td colSpan={8} className="px-4 py-8 text-center text-slate-500">Loading…</td></tr>
             )}
             {!isLoading && data?.results.length === 0 && (
-              <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-400">No submittals found</td></tr>
+              <tr><td colSpan={8} className="px-4 py-8 text-center text-slate-500">No submittals found</td></tr>
             )}
             {data?.results.map(s => (
-              <tr key={s.id} className={`hover:bg-gray-50 transition-colors ${s.is_shortlisted ? 'bg-amber-50/50' : ''}`}>
+              <tr key={s.id} className={`hover:bg-white/[0.03] transition-colors ${s.is_shortlisted ? 'bg-amber-500/5' : ''}`}>
                 <td className="px-3 py-3"><StarButton submittal={s} /></td>
-                <td className="px-4 py-3 font-medium text-gray-900">{s.candidate_name}</td>
-                <td className="px-4 py-3 text-gray-600">{s.job_title}</td>
-                <td className="px-4 py-3 text-gray-600">
+                <td className="px-4 py-3 font-medium text-slate-100">{s.candidate_name}</td>
+                <td className="px-4 py-3 text-slate-400">{s.job_title}</td>
+                <td className="px-4 py-3 text-slate-400">
                   {s.current_stage_name
-                    ? <span className="text-blue-700 font-medium">{s.current_stage_name}</span>
-                    : <span className="text-gray-400">Not started</span>
+                    ? <span className="text-indigo-400 font-medium">{s.current_stage_name}</span>
+                    : <span className="text-slate-500">Not started</span>
                   }
                 </td>
                 <td className="px-4 py-3"><MatchBadge score={s.match_score} /></td>
                 <td className="px-4 py-3">
-                  <Badge variant={STATUS_VARIANT[s.status] ?? 'secondary'}>{s.status}</Badge>
+                  <StatusBadge status={s.status} />
                 </td>
-                <td className="px-4 py-3 text-gray-500 text-xs">{s.submitted_by}</td>
+                <td className="px-4 py-3 text-slate-500 text-xs">{s.submitted_by}</td>
                 <td className="px-4 py-3">
-                  {/* Only show actions for active submittals */}
                   {s.status === 'active' && (
                     <div className="flex items-center gap-1">
                       <AdvanceStageDialog submittal={s} onDone={() => {}} />
@@ -644,9 +633,8 @@ export default function Submittals() {
                       )}
                     </div>
                   )}
-                  {/* Managers can change status on non-active submittals too */}
                   {isManager && s.status !== 'active' && (
-                    <span className="text-xs text-gray-400">Closed</span>
+                    <span className="text-xs text-slate-500">Closed</span>
                   )}
                 </td>
               </tr>
@@ -657,7 +645,7 @@ export default function Submittals() {
 
       {/* ── Pagination ── */}
       {data && data.count > 10 && (
-        <div className="flex items-center justify-between text-sm text-gray-600">
+        <div className="flex items-center justify-between text-sm text-slate-400">
           <span>{data.count} submittals · page {page} of {totalPages}</span>
           <div className="flex gap-1">
             <Button variant="outline" size="sm" disabled={!data.previous} onClick={() => setPage(p => p - 1)}>

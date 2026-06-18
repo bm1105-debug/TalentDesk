@@ -14,8 +14,8 @@ import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { StatusBadge } from '@/components/StatusBadge'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -59,23 +59,6 @@ const schema = z.object({
 })
 
 type FormValues = z.infer<typeof schema>
-
-// ── Badge helpers ──────────────────────────────────────────────────────────────
-
-const STATUS_VARIANT: Record<string, 'success' | 'default' | 'secondary' | 'destructive' | 'warning'> = {
-  open:      'success',
-  draft:     'secondary',
-  on_hold:   'warning',
-  filled:    'default',
-  cancelled: 'destructive',
-}
-
-const PRIORITY_VARIANT: Record<string, 'destructive' | 'warning' | 'default' | 'secondary'> = {
-  urgent: 'destructive',
-  high:   'warning',
-  medium: 'default',
-  low:    'secondary',
-}
 
 // ── Add Job Form ───────────────────────────────────────────────────────────────
 
@@ -228,7 +211,7 @@ export default function Jobs() {
 
       {/* ── Top bar ── */}
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-gray-900">Jobs</h1>
+        <p className="text-sm text-slate-400">Track open positions and hiring progress</p>
 
         {/* Only show Add button for managers — recruiters are read-only */}
         {isManager && (
@@ -255,7 +238,7 @@ export default function Jobs() {
         </div>
 
         <select value={status} onChange={e => { setStatus(e.target.value); setPage(1) }}
-          className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
+          className="h-9 rounded-lg border border-white/[0.12] bg-[#1a1a2e] px-3 text-sm hover:border-white/[0.25] hover:bg-[#1e1e36] transition-colors">
           <option value="">All statuses</option>
           <option value="draft">Draft</option>
           <option value="open">Open</option>
@@ -265,7 +248,7 @@ export default function Jobs() {
         </select>
 
         <select value={priority} onChange={e => { setPriority(e.target.value); setPage(1) }}
-          className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
+          className="h-9 rounded-lg border border-white/[0.12] bg-[#1a1a2e] px-3 text-sm hover:border-white/[0.25] hover:bg-[#1e1e36] transition-colors">
           <option value="">All priorities</option>
           <option value="urgent">Urgent</option>
           <option value="high">High</option>
@@ -275,61 +258,59 @@ export default function Jobs() {
       </div>
 
       {/* ── Table ── */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.06] overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b border-gray-200">
+          <thead className="bg-white/[0.04] border-b border-white/[0.06]">
             <tr>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Title</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Client</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Status</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Priority</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Openings</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Target</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Assigned</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-400">Title</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-400">Client</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-400">Status</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-400">Priority</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-400">Openings</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-400">Target</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-400">Assigned</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-white/[0.04]">
             {isLoading && (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">Loading…</td></tr>
+              <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">Loading…</td></tr>
             )}
             {!isLoading && data?.results.length === 0 && (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400">No jobs found</td></tr>
+              <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">No jobs found</td></tr>
             )}
             {data?.results.map(j => (
-              <tr key={j.id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-4 py-3 font-medium text-gray-900">
-                  <Link to={`/jobs/${j.id}`} className="hover:text-blue-600 hover:underline">
+              <tr key={j.id} className="hover:bg-white/[0.03] transition-colors">
+                <td className="px-4 py-3 font-medium text-slate-100">
+                  <Link to={`/jobs/${j.id}`} className="hover:text-indigo-400 hover:underline">
                     {j.title}
                   </Link>
-                  {j.location && <span className="block text-xs text-gray-400 font-normal">{j.location}</span>}
+                  {j.location && <span className="block text-xs text-slate-500 font-normal">{j.location}</span>}
                 </td>
-                <td className="px-4 py-3 text-gray-600">{j.client_name}</td>
+                <td className="px-4 py-3 text-slate-400">{j.client_name}</td>
                 <td className="px-4 py-3">
-                  <Badge variant={STATUS_VARIANT[j.status] ?? 'secondary'}>
-                    {j.status.replace('_', ' ')}
-                  </Badge>
+                  <StatusBadge status={j.status.replace('_', ' ')} />
                 </td>
                 <td className="px-4 py-3">
-                  <Badge variant={PRIORITY_VARIANT[j.priority] ?? 'secondary'}>{j.priority}</Badge>
+                  <StatusBadge status={j.priority} />
                 </td>
-                <td className="px-4 py-3 text-gray-600">{j.openings}</td>
-                <td className="px-4 py-3 text-gray-600">
+                <td className="px-4 py-3 text-slate-400">{j.openings}</td>
+                <td className="px-4 py-3 text-slate-400">
                   {j.target_date
                     ? new Date(j.target_date).toLocaleDateString()
-                    : <span className="text-gray-400">—</span>
+                    : <span className="text-slate-500">—</span>
                   }
                 </td>
-                <td className="px-4 py-3 text-gray-600">
+                <td className="px-4 py-3 text-slate-400">
                   {j.assigned_to_names.length > 0
                     ? (
                       <div className="flex items-center gap-1">
-                        <Users className="h-3.5 w-3.5 text-gray-400" />
+                        <Users className="h-3.5 w-3.5 text-slate-500" />
                         <span className="text-xs">{j.assigned_to_names.slice(0, 2).join(', ')}
                           {j.assigned_to_names.length > 2 && ` +${j.assigned_to_names.length - 2}`}
                         </span>
                       </div>
                     )
-                    : <span className="text-gray-400 text-xs">Unassigned</span>
+                    : <span className="text-slate-500 text-xs">Unassigned</span>
                   }
                 </td>
               </tr>
@@ -340,7 +321,7 @@ export default function Jobs() {
 
       {/* ── Pagination ── */}
       {data && data.count > 10 && (
-        <div className="flex items-center justify-between text-sm text-gray-600">
+        <div className="flex items-center justify-between text-sm text-slate-400">
           <span>{data.count} jobs · page {page} of {totalPages}</span>
           <div className="flex gap-1">
             <Button variant="outline" size="sm" disabled={!data.previous} onClick={() => setPage(p => p - 1)}>

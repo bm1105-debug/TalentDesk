@@ -9,7 +9,6 @@ import api from '@/api/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -60,9 +59,9 @@ function SendEmailDialog({ template }: { template: EmailTemplate }) {
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogTrigger asChild>
-        <Button size="sm" variant="outline" className="gap-1.5">
+        <button className="flex items-center gap-1.5 border border-white/[0.15] bg-white/[0.05] text-slate-200 hover:bg-white/[0.1] hover:border-white/[0.25] rounded-lg text-sm px-3 py-1.5 transition-colors shrink-0">
           <Send className="h-3.5 w-3.5" /> Use Template
-        </Button>
+        </button>
       </DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader>
@@ -92,8 +91,8 @@ function SendEmailDialog({ template }: { template: EmailTemplate }) {
             </div>
 
             {variables.length > 0 && (
-              <div className="space-y-2 border rounded-lg p-3 bg-gray-50">
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+              <div className="space-y-2 border border-white/[0.06] rounded-lg p-3 bg-white/[0.02]">
+                <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">
                   Template variables
                 </p>
                 {variables.map(v => (
@@ -111,7 +110,7 @@ function SendEmailDialog({ template }: { template: EmailTemplate }) {
             )}
 
             {/* Preview of what the subject will render to */}
-            <div className="text-xs text-gray-400 bg-gray-50 rounded px-3 py-2">
+            <div className="text-xs text-slate-500 bg-white/[0.02] rounded px-3 py-2">
               <span className="font-medium">Subject template: </span>{template.subject}
             </div>
 
@@ -144,14 +143,11 @@ export default function Communications() {
   return (
     <div className="space-y-4">
 
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-gray-900">Communications</h1>
-      </div>
 
-      {isLoading && <p className="text-sm text-gray-400">Loading templates…</p>}
+      {isLoading && <p className="text-sm text-slate-500">Loading templates…</p>}
 
       {!isLoading && data?.results.length === 0 && (
-        <div className="text-center py-16 text-gray-400">
+        <div className="text-center py-16 text-slate-500">
           <Mail className="h-10 w-10 mx-auto mb-3 opacity-30" />
           <p className="text-sm">No email templates yet.</p>
           <p className="text-xs mt-1">Ask an Account Manager to create templates.</p>
@@ -160,30 +156,28 @@ export default function Communications() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {data?.results.map(t => (
-          <Card key={t.id}>
-            <CardHeader className="pb-2">
+          <div key={t.id} className="rounded-xl border border-white/[0.07] bg-[#1a1a2e] flex flex-col">
+            <div className="px-4 pt-4 pb-3">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-indigo-400 mb-1">
+                {t.template_type.replace(/_/g, ' ')}
+              </p>
               <div className="flex items-start justify-between gap-2">
-                <div>
-                  <CardTitle className="text-sm font-semibold">{t.name}</CardTitle>
-                  <p className="text-xs text-gray-400 mt-0.5 capitalize">
-                    {t.template_type.replace('_', ' ')}
-                  </p>
-                </div>
+                <p className="text-sm font-semibold text-slate-100">{t.name}</p>
                 <SendEmailDialog template={t} />
               </div>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <p className="text-xs text-gray-500">
-                <span className="font-medium">Subject:</span> {t.subject}
+            </div>
+            <div className="px-4 pb-4 space-y-1.5 flex-1">
+              <p className="text-xs text-slate-400">
+                <span className="font-medium text-slate-300">Subject:</span> {t.subject}
               </p>
               {t.available_variables && (
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-slate-400">
                   Variables: {t.available_variables}
                 </p>
               )}
-              <p className="text-xs text-gray-300">Created by {t.created_by}</p>
-            </CardContent>
-          </Card>
+              <p className="text-xs text-slate-600">Created by {t.created_by}</p>
+            </div>
+          </div>
         ))}
       </div>
     </div>

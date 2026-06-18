@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { BarChart2 } from 'lucide-react'
 import api from '@/api/client'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -41,12 +42,12 @@ function StageBar({ name, count, max }: { name: string; count: number; max: numb
   return (
     <div className="space-y-1">
       <div className="flex justify-between text-sm">
-        <span className="text-gray-700 font-medium">{name}</span>
-        <span className="text-gray-500">{count}</span>
+        <span className="text-slate-300 font-medium">{name}</span>
+        <span className="text-slate-500">{count}</span>
       </div>
-      <div className="h-2.5 w-full bg-gray-100 rounded-full overflow-hidden">
+      <div className="h-2.5 w-full bg-white/[0.06] rounded-full overflow-hidden">
         <div
-          className="h-full bg-blue-500 rounded-full transition-all duration-500"
+          className="h-full bg-indigo-500 rounded-full transition-all duration-500"
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -74,13 +75,13 @@ export default function Reports() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold text-gray-900">Reports</h1>
+      <p className="text-sm text-slate-400">View pipeline metrics by job</p>
 
       {/* ── Job selector ── */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-3">
-        <label className="text-sm font-medium text-gray-700 shrink-0">Select job</label>
+      <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.06] p-4 flex items-center gap-3">
+        <label className="text-sm font-medium text-slate-300 shrink-0">Select job</label>
         <select
-          className="flex-1 h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm"
+          className="flex-1 h-9 rounded-lg border border-white/[0.12] bg-[#1a1a2e] px-3 text-sm hover:border-white/[0.25] hover:bg-[#1e1e36] transition-colors"
           value={selectedJobId ?? ''}
           onChange={e => setSelectedJobId(e.target.value ? Number(e.target.value) : null)}
         >
@@ -95,14 +96,16 @@ export default function Reports() {
 
       {/* ── Empty state ── */}
       {!selectedJobId && (
-        <div className="bg-white rounded-xl border border-gray-200 py-16 text-center text-gray-400 text-sm">
-          Select a job above to see its pipeline report.
+        <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.07] min-h-[280px] flex flex-col items-center justify-center gap-3">
+          <BarChart2 className="h-6 w-6 text-slate-600" />
+          <p className="text-base font-medium text-slate-300">No report selected</p>
+          <p className="text-sm text-slate-500">Choose a job from the dropdown above to view its hiring pipeline.</p>
         </div>
       )}
 
       {/* ── Loading ── */}
       {selectedJobId && reportLoading && (
-        <div className="bg-white rounded-xl border border-gray-200 py-16 text-center text-gray-400 text-sm">
+        <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.06] py-16 text-center text-slate-500 text-sm">
           Loading…
         </div>
       )}
@@ -113,21 +116,21 @@ export default function Reports() {
 
           {/* Outcome summary */}
           <div className="grid grid-cols-4 gap-4">
-            <OutcomeCard label="Active"    count={report.outcomes.active}    color="bg-blue-50 border-blue-200 text-blue-800" />
-            <OutcomeCard label="Placed"    count={report.outcomes.placed}    color="bg-green-50 border-green-200 text-green-800" />
-            <OutcomeCard label="Rejected"  count={report.outcomes.rejected}  color="bg-red-50 border-red-200 text-red-800" />
-            <OutcomeCard label="Withdrawn" count={report.outcomes.withdrawn} color="bg-gray-50 border-gray-200 text-gray-700" />
+            <OutcomeCard label="Active"    count={report.outcomes.active}    color="bg-indigo-500/10 border-indigo-500/20 text-indigo-300" />
+            <OutcomeCard label="Placed"    count={report.outcomes.placed}    color="bg-green-500/10 border-green-500/20 text-green-300" />
+            <OutcomeCard label="Rejected"  count={report.outcomes.rejected}  color="bg-red-500/10 border-red-500/20 text-red-300" />
+            <OutcomeCard label="Withdrawn" count={report.outcomes.withdrawn} color="bg-white/[0.04] border-white/[0.06] text-slate-300" />
           </div>
 
           {/* Pipeline stage breakdown */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+          <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.06] p-6 space-y-4">
             <div className="flex items-baseline justify-between">
-              <h2 className="font-semibold text-gray-900">Pipeline breakdown</h2>
-              <span className="text-sm text-gray-400">{report.total} total candidates</span>
+              <h2 className="font-semibold text-slate-100">Pipeline breakdown</h2>
+              <span className="text-sm text-slate-500">{report.total} total candidates</span>
             </div>
 
             {report.stages.length === 0 ? (
-              <p className="text-sm text-gray-400">No pipeline stages defined for this job.</p>
+              <p className="text-sm text-slate-500">No pipeline stages defined for this job.</p>
             ) : (
               <div className="space-y-3">
                 {report.stages.map(s => (

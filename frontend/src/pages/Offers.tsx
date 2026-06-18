@@ -6,11 +6,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { ChevronLeft, ChevronRight, CheckCircle, XCircle, MinusCircle } from 'lucide-react'
+import { ChevronLeft, ChevronRight, CheckCircle, XCircle, MinusCircle, FileText } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import api from '@/api/client'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Label } from '@/components/ui/label'
+import { StatusBadge } from '@/components/StatusBadge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -34,14 +35,7 @@ interface Offer {
 
 interface Paginated<T> { count: number; next: string | null; previous: string | null; results: T[] }
 
-// ── Status helpers ─────────────────────────────────────────────────────────────
-
-const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'destructive' | 'secondary'> = {
-  pending:   'warning',
-  accepted:  'success',
-  declined:  'destructive',
-  withdrawn: 'secondary',
-}
+// ── Helpers ────────────────────────────────────────────────────────────────────
 
 function fmt(dateStr: string | null) {
   if (!dateStr) return '—'
@@ -156,8 +150,9 @@ export default function Offers() {
 
       {/* ── Top bar ── */}
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-gray-900">Offers</h1>
-        <p className="text-sm text-gray-400">Create offers from the Submittals page</p>
+        <Link to="/submittals" className="text-sm text-indigo-400 underline-offset-2 hover:underline">
+          Create offers from the Submittals page
+        </Link>
       </div>
 
       {/* ── Filter ── */}
@@ -165,7 +160,7 @@ export default function Offers() {
         <select
           value={statusFilter}
           onChange={e => { setStatusFilter(e.target.value); setPage(1) }}
-          className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm"
+          className="h-9 rounded-lg border border-white/[0.12] bg-[#1a1a2e] px-3 text-sm hover:border-white/[0.25] hover:bg-[#1e1e36] transition-colors"
         >
           <option value="">All statuses</option>
           <option value="pending">Pending</option>
@@ -176,42 +171,52 @@ export default function Offers() {
       </div>
 
       {/* ── Table ── */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.06] overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b border-gray-200">
+          <thead className="bg-white/[0.04] border-b border-white/[0.06]">
             <tr>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Candidate</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Job · Client</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Salary</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Offer Date</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Expiry</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Start Date</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Status</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Actions</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-400">Candidate</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-400">Job · Client</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-400">Salary</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-400">Offer Date</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-400">Expiry</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-400">Start Date</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-400">Status</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-400">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-white/[0.04]">
             {isLoading && (
-              <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-400">Loading…</td></tr>
+              <tr><td colSpan={8} className="px-4 py-8 text-center text-slate-500">Loading…</td></tr>
             )}
             {!isLoading && data?.results.length === 0 && (
-              <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-400">No offers found</td></tr>
+              <tr>
+                <td colSpan={8} className="py-16">
+                  <div className="flex flex-col items-center gap-2">
+                    <FileText className="h-6 w-6 text-slate-600" />
+                    <p className="text-sm font-medium text-slate-300">No offers yet</p>
+                    <p className="text-xs text-slate-500 text-center max-w-xs">
+                      Offers are created from the Submittals page once a candidate reaches offer stage.
+                    </p>
+                  </div>
+                </td>
+              </tr>
             )}
             {data?.results.map(o => (
-              <tr key={o.id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-4 py-3 font-medium text-gray-900">{o.candidate_name}</td>
-                <td className="px-4 py-3 text-gray-600">
+              <tr key={o.id} className="hover:bg-white/[0.03] transition-colors">
+                <td className="px-4 py-3 font-medium text-slate-100">{o.candidate_name}</td>
+                <td className="px-4 py-3 text-slate-400">
                   <span className="font-medium">{o.job_title}</span>
-                  <span className="text-gray-400"> · {o.client_name}</span>
+                  <span className="text-slate-500"> · {o.client_name}</span>
                 </td>
-                <td className="px-4 py-3 text-gray-900 font-medium">
+                <td className="px-4 py-3 text-slate-100 font-medium">
                   {fmtSalary(o.salary, o.currency)}
                 </td>
-                <td className="px-4 py-3 text-gray-600">{fmt(o.offer_date)}</td>
-                <td className="px-4 py-3 text-gray-500">{fmt(o.expiry_date)}</td>
-                <td className="px-4 py-3 text-gray-500">{fmt(o.start_date)}</td>
+                <td className="px-4 py-3 text-slate-400">{fmt(o.offer_date)}</td>
+                <td className="px-4 py-3 text-slate-500">{fmt(o.expiry_date)}</td>
+                <td className="px-4 py-3 text-slate-500">{fmt(o.start_date)}</td>
                 <td className="px-4 py-3">
-                  <Badge variant={STATUS_VARIANT[o.status] ?? 'secondary'}>{o.status}</Badge>
+                  <StatusBadge status={o.status} />
                 </td>
                 <td className="px-4 py-3">
                   {o.status === 'pending' && (
@@ -230,14 +235,14 @@ export default function Offers() {
                       </button>
                       <button
                         onClick={() => setActionState({ offer: o, action: 'withdraw' })}
-                        className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 font-medium px-1.5 py-1 rounded hover:bg-gray-100"
+                        className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-200 font-medium px-1.5 py-1 rounded hover:bg-white/[0.05]"
                       >
                         <MinusCircle className="h-3.5 w-3.5" /> Withdraw
                       </button>
                     </div>
                   )}
                   {o.status !== 'pending' && (
-                    <span className="text-xs text-gray-400 capitalize">{o.status}</span>
+                    <span className="text-xs text-slate-500 capitalize">{o.status}</span>
                   )}
                 </td>
               </tr>
@@ -248,7 +253,7 @@ export default function Offers() {
 
       {/* ── Pagination ── */}
       {data && data.count > 10 && (
-        <div className="flex items-center justify-between text-sm text-gray-600">
+        <div className="flex items-center justify-between text-sm text-slate-400">
           <span>{data.count} offers · page {page} of {totalPages}</span>
           <div className="flex gap-1">
             <Button variant="outline" size="sm" disabled={!data.previous} onClick={() => setPage(p => p - 1)}>

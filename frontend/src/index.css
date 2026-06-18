@@ -1,36 +1,159 @@
 @import "tailwindcss";
 
-/* Shadcn/ui CSS variable theme — maps semantic names to actual colours */
+/* ── Midnight Indigo raw design tokens (consumed via style={{}} in JS) ─── */
+:root {
+  --td-bg:             #0f0f1a;
+  --td-surface:        #1a1a2e;
+  --td-sidebar:        #12121f;
+  --td-header:         #12121f;
+  --td-border:         rgba(255, 255, 255, 0.06);
+  --td-border-subtle:  rgba(255, 255, 255, 0.05);
+  --td-primary:        #6366f1;
+  --td-primary-hover:  #4f46e5;
+  --td-secondary:      #8b5cf6;
+  --td-highlight:      #06b6d4;
+  --td-text:           #f1f5f9;
+  --td-text-secondary: #94a3b8;
+  --td-text-muted:     #475569;
+}
+
+/* ── Shadcn/ui semantic tokens remapped to Midnight Indigo ─────────────── */
+/* Values are HSL channels only — consumed as hsl(var(--token))            */
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221 83% 37%;        /* brand blue #1a56a0 */
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221 83% 37%;
-    --radius: 0.5rem;
+    --background:           240 27% 8%;    /* #0f0f1a */
+    --foreground:           213 40% 96%;   /* #f1f5f9 */
+    --card:                 240 28% 14%;   /* #1a1a2e */
+    --card-foreground:      213 40% 96%;   /* #f1f5f9 */
+    --popover:              240 27% 10%;   /* #12121f */
+    --popover-foreground:   213 40% 96%;   /* #f1f5f9 */
+    --primary:              238 84% 67%;   /* #6366f1 */
+    --primary-foreground:   0 0% 100%;
+    --secondary:            240 20% 20%;
+    --secondary-foreground: 215 20% 65%;   /* #94a3b8 */
+    --muted:                240 22% 18%;
+    --muted-foreground:     215 20% 65%;   /* #94a3b8 */
+    --accent:               258 89% 66%;   /* #8b5cf6 */
+    --accent-foreground:    0 0% 100%;
+    --destructive:          0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+    --border:               240 15% 20%;
+    --input:                240 15% 20%;
+    --ring:                 238 84% 67%;   /* #6366f1 */
+    --radius:               0.5rem;
   }
 }
 
 @layer base {
   * { box-sizing: border-box; }
   body {
-    background-color: hsl(var(--background));
-    color: hsl(var(--foreground));
+    background-color: var(--td-bg);
+    color: var(--td-text);
     font-family: system-ui, -apple-system, sans-serif;
+    transition: background 0.3s ease, color 0.3s ease;
   }
 }
+
+/* ── Glassmorphism KPI card — spring hover with custom cubic-bezier ─────── */
+.glass-card {
+  transition: all 0.18s ease-out;
+}
+.glass-card:hover {
+  transform: translateY(-2px);
+}
+
+/* ── Dashboard panel cards ───────────────────────────────────────────────── */
+.panel-card {
+  background:      rgba(26, 26, 46, 0.8);
+  backdrop-filter: blur(20px);
+  border:          1px solid rgba(255, 255, 255, 0.07);
+  border-radius:   20px;
+  box-shadow:      0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+/* Priority / overdue / late badges */
+.priority-badge {
+  display:        inline-flex;
+  align-items:    center;
+  border-radius:  999px;
+  font-size:      9px;
+  font-weight:    600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding:        2px 8px;
+}
+.priority-urgent { background: rgba(239,68,68,0.15);  color: #fca5a5; border: 1px solid rgba(239,68,68,0.25);  }
+.priority-high   { background: rgba(249,115,22,0.15); color: #fdba74; border: 1px solid rgba(249,115,22,0.25); }
+.priority-medium { background: rgba(99,102,241,0.15); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.25); }
+.priority-low    { background: rgba(148,163,184,0.12); color: #94a3b8; border: 1px solid rgba(148,163,184,0.2); }
+
+/* ── Frosted glass header — search trigger hover ────────────────────────── */
+.header-search {
+  background:    rgba(255, 255, 255, 0.06);
+  border:        1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color:         rgba(255, 255, 255, 0.4);
+  transition:    border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.header-search:hover {
+  border-color: rgba(99, 102, 241, 0.5);
+  box-shadow:   0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+/* ── Greeting hero — glassmorphic status pills ──────────────────────────── */
+.status-pill {
+  display:         inline-flex;
+  align-items:     center;
+  background:      rgba(255, 255, 255, 0.06);
+  border:          1px solid rgba(255, 255, 255, 0.12);
+  color:           rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(8px);
+  border-radius:   999px;
+  padding:         5px 14px;
+  font-size:       12px;
+  font-weight:     500;
+  transition:      border-color 0.15s ease, background 0.15s ease;
+  white-space:     nowrap;
+}
+.status-pill:hover {
+  border-color: rgba(99, 102, 241, 0.5);
+  background:   rgba(99, 102, 241, 0.15);
+}
+
+/* ── Sidebar nav links ───────────────────────────────────────────────────── */
+.nav-link {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 13px;
+  font-weight: 500;
+  border-left: 3px solid transparent;
+}
+.nav-link:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: white;
+  border-radius: 8px;
+}
+.nav-link.active {
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.3), rgba(99, 102, 241, 0.1));
+  border-left: 3px solid #6366f1;
+  color: #a5b4fc;
+  font-weight: 600;
+}
+
+/* ── Scrollbar ───────────────────────────────────────────────────────────── */
+::-webkit-scrollbar             { width: 4px; height: 4px }
+::-webkit-scrollbar-track       { background: transparent }
+::-webkit-scrollbar-thumb       { background: rgba(99,102,241,0.3); border-radius: 4px }
+::-webkit-scrollbar-thumb:hover { background: rgba(99,102,241,0.6) }
+
+/* ── Interactive polish ──────────────────────────────────────────────────── */
+button, a, [role="button"] { cursor: pointer }
+button, a {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+button:focus-visible, a:focus-visible {
+  outline:        2px solid rgba(99,102,241,0.6);
+  outline-offset: 2px;
+}
+
+/* ── Tabular numeric figures ─────────────────────────────────────────────── */
+.stat-num { font-variant-numeric: tabular-nums }

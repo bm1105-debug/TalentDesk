@@ -5,6 +5,7 @@ import { ArrowLeft, Upload, Download, Trash2, FileText, Loader2, FileDown } from
 import api from '@/api/client'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { StatusBadge } from '@/components/StatusBadge'
 import { useAuth } from '@/context/AuthContext'
 import InitialsAvatar from '@/components/InitialsAvatar'
 
@@ -42,13 +43,6 @@ interface Attachment {
 interface PaginatedAttachments {
   results: Attachment[]
   count: number
-}
-
-const STATUS_VARIANTS: Record<string, 'success' | 'default' | 'secondary' | 'destructive'> = {
-  active:      'success',
-  passive:     'default',
-  placed:      'secondary',
-  blacklisted: 'destructive',
 }
 
 function formatBytes(bytes: number) {
@@ -123,7 +117,7 @@ function AttachmentsTab({ candidateId }: { candidateId: number }) {
           className="hidden"
           onChange={handleUpload}
         />
-        <span className="text-xs text-gray-400">PDF, DOCX, TXT, images</span>
+        <span className="text-xs text-slate-500">PDF, DOCX, TXT, images</span>
       </div>
 
       {uploadError && (
@@ -131,10 +125,10 @@ function AttachmentsTab({ candidateId }: { candidateId: number }) {
       )}
 
       {/* List */}
-      {isLoading && <p className="text-sm text-gray-400">Loading…</p>}
+      {isLoading && <p className="text-sm text-slate-500">Loading…</p>}
 
       {!isLoading && data?.results.length === 0 && (
-        <div className="text-center py-10 text-gray-400 text-sm border border-dashed border-gray-200 rounded-xl">
+        <div className="text-center py-10 text-slate-500 text-sm border border-dashed border-white/[0.06] rounded-xl">
           No files uploaded yet
         </div>
       )}
@@ -142,12 +136,12 @@ function AttachmentsTab({ candidateId }: { candidateId: number }) {
       <div className="space-y-2">
         {data?.results.map(att => (
           <div key={att.id}
-            className="flex items-center justify-between px-4 py-3 bg-white border border-gray-200 rounded-lg">
+            className="flex items-center justify-between px-4 py-3 bg-[#1a1a2e] border border-white/[0.06] rounded-lg">
             <div className="flex items-center gap-3 min-w-0">
-              <FileText className="h-5 w-5 text-gray-400 shrink-0" />
+              <FileText className="h-5 w-5 text-slate-500 shrink-0" />
               <div className="min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">{att.original_name}</p>
-                <p className="text-xs text-gray-400">
+                <p className="text-sm font-medium text-slate-100 truncate">{att.original_name}</p>
+                <p className="text-xs text-slate-500">
                   {formatBytes(att.file_size)} · {att.uploaded_by_name} · {new Date(att.created_at).toLocaleDateString()}
                 </p>
               </div>
@@ -206,7 +200,7 @@ export default function CandidateDetail() {
   }
 
   if (isLoading) {
-    return <div className="text-sm text-gray-400 py-10 text-center">Loading…</div>
+    return <div className="text-sm text-slate-500 py-10 text-center">Loading…</div>
   }
 
   if (isError || !candidate) {
@@ -224,12 +218,12 @@ export default function CandidateDetail() {
         <InitialsAvatar id={candidate.id} firstName={candidate.first_name} lastName={candidate.last_name} size="lg" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-xl font-semibold text-gray-900">
+            <h1 className="text-xl font-semibold text-slate-100">
               {candidate.first_name} {candidate.last_name}
             </h1>
-            <Badge variant={STATUS_VARIANTS[candidate.status] ?? 'secondary'}>{candidate.status}</Badge>
+            <StatusBadge status={candidate.status} />
           </div>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <p className="text-sm text-slate-500 mt-0.5">
             {candidate.current_title || 'No title'}
             {candidate.current_company && ` · ${candidate.current_company}`}
           </p>
@@ -255,7 +249,7 @@ export default function CandidateDetail() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-white/[0.06]">
         <div className="flex gap-6">
           {(['overview', 'attachments'] as const).map(t => (
             <button
@@ -264,7 +258,7 @@ export default function CandidateDetail() {
               className={`pb-2 text-sm font-medium capitalize border-b-2 transition-colors ${
                 tab === t
                   ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                  : 'border-transparent text-slate-500 hover:text-slate-300'
               }`}
             >
               {t}
@@ -278,26 +272,26 @@ export default function CandidateDetail() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
           {/* Contact */}
-          <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
-            <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Contact</h2>
+          <div className="bg-[#1a1a2e] border border-white/[0.06] rounded-xl p-5 space-y-3">
+            <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">Contact</h2>
             <dl className="space-y-2 text-sm">
               <div className="flex gap-2">
-                <dt className="text-gray-400 w-20 shrink-0">Email</dt>
-                <dd className="text-gray-900 break-all">{candidate.email}</dd>
+                <dt className="text-slate-500 w-20 shrink-0">Email</dt>
+                <dd className="text-slate-100 break-all">{candidate.email}</dd>
               </div>
               <div className="flex gap-2">
-                <dt className="text-gray-400 w-20 shrink-0">Phone</dt>
-                <dd className="text-gray-900">{candidate.phone}</dd>
+                <dt className="text-slate-500 w-20 shrink-0">Phone</dt>
+                <dd className="text-slate-100">{candidate.phone}</dd>
               </div>
               {candidate.location && (
                 <div className="flex gap-2">
-                  <dt className="text-gray-400 w-20 shrink-0">Location</dt>
-                  <dd className="text-gray-900">{candidate.location}</dd>
+                  <dt className="text-slate-500 w-20 shrink-0">Location</dt>
+                  <dd className="text-slate-100">{candidate.location}</dd>
                 </div>
               )}
               {candidate.linkedin_url && (
                 <div className="flex gap-2">
-                  <dt className="text-gray-400 w-20 shrink-0">LinkedIn</dt>
+                  <dt className="text-slate-500 w-20 shrink-0">LinkedIn</dt>
                   <dd>
                     <a href={candidate.linkedin_url} target="_blank" rel="noreferrer"
                       className="text-blue-600 hover:underline break-all">
@@ -310,21 +304,21 @@ export default function CandidateDetail() {
           </div>
 
           {/* Meta */}
-          <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
-            <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Details</h2>
+          <div className="bg-[#1a1a2e] border border-white/[0.06] rounded-xl p-5 space-y-3">
+            <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">Details</h2>
             <dl className="space-y-2 text-sm">
               <div className="flex gap-2">
-                <dt className="text-gray-400 w-20 shrink-0">Source</dt>
-                <dd className="text-gray-900 capitalize">{candidate.source.replace('_', ' ')}</dd>
+                <dt className="text-slate-500 w-20 shrink-0">Source</dt>
+                <dd className="text-slate-100 capitalize">{candidate.source.replace('_', ' ')}</dd>
               </div>
               <div className="flex gap-2">
-                <dt className="text-gray-400 w-20 shrink-0">Added</dt>
-                <dd className="text-gray-900">{new Date(candidate.created_at).toLocaleDateString()}</dd>
+                <dt className="text-slate-500 w-20 shrink-0">Added</dt>
+                <dd className="text-slate-100">{new Date(candidate.created_at).toLocaleDateString()}</dd>
               </div>
               {candidate.years_of_experience != null && (
                 <div className="flex gap-2">
-                  <dt className="text-gray-400 w-20 shrink-0">Experience</dt>
-                  <dd className="text-gray-900">{candidate.years_of_experience} yr{candidate.years_of_experience !== 1 ? 's' : ''}</dd>
+                  <dt className="text-slate-500 w-20 shrink-0">Experience</dt>
+                  <dd className="text-slate-100">{candidate.years_of_experience} yr{candidate.years_of_experience !== 1 ? 's' : ''}</dd>
                 </div>
               )}
             </dl>
@@ -332,8 +326,8 @@ export default function CandidateDetail() {
 
           {/* Skills */}
           {candidate.skills.length > 0 && (
-            <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3 md:col-span-2">
-              <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Skills</h2>
+            <div className="bg-[#1a1a2e] border border-white/[0.06] rounded-xl p-5 space-y-3 md:col-span-2">
+              <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">Skills</h2>
               <div className="flex flex-wrap gap-2">
                 {candidate.skills.map(s => (
                   <Badge key={s.id} variant="secondary">{s.name}</Badge>
@@ -344,9 +338,9 @@ export default function CandidateDetail() {
 
           {/* Notes */}
           {candidate.notes && (
-            <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3 md:col-span-2">
-              <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Notes</h2>
-              <p className="text-sm text-gray-700 whitespace-pre-wrap">{candidate.notes}</p>
+            <div className="bg-[#1a1a2e] border border-white/[0.06] rounded-xl p-5 space-y-3 md:col-span-2">
+              <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">Notes</h2>
+              <p className="text-sm text-slate-300 whitespace-pre-wrap">{candidate.notes}</p>
             </div>
           )}
         </div>

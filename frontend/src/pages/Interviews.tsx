@@ -8,8 +8,8 @@ import api from '@/api/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { StatusBadge } from '@/components/StatusBadge'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -38,18 +38,11 @@ interface SubmittalOption {
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-const STATUS_VARIANT: Record<string, 'default' | 'success' | 'secondary' | 'destructive' | 'warning'> = {
-  scheduled:  'default',
-  completed:  'success',
-  cancelled:  'secondary',
-  no_show:    'destructive',
-}
-
-const STATUS_CHIP: Record<string, string> = {
-  scheduled: 'bg-blue-100 text-blue-800',
-  completed: 'bg-green-100 text-green-800',
-  cancelled: 'bg-gray-100 text-gray-600',
-  no_show:   'bg-red-100 text-red-700',
+const CALENDAR_CHIP: Record<string, string> = {
+  scheduled: 'bg-indigo-500/15 text-indigo-300',
+  completed: 'bg-emerald-500/15 text-emerald-300',
+  cancelled: 'bg-slate-500/15 text-slate-400',
+  no_show:   'bg-orange-500/15 text-orange-300',
 }
 
 const TYPE_LABEL: Record<string, string> = {
@@ -64,6 +57,26 @@ const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
 
 function fmtDateTime(iso: string) {
   return new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+}
+
+function fmtDateShort(iso: string) {
+  const d = new Date(iso)
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1)
+  const day = new Date(d); day.setHours(0, 0, 0, 0)
+  if (day.getTime() === today.getTime()) return 'Today'
+  if (day.getTime() === tomorrow.getTime()) return 'Tomorrow'
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+}
+
+function groupLabel(dateStr: string) {
+  const d = new Date(dateStr + 'T00:00:00')
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1)
+  const long = d.toLocaleDateString(undefined, { month: 'long', day: 'numeric' })
+  if (d.getTime() === today.getTime()) return `Today — ${long}`
+  if (d.getTime() === tomorrow.getTime()) return `Tomorrow — ${long}`
+  return long
 }
 
 function fmtTime(iso: string) {
@@ -236,7 +249,7 @@ function ScoreDialog({ interview }: { interview: Interview }) {
       <button
         onClick={() => setOpen(true)}
         title={interview.score != null ? 'Edit score' : 'Add score'}
-        className="flex items-center gap-1 text-xs px-2 py-1 rounded-md border border-gray-200 hover:bg-gray-50 transition-colors"
+        className="flex items-center gap-1 text-xs px-2 py-1 rounded-md border border-white/[0.06] hover:bg-white/[0.03] transition-colors"
       >
         <Star className="h-3 w-3 text-amber-400" />
         {interview.score != null ? (
@@ -318,11 +331,11 @@ function CalendarView({ year, month }: { year: number; month: number }) {
   const today = isoDate(new Date())
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+    <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.06] overflow-hidden">
       {/* Day headers */}
-      <div className="grid grid-cols-7 border-b border-gray-100">
+      <div className="grid grid-cols-7 border-b border-white/[0.06] bg-white/[0.04]">
         {DAY_NAMES.map(d => (
-          <div key={d} className="py-2 text-center text-xs font-medium text-gray-400 uppercase tracking-wide">
+          <div key={d} className="py-2 text-center text-xs font-medium text-slate-500 uppercase tracking-wide">
             {d}
           </div>
         ))}
@@ -330,7 +343,7 @@ function CalendarView({ year, month }: { year: number; month: number }) {
 
       {/* Day cells */}
       {isLoading ? (
-        <div className="py-20 text-center text-sm text-gray-400">Loading…</div>
+        <div className="py-20 text-center text-sm text-slate-500">Loading…</div>
       ) : (
         <div className="grid grid-cols-7">
           {cells.map((date, idx) => {
@@ -341,16 +354,16 @@ function CalendarView({ year, month }: { year: number; month: number }) {
             return (
               <div
                 key={key}
-                className={`min-h-[100px] border-b border-r border-gray-100 p-1.5 ${
-                  !date ? 'bg-gray-50' : ''
+                className={`min-h-[100px] border-b border-r border-white/[0.04] p-1.5 ${
+                  !date ? 'bg-white/[0.02]' : ''
                 }`}
               >
                 {date && (
                   <>
                     <span className={`inline-flex items-center justify-center w-6 h-6 text-xs font-medium rounded-full mb-1 ${
                       isToday
-                        ? 'bg-blue-600 text-white'
-                        : 'text-gray-600'
+                        ? 'bg-indigo-600 text-white'
+                        : 'text-slate-400'
                     }`}>
                       {date.getDate()}
                     </span>
@@ -359,7 +372,7 @@ function CalendarView({ year, month }: { year: number; month: number }) {
                         <button
                           key={iv.id}
                           onClick={() => setSelected(iv)}
-                          className={`w-full text-left text-xs px-1.5 py-0.5 rounded truncate font-medium ${STATUS_CHIP[iv.status] ?? 'bg-gray-100 text-gray-700'}`}
+                          className={`w-full text-left text-xs px-1.5 py-0.5 rounded truncate font-medium ${CALENDAR_CHIP[iv.status] ?? 'bg-slate-500/15 text-slate-400'}`}
                         >
                           {fmtTime(iv.scheduled_at)} {iv.candidate_name}
                         </button>
@@ -377,35 +390,33 @@ function CalendarView({ year, month }: { year: number; month: number }) {
       {selected && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/30"
           onClick={() => setSelected(null)}>
-          <div className="bg-white rounded-xl border border-gray-200 shadow-xl p-5 w-80 space-y-3"
+          <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.06] shadow-xl p-5 w-80 space-y-3"
             onClick={e => e.stopPropagation()}>
             <div className="flex items-start justify-between gap-2">
               <div>
-                <p className="font-semibold text-gray-900">{selected.candidate_name}</p>
-                <p className="text-sm text-gray-500">{selected.job_title}</p>
+                <p className="font-semibold text-slate-100">{selected.candidate_name}</p>
+                <p className="text-sm text-slate-500">{selected.job_title}</p>
               </div>
-              <Badge variant={STATUS_VARIANT[selected.status] ?? 'secondary'}>
-                {selected.status.replace('_', ' ')}
-              </Badge>
+              <StatusBadge status={selected.status} />
             </div>
             <dl className="text-sm space-y-1.5">
               <div className="flex gap-2">
-                <dt className="text-gray-400 w-20 shrink-0">Type</dt>
-                <dd className="text-gray-700">{TYPE_LABEL[selected.interview_type] ?? selected.interview_type}</dd>
+                <dt className="text-slate-500 w-20 shrink-0">Type</dt>
+                <dd className="text-slate-300">{TYPE_LABEL[selected.interview_type] ?? selected.interview_type}</dd>
               </div>
               <div className="flex gap-2">
-                <dt className="text-gray-400 w-20 shrink-0">Time</dt>
-                <dd className="text-gray-700">{fmtDateTime(selected.scheduled_at)}</dd>
+                <dt className="text-slate-500 w-20 shrink-0">Time</dt>
+                <dd className="text-slate-300">{fmtDateTime(selected.scheduled_at)}</dd>
               </div>
               {selected.duration_minutes && (
                 <div className="flex gap-2">
-                  <dt className="text-gray-400 w-20 shrink-0">Duration</dt>
-                  <dd className="text-gray-700">{selected.duration_minutes} mins</dd>
+                  <dt className="text-slate-500 w-20 shrink-0">Duration</dt>
+                  <dd className="text-slate-300">{selected.duration_minutes} mins</dd>
                 </div>
               )}
               {selected.meeting_link && (
                 <div className="flex gap-2">
-                  <dt className="text-gray-400 w-20 shrink-0">Link</dt>
+                  <dt className="text-slate-500 w-20 shrink-0">Link</dt>
                   <dd>
                     <a href={selected.meeting_link} target="_blank" rel="noreferrer"
                       className="text-blue-600 hover:underline truncate block max-w-[180px]">
@@ -416,20 +427,20 @@ function CalendarView({ year, month }: { year: number; month: number }) {
               )}
               {selected.location && (
                 <div className="flex gap-2">
-                  <dt className="text-gray-400 w-20 shrink-0">Location</dt>
-                  <dd className="text-gray-700">{selected.location}</dd>
+                  <dt className="text-slate-500 w-20 shrink-0">Location</dt>
+                  <dd className="text-slate-300">{selected.location}</dd>
                 </div>
               )}
               {selected.score != null && (
                 <div className="flex gap-2">
-                  <dt className="text-gray-400 w-20 shrink-0">Score</dt>
-                  <dd className="text-gray-700 font-semibold">{selected.score}/100</dd>
+                  <dt className="text-slate-500 w-20 shrink-0">Score</dt>
+                  <dd className="text-slate-100 font-semibold">{selected.score}/100</dd>
                 </div>
               )}
             </dl>
-            <div className="pt-1 border-t border-gray-100 flex justify-end">
+            <div className="pt-1 border-t border-white/[0.06] flex justify-end">
               <button onClick={() => setSelected(null)}
-                className="text-sm text-gray-500 hover:text-gray-700">Close</button>
+                className="text-sm text-slate-500 hover:text-slate-300">Close</button>
             </div>
           </div>
         </div>
@@ -457,48 +468,69 @@ function ListView({ statusFilter, page, setPage }: {
 
   return (
     <>
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.06] overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b border-gray-200">
+          <thead className="bg-white/[0.04] border-b border-white/[0.06]">
             <tr>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Candidate</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Job</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Type</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Scheduled</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Status</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Actions</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-400">Candidate</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-400">Job</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-400">Type</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-400">Scheduled</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-400">Status</th>
+              <th className="text-left px-4 py-3 font-medium text-slate-400">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
-            {isLoading && <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-400">Loading…</td></tr>}
+          <tbody className="divide-y divide-white/[0.04]">
+            {isLoading && <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-500">Loading…</td></tr>}
             {!isLoading && data?.results.length === 0 && (
-              <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-400">No interviews found</td></tr>
+              <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-500">No interviews found</td></tr>
             )}
-            {data?.results.map(i => (
-              <tr key={i.id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-4 py-3 font-medium text-gray-900">{i.candidate_name}</td>
-                <td className="px-4 py-3 text-gray-600">{i.job_title}</td>
-                <td className="px-4 py-3 text-gray-600 capitalize">{i.interview_type.replace('_', ' ')}</td>
-                <td className="px-4 py-3 text-gray-600">{fmtDateTime(i.scheduled_at)}</td>
-                <td className="px-4 py-3">
-                  <Badge variant={STATUS_VARIANT[i.status] ?? 'secondary'}>
-                    {i.status.replace('_', ' ')}
-                  </Badge>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <StatusButtons interview={i} />
-                    <ScoreDialog interview={i} />
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {!isLoading && data?.results && (() => {
+              let lastDate = ''
+              return data.results.flatMap(i => {
+                const d = isoDate(new Date(i.scheduled_at))
+                const rows = []
+                if (d !== lastDate) {
+                  lastDate = d
+                  rows.push(
+                    <tr key={`grp-${d}`}>
+                      <td colSpan={6} className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-slate-500 bg-white/[0.02] border-b border-white/[0.04]">
+                        {groupLabel(d)}
+                      </td>
+                    </tr>
+                  )
+                }
+                rows.push(
+                  <tr key={i.id} className="hover:bg-white/[0.03] transition-colors">
+                    <td className="px-4 py-3 font-medium text-slate-100">{i.candidate_name}</td>
+                    <td className="px-4 py-3 text-slate-400">{i.job_title}</td>
+                    <td className="px-4 py-3 text-slate-400 capitalize">{i.interview_type.replace('_', ' ')}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-slate-200 text-sm font-medium">{fmtDateShort(i.scheduled_at)}</span>
+                        <span className="text-slate-500 text-xs">{fmtTime(i.scheduled_at)}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <StatusBadge status={i.status} />
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <StatusButtons interview={i} />
+                        <ScoreDialog interview={i} />
+                      </div>
+                    </td>
+                  </tr>
+                )
+                return rows
+              })
+            })()}
           </tbody>
         </table>
       </div>
 
       {data && data.count > 10 && (
-        <div className="flex items-center justify-between text-sm text-gray-600">
+        <div className="flex items-center justify-between text-sm text-slate-400">
           <span>{data.count} interviews · page {page} of {totalPages}</span>
           <div className="flex gap-1">
             <Button variant="outline" size="sm" disabled={!data.previous} onClick={() => setPage(p => p - 1)}>
@@ -539,22 +571,21 @@ export default function Interviews() {
     <div className="space-y-4">
 
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-gray-900">Interviews</h1>
         <div className="flex items-center gap-2">
           {/* View toggle */}
-          <div className="flex items-center rounded-md border border-gray-200 overflow-hidden">
+          <div className="flex items-center rounded-md border border-white/[0.06] overflow-hidden">
             <button
               onClick={() => setView('list')}
               className={`px-3 py-1.5 text-sm flex items-center gap-1.5 transition-colors ${
-                view === 'list' ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-500 hover:bg-gray-50'
+                view === 'list' ? 'bg-white/[0.08] text-slate-100 font-medium' : 'text-slate-400 hover:bg-white/[0.03]'
               }`}
             >
               <List className="h-4 w-4" /> List
             </button>
             <button
               onClick={() => setView('calendar')}
-              className={`px-3 py-1.5 text-sm flex items-center gap-1.5 border-l border-gray-200 transition-colors ${
-                view === 'calendar' ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-500 hover:bg-gray-50'
+              className={`px-3 py-1.5 text-sm flex items-center gap-1.5 border-l border-white/[0.06] transition-colors ${
+                view === 'calendar' ? 'bg-white/[0.08] text-slate-100 font-medium' : 'text-slate-400 hover:bg-white/[0.03]'
               }`}
             >
               <CalendarDays className="h-4 w-4" /> Calendar
@@ -578,7 +609,7 @@ export default function Interviews() {
       {view === 'list' && (
         <div className="flex gap-3">
           <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1) }}
-            className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm">
+            className="h-9 rounded-lg border border-white/[0.12] bg-[#1a1a2e] px-3 text-sm hover:border-white/[0.25] hover:bg-[#1e1e36] transition-colors">
             <option value="">All statuses</option>
             <option value="scheduled">Scheduled</option>
             <option value="completed">Completed</option>
@@ -591,15 +622,15 @@ export default function Interviews() {
       {view === 'calendar' && (
         <div className="flex items-center gap-3">
           <button onClick={prevMonth}
-            className="p-1.5 rounded-md border border-gray-200 hover:bg-gray-50 transition-colors">
-            <ChevronLeft className="h-4 w-4 text-gray-600" />
+            className="p-1.5 rounded-md border border-white/[0.06] hover:bg-white/[0.03] transition-colors">
+            <ChevronLeft className="h-4 w-4 text-slate-400" />
           </button>
-          <span className="text-sm font-medium text-gray-900 w-36 text-center">
+          <span className="text-sm font-medium text-slate-100 w-36 text-center">
             {MONTH_NAMES[calMonth]} {calYear}
           </span>
           <button onClick={nextMonth}
-            className="p-1.5 rounded-md border border-gray-200 hover:bg-gray-50 transition-colors">
-            <ChevronRight className="h-4 w-4 text-gray-600" />
+            className="p-1.5 rounded-md border border-white/[0.06] hover:bg-white/[0.03] transition-colors">
+            <ChevronRight className="h-4 w-4 text-slate-400" />
           </button>
         </div>
       )}
