@@ -11,7 +11,7 @@ from rest_framework.response import Response
 
 from clients.models import Client, Contact
 from clients.serializers import ClientSerializer, ClientWriteSerializer, ContactSerializer
-from users.permissions import IsAccountManagerOrAbove, IsRecruiterOrAbove
+from users.permissions import IsRecruiterOrAbove, IsVPOrAbove
 
 class ClientViewSet(viewsets.ModelViewSet):
     """
@@ -26,7 +26,7 @@ class ClientViewSet(viewsets.ModelViewSet):
         # Read actions are open to all staff; writes are restricted
         if self.action in ("list", "retrieve"):
             return [IsRecruiterOrAbove()]
-        return [IsAccountManagerOrAbove()]
+        return [IsVPOrAbove()]
 
     def get_queryset(self):
         # Prefetch contacts to avoid N+1 on list view
@@ -78,7 +78,7 @@ class ContactViewSet(viewsets.ModelViewSet):
         # Same rule: reads for all staff, writes for account managers and above
         if self.action in ("list", "retrieve"):
             return [IsRecruiterOrAbove()]
-        return [IsAccountManagerOrAbove()]
+        return [IsVPOrAbove()]
 
     def get_queryset(self):
         # Scope contacts to the client in the URL — never leak other clients' contacts

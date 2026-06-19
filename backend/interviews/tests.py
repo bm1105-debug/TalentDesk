@@ -35,7 +35,7 @@ def auth(client, user, password="pass1234"):
 def make_submittal(recruiter):
     """Creates the full chain: client → job → candidate → submittal."""
     client_obj = Client.objects.create(name="Acme", industry="Tech", status="active")
-    manager    = make_user("mgr@test.com", role=Role.ACCOUNT_MANAGER)
+    manager    = make_user("mgr@test.com", role=Role.VP)
     job        = Job.objects.create(
         title="Engineer", client=client_obj, status="open", created_by=manager
     )
@@ -279,7 +279,7 @@ class InterviewPermissionTests(APITestCase):
 
     def setUp(self):
         self.recruiter = make_user("rec@test.com",  role=Role.RECRUITER)
-        self.manager   = make_user("mgr2@test.com", role=Role.ACCOUNT_MANAGER)
+        self.manager   = make_user("mgr2@test.com", role=Role.VP)
         submittal      = make_submittal(self.recruiter)
         self.interview = Interview.objects.create(
             submittal=submittal, interview_type="phone",

@@ -237,7 +237,7 @@ export default function Layout() {
     navigate('/login', { replace: true })
   }
 
-  const isManager = ['account_manager', 'ceo', 'team_lead'].includes(user?.role ?? '')
+  const isManager = ['vp', 'ceo', 'team_lead'].includes(user?.role ?? '')
 
   return (
     /* ── Root shell: direct style injection on .flex.h-screen ───────── */
@@ -318,7 +318,7 @@ export default function Layout() {
               <div style={{ overflow: 'hidden' }}>
                 {MANAGEMENT_ITEMS.filter(item => {
                   if (item.to === '/scorecard' && user?.role === 'ceo') return false
-                  if (item.to === '/people' && !['account_manager', 'ceo', 'team_lead'].includes(user?.role ?? '')) return false
+                  if (item.to === '/people' && !['vp', 'ceo', 'team_lead'].includes(user?.role ?? '')) return false
                   return true
                 }).map(item => (
                   <NavItem key={item.to} {...item} collapsed={collapsed} />

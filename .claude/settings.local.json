@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(python -c ' *)",
+      "Bash(\"./venv/Scripts/python\" manage.py migrate --run-syncdb)",
+      "Bash(\"./venv/Scripts/python\" manage.py migrate --keepdb)",
+      "Bash(\"./venv/Scripts/python\" manage.py migrate)",
+      "Bash(\"./venv/Scripts/python\" manage.py test users --keepdb)",
+      "Bash(\"./venv/Scripts/python\" manage.py test --keepdb)",
+      "Bash(\"./venv/Scripts/python\" manage.py test users)",
+      "Bash(\"./venv/Scripts/python\" manage.py test users dashboard --keepdb)",
+      "Bash(\"./venv/Scripts/python\" manage.py test jobs --keepdb)",
+      "Bash(\"./venv/Scripts/python\" manage.py test clients submittals candidates --keepdb)",
+      "Bash(\"./venv/Scripts/python\" manage.py test submittals --keepdb)",
+      "Bash(\"./venv/Scripts/python\" manage.py test candidates --keepdb)",
+      "Bash(\"./venv/Scripts/python\" manage.py test candidates clients communications interviews offers --keepdb)"
+    ],
+    "defaultMode": "bypassPermissions"
+  }
+}

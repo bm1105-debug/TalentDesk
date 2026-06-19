@@ -5,7 +5,7 @@ import type { ReactNode } from 'react'
 const ROLE_LEVEL: Record<string, number> = {
   recruiter:       1,
   team_lead:       2,
-  account_manager: 3,
+  vp:              3,
   ceo:             4,
 }
 

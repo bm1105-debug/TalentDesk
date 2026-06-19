@@ -183,7 +183,7 @@ function AddJobForm({ onSuccess }: { onSuccess: () => void }) {
 
 export default function Jobs() {
   const { user } = useAuth()
-  const isManager = ['account_manager', 'ceo'].includes(user?.role ?? '')
+  const isManager = ['vp', 'ceo'].includes(user?.role ?? '')
 
   const [searchParams] = useSearchParams()
   const [search,     setSearch]     = useState('')

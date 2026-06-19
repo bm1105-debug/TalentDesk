@@ -67,7 +67,7 @@ class AttachmentAPITest(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.recruiter = make_user('recruiter_att')
-        self.manager   = make_user('manager_att', Role.ACCOUNT_MANAGER)
+        self.manager   = make_user('manager_att', Role.VP)
         self.candidate = make_candidate('att_candidate@example.com')
 
     def _auth(self, user):

@@ -21,7 +21,7 @@ class ClientSetup(APITestCase):
             first_name="CEO", last_name="User", email="ceo@test.com"
         )
         self.am = User.objects.create_user(
-            username="am1", password="Str0ng!Pass", role=Role.ACCOUNT_MANAGER,
+            username="am1", password="Str0ng!Pass", role=Role.VP,
             first_name="Account", last_name="Manager", email="am@test.com"
         )
         self.recruiter = User.objects.create_user(

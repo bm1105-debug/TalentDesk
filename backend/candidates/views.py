@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from communications.models import SentEmail
 from .models import Candidate, SkillTag
 from .serializers import CandidateSerializer, SkillTagSerializer
-from users.permissions import IsAccountManagerOrAbove, IsRecruiterOrAbove
+from users.permissions import IsRecruiterOrAbove, IsVPOrAbove
 from users.mixins import RoleQuerysetMixin
 
 
@@ -118,7 +118,7 @@ class CandidateViewSet(RoleQuerysetMixin, viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action == "destroy":
-            return [IsAccountManagerOrAbove()]
+            return [IsVPOrAbove()]
         return [IsRecruiterOrAbove()]
 
     @action(detail=False, methods=["patch"], url_path="bulk-status")

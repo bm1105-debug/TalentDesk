@@ -97,7 +97,7 @@ class TaskPermissionTests(APITestCase):
     def setUp(self):
         self.recruiter_a = make_user("recA@tasks.com")
         self.recruiter_b = make_user("recB@tasks.com")
-        self.manager     = make_user("mgr@tasks.com", role=Role.ACCOUNT_MANAGER)
+        self.manager     = make_user("mgr@tasks.com", role=Role.VP)
         self.task_a      = make_task(self.recruiter_a, title="A's task")
 
     def test_recruiter_cannot_read_other_recruiter_task(self):

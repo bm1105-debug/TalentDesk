@@ -93,7 +93,7 @@ function AttachmentsTab({ candidateId }: { candidateId: number }) {
     window.open(`/api/attachments/${att.id}/download/`, '_blank')
   }
 
-  const canDelete = user?.role === 'account_manager' || user?.role === 'ceo'
+  const canDelete = user?.role === 'vp' || user?.role === 'ceo'
 
   return (
     <div className="space-y-4">

@@ -22,7 +22,7 @@ def auth(client, user):
 
 def make_submittal(recruiter):
     client_obj = Client.objects.create(name="Acme", industry="Tech", status="active")
-    manager = make_user("mgr_n", Role.ACCOUNT_MANAGER)
+    manager = make_user("mgr_n", Role.VP)
     job = Job.objects.create(title="Dev", client=client_obj, status="open", created_by=manager)
     stage = PipelineStage.objects.create(job=job, name="Screening", order=0)
     candidate = Candidate.objects.create(

@@ -65,7 +65,7 @@ class MiddlewareLoggingTests(APITestCase):
 
     def setUp(self):
         self.recruiter = make_user("recruiter@test.com", role=Role.RECRUITER)
-        self.manager   = make_user("manager@test.com",   role=Role.ACCOUNT_MANAGER)
+        self.manager   = make_user("manager@test.com",   role=Role.VP)
         auth(self.client, self.manager)
 
     def test_post_creates_activity_log(self):
@@ -124,7 +124,7 @@ class MiddlewareLoggingTests(APITestCase):
 class ActivityLogAPITests(APITestCase):
 
     def setUp(self):
-        self.manager   = make_user("manager@test.com",   role=Role.ACCOUNT_MANAGER)
+        self.manager   = make_user("manager@test.com",   role=Role.VP)
         self.recruiter = make_user("recruiter@test.com", role=Role.RECRUITER)
         # Seed a few log entries directly
         ActivityLog.objects.create(
@@ -185,7 +185,7 @@ class ActivityLogIsolationTests(APITestCase):
         self.rec_in_pod.reports_to = self.team_lead
         self.rec_in_pod.save()
         self.rec_out = make_user("rec_out@iso.com", role=Role.RECRUITER)
-        self.am = make_user("am@iso.com", role=Role.ACCOUNT_MANAGER)
+        self.am = make_user("am@iso.com", role=Role.VP)
 
         ActivityLog.objects.create(
             user=self.rec_in_pod, action="create", method="POST",

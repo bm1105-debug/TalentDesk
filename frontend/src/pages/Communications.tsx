@@ -150,7 +150,7 @@ export default function Communications() {
         <div className="text-center py-16 text-slate-500">
           <Mail className="h-10 w-10 mx-auto mb-3 opacity-30" />
           <p className="text-sm">No email templates yet.</p>
-          <p className="text-xs mt-1">Ask an Account Manager to create templates.</p>
+          <p className="text-xs mt-1">Ask a VP to create templates.</p>
         </div>
       )}
 

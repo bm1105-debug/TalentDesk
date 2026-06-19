@@ -50,7 +50,7 @@ class EmailTemplateTests(APITestCase):
     and recruiters can only read them."""
 
     def setUp(self):
-        self.manager   = make_user("mgr@test.com",  role=Role.ACCOUNT_MANAGER)
+        self.manager   = make_user("mgr@test.com",  role=Role.VP)
         self.recruiter = make_user("rec@test.com",  role=Role.RECRUITER)
 
     def test_manager_can_create_template(self):
@@ -109,7 +109,7 @@ class PreviewEmailTests(APITestCase):
     {{ variables }} correctly without sending anything."""
 
     def setUp(self):
-        self.manager  = make_user("mgr@test.com", role=Role.ACCOUNT_MANAGER)
+        self.manager  = make_user("mgr@test.com", role=Role.VP)
         self.recruiter = make_user("rec@test.com", role=Role.RECRUITER)
         self.template  = make_template(self.manager)
         auth(self.client, self.recruiter)
@@ -156,7 +156,7 @@ class SendEmailTests(APITestCase):
     dispatches via the locmem backend, and creates a SentEmail log entry."""
 
     def setUp(self):
-        self.manager   = make_user("mgr@test.com",  role=Role.ACCOUNT_MANAGER)
+        self.manager   = make_user("mgr@test.com",  role=Role.VP)
         self.recruiter = make_user("rec@test.com",  role=Role.RECRUITER)
         self.template  = make_template(self.manager)
         auth(self.client, self.recruiter)
@@ -239,7 +239,7 @@ class SentEmailAuditTests(APITestCase):
     and that no create/delete is exposed."""
 
     def setUp(self):
-        self.manager  = make_user("mgr@test.com", role=Role.ACCOUNT_MANAGER)
+        self.manager  = make_user("mgr@test.com", role=Role.VP)
         auth(self.client, self.manager)
         self.template = make_template(self.manager)
 

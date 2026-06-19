@@ -33,7 +33,7 @@ class RoleQuerysetMixinTests(TestCase):
             first_name="Other", last_name="Rec", email="other@t.com",
         )
         self.am = User.objects.create_user(
-            username="am", password="x", role=Role.ACCOUNT_MANAGER,
+            username="am", password="x", role=Role.VP,
             first_name="Alice", last_name="Manager", email="am@t.com",
         )
         self.ceo = User.objects.create_user(

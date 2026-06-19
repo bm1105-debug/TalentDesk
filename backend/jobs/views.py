@@ -7,7 +7,7 @@ from django.utils import timezone
 
 from .models import Job, PipelineStage
 from .serializers import JobSerializer, PipelineStageSerializer
-from users.permissions import IsAccountManagerOrAbove, IsRecruiterOrAbove
+from users.permissions import IsRecruiterOrAbove, IsVPOrAbove
 from users.mixins import RoleQuerysetMixin
 
 class JobViewSet(RoleQuerysetMixin, viewsets.ModelViewSet):
@@ -50,7 +50,7 @@ class JobViewSet(RoleQuerysetMixin, viewsets.ModelViewSet):
         # Only managers and above can create, update, or delete jobs
         # Recruiters can read — they need to see what they're working on
         if self.action in ("create", "update", "partial_update", "destroy"):
-            return [IsAccountManagerOrAbove()]
+            return [IsVPOrAbove()]
         return [IsRecruiterOrAbove()]
 
     @action(detail=True, methods=["post"], url_path="reorder-stages")

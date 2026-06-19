@@ -32,7 +32,7 @@ def auth(client, user, password="pass1234"):
 def make_submittal(recruiter):
     """Creates the full chain: client → job (with pipeline) → candidate → submittal."""
     client_obj = Client.objects.create(name="Acme", industry="Tech", status="active")
-    manager    = make_user("mgr@acme.com", role=Role.ACCOUNT_MANAGER)
+    manager    = make_user("mgr@acme.com", role=Role.VP)
     job = Job.objects.create(
         title="Engineer", client=client_obj, status="open", created_by=manager
     )
@@ -217,7 +217,7 @@ class OfferPermissionTests(APITestCase):
 
     def setUp(self):
         self.recruiter = make_user("rec6@test.com")
-        self.manager   = make_user("mgr6@test.com", role=Role.ACCOUNT_MANAGER)
+        self.manager   = make_user("mgr6@test.com", role=Role.VP)
         self.submittal = make_submittal(self.recruiter)
         self.offer     = make_offer(self.submittal, self.recruiter)
 

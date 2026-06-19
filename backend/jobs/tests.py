@@ -46,7 +46,7 @@ def make_job(client, created_by, **kwargs):
 class JobPipelineTests(APITestCase):
 
     def setUp(self):
-        self.manager = make_user("manager@test.com", role=Role.ACCOUNT_MANAGER)
+        self.manager = make_user("manager@test.com", role=Role.VP)
         auth(self.client, self.manager)
         self.acme = make_client()
         self.url  = reverse("job-list")
@@ -108,7 +108,7 @@ class JobPipelineTests(APITestCase):
 class JobCRUDTests(APITestCase):
 
     def setUp(self):
-        self.manager   = make_user("manager@test.com",   role=Role.ACCOUNT_MANAGER)
+        self.manager   = make_user("manager@test.com",   role=Role.VP)
         self.recruiter = make_user("recruiter@test.com", role=Role.RECRUITER)
         self.acme      = make_client()
         self.url       = reverse("job-list")
@@ -165,7 +165,7 @@ class JobCRUDTests(APITestCase):
 class JobFilterTests(APITestCase):
 
     def setUp(self):
-        self.manager   = make_user("manager@test.com",   role=Role.ACCOUNT_MANAGER)
+        self.manager   = make_user("manager@test.com",   role=Role.VP)
         self.recruiter = make_user("recruiter@test.com", role=Role.RECRUITER)
         self.acme      = make_client("Acme")
         self.beta      = make_client("Beta Inc")
@@ -213,7 +213,7 @@ class JobFilterTests(APITestCase):
 class JobAssignTests(APITestCase):
 
     def setUp(self):
-        self.manager   = make_user("manager@test.com",   role=Role.ACCOUNT_MANAGER)
+        self.manager   = make_user("manager@test.com",   role=Role.VP)
         self.recruiter = make_user("recruiter@test.com", role=Role.RECRUITER)
         self.acme      = make_client()
         auth(self.client, self.manager)
@@ -247,7 +247,7 @@ class PipelineReportTests(APITestCase):
         self.recruiter = make_user("rec@test.com")
         auth(self.client, self.recruiter)
         acme = make_client()
-        manager = make_user("mgr@test.com", role=Role.ACCOUNT_MANAGER)
+        manager = make_user("mgr@test.com", role=Role.VP)
         self.job = make_job(acme, manager)
         PipelineStage.objects.create(job=self.job, name="Screening", order=0)
         PipelineStage.objects.create(job=self.job, name="Interview", order=1)
@@ -295,7 +295,7 @@ class JobIsolationTests(APITestCase):
         self.rec_a.reports_to = self.team_lead
         self.rec_a.save()
         self.rec_b = make_user("recb@iso.com", role=Role.RECRUITER)
-        self.am = make_user("am@iso.com", role=Role.ACCOUNT_MANAGER)
+        self.am = make_user("am@iso.com", role=Role.VP)
         acme = make_client()
 
         self.j_a = make_job(acme, self.am, title="Job A")

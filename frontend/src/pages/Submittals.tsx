@@ -516,7 +516,7 @@ function StarButton({ submittal }: { submittal: Submittal }) {
 
 export default function Submittals() {
   const { user } = useAuth()
-  const isManager = ['account_manager', 'ceo'].includes(user?.role ?? '')
+  const isManager = ['vp', 'ceo'].includes(user?.role ?? '')
 
   const [status,          setStatus]          = useState('')
   const [showShortlisted, setShowShortlisted] = useState(false)

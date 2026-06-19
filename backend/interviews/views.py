@@ -12,7 +12,7 @@ from rest_framework.response import Response
 
 from .models import Interview
 from .serializers import InterviewSerializer, InterviewStatusUpdateSerializer
-from users.permissions import IsAccountManagerOrAbove, IsRecruiterOrAbove
+from users.permissions import IsRecruiterOrAbove, IsVPOrAbove
 from users.mixins import RoleQuerysetMixin
 from notifications.utils import notify
 
@@ -72,7 +72,7 @@ class InterviewViewSet(RoleQuerysetMixin, viewsets.ModelViewSet):
         # Recruiters can schedule and view interviews
         # Only managers can delete interview records
         if self.action == "destroy":
-            return [IsAccountManagerOrAbove()]
+            return [IsVPOrAbove()]
         return [IsRecruiterOrAbove()]
 
     @action(detail=True, methods=["post"], url_path="update-status")

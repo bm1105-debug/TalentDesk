@@ -6,7 +6,7 @@ from rest_framework.response import Response
 
 from .models import Offer
 from .serializers import OfferSerializer, OfferActionSerializer
-from users.permissions import IsAccountManagerOrAbove, IsRecruiterOrAbove
+from users.permissions import IsRecruiterOrAbove, IsVPOrAbove
 from users.mixins import RoleQuerysetMixin
 
 
@@ -44,7 +44,7 @@ class OfferViewSet(RoleQuerysetMixin, viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action == "destroy":
-            return [IsAccountManagerOrAbove()]
+            return [IsVPOrAbove()]
         return [IsRecruiterOrAbove()]
 
     @action(detail=True, methods=["post"])

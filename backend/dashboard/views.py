@@ -11,7 +11,7 @@ from submittals.models import Submittal
 from jobs.serializers import JobSerializer
 from submittals.serializers import SubmittalSerializer
 from users.models import User, Role
-from users.permissions import IsRecruiterOrAbove, IsAccountManagerOrAbove, IsTeamLeadOrAbove
+from users.permissions import IsRecruiterOrAbove, IsTeamLeadOrAbove, IsVPOrAbove
 from candidates.models import Candidate
 from interviews.models import Interview
 from offers.models import Offer
@@ -33,7 +33,7 @@ class MyDayView(APIView):
 
     def get(self, request):
         user = request.user
-        is_manager = user.role in (Role.ACCOUNT_MANAGER, Role.CEO, Role.TEAM_LEAD)
+        is_manager = user.role in (Role.VP, Role.CEO, Role.TEAM_LEAD)
         now = timezone.now()
         stale_cutoff = now - timedelta(days=STALE_DAYS)
 
@@ -215,7 +215,7 @@ class AnalyticsView(APIView):
     Returns all seven analytics widget payloads. Each section starts as a
     null/empty stub; subsequent issues fill in the real aggregations one by one.
     """
-    permission_classes = [IsAccountManagerOrAbove]
+    permission_classes = [IsVPOrAbove]
 
     def get(self, request):
         # ── Candidate pool ────────────────────────────────────────────────────

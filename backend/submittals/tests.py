@@ -61,7 +61,7 @@ class SubmittalCreateTests(APITestCase):
 
     def setUp(self):
         self.recruiter = make_user("recruiter@test.com", role=Role.RECRUITER)
-        self.manager   = make_user("manager@test.com",   role=Role.ACCOUNT_MANAGER)
+        self.manager   = make_user("manager@test.com",   role=Role.VP)
         auth(self.client, self.recruiter)
         self.acme      = make_client()
         self.job       = make_job(self.acme, self.manager)
@@ -101,7 +101,7 @@ class SubmittalFilterTests(APITestCase):
 
     def setUp(self):
         self.recruiter = make_user("recruiter@test.com")
-        self.manager   = make_user("manager@test.com", role=Role.ACCOUNT_MANAGER)
+        self.manager   = make_user("manager@test.com", role=Role.VP)
         auth(self.client, self.recruiter)
         self.acme  = make_client()
         self.job1  = make_job(self.acme, self.manager)
@@ -135,7 +135,7 @@ class SubmittalAdvanceTests(APITestCase):
 
     def setUp(self):
         self.recruiter = make_user("recruiter@test.com")
-        self.manager   = make_user("manager@test.com", role=Role.ACCOUNT_MANAGER)
+        self.manager   = make_user("manager@test.com", role=Role.VP)
         auth(self.client, self.recruiter)
         self.acme      = make_client()
         self.job       = make_job(self.acme, self.manager)
@@ -182,7 +182,7 @@ class SubmittalNoteTests(APITestCase):
 
     def setUp(self):
         self.recruiter = make_user("recruiter@test.com")
-        self.manager   = make_user("manager@test.com", role=Role.ACCOUNT_MANAGER)
+        self.manager   = make_user("manager@test.com", role=Role.VP)
         auth(self.client, self.recruiter)
         self.acme      = make_client()
         self.job       = make_job(self.acme, self.manager)
@@ -209,7 +209,7 @@ class SubmittalStatusTests(APITestCase):
 
     def setUp(self):
         self.recruiter = make_user("recruiter@test.com", role=Role.RECRUITER)
-        self.manager   = make_user("manager@test.com",   role=Role.ACCOUNT_MANAGER)
+        self.manager   = make_user("manager@test.com",   role=Role.VP)
         acme           = make_client()
         job            = make_job(acme, self.manager)
         candidate      = make_candidate()
@@ -249,7 +249,7 @@ class ShortlistFlagTests(APITestCase):
 
     def setUp(self):
         self.recruiter = make_user("rec@test.com", role=Role.RECRUITER)
-        self.manager   = make_user("mgr@test.com", role=Role.ACCOUNT_MANAGER)
+        self.manager   = make_user("mgr@test.com", role=Role.VP)
         acme           = make_client()
         job            = make_job(acme, self.manager)
         c1             = make_candidate(email="a@x.com", phone="9001")
@@ -311,7 +311,7 @@ class ShortlistFlagTests(APITestCase):
 class RejectionPromptTests(APITestCase):
 
     def setUp(self):
-        self.manager   = make_user("manager@test.com", role=Role.ACCOUNT_MANAGER)
+        self.manager   = make_user("manager@test.com", role=Role.VP)
         acme           = make_client()
         job            = make_job(acme, self.manager)
         candidate      = make_candidate()
@@ -369,7 +369,7 @@ class MatchScoreTests(APITestCase):
 
     def setUp(self):
         self.recruiter = make_user("recruiter@test.com")
-        self.manager   = make_user("manager@test.com", role=Role.ACCOUNT_MANAGER)
+        self.manager   = make_user("manager@test.com", role=Role.VP)
         auth(self.client, self.recruiter)
         self.acme = make_client()
 

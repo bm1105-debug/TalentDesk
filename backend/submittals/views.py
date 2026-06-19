@@ -12,7 +12,7 @@ from .serializers import (
     NoteSerializer,
     StatusChangeSerializer,
 )
-from users.permissions import IsAccountManagerOrAbove, IsRecruiterOrAbove
+from users.permissions import IsRecruiterOrAbove, IsVPOrAbove
 from users.mixins import RoleQuerysetMixin
 from notifications.utils import notify
 
@@ -63,7 +63,7 @@ class SubmittalViewSet(RoleQuerysetMixin, viewsets.ModelViewSet):
         # Recruiters can create submittals and add notes
         # Managers control status changes and deletions
         if self.action in ("destroy", "change_status"):
-            return [IsAccountManagerOrAbove()]
+            return [IsVPOrAbove()]
         return [IsRecruiterOrAbove()]
 
     def perform_create(self, serializer):
@@ -134,7 +134,7 @@ class SubmittalViewSet(RoleQuerysetMixin, viewsets.ModelViewSet):
         return Response(SubmittalSerializer(submittal, context={"request": request}).data)
 
     @action(detail=True, methods=["post"], url_path="change-status",
-            permission_classes=[IsAccountManagerOrAbove])
+            permission_classes=[IsVPOrAbove])
     def change_status(self, request, pk=None):
         """
         POST /submittals/{id}/change-status/

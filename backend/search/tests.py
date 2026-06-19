@@ -164,7 +164,7 @@ class JobSearchTests(APITestCase):
 
     def setUp(self):
         self.user    = make_user("rec@test.com")
-        self.manager = make_user("mgr@test.com", role=Role.ACCOUNT_MANAGER)
+        self.manager = make_user("mgr@test.com", role=Role.VP)
         # Search as manager — AM sees all jobs regardless of assignment
         auth(self.client, self.manager)
         acme = make_client_obj("Acme Corp")
@@ -195,7 +195,7 @@ class JobSearchTests(APITestCase):
 class ClientSearchTests(APITestCase):
 
     def setUp(self):
-        self.manager = make_user("mgr@test.com", role=Role.ACCOUNT_MANAGER)
+        self.manager = make_user("mgr@test.com", role=Role.VP)
         # Search as manager — recruiters/TL get empty client results
         auth(self.client, self.manager)
         self.acme    = make_client_obj("Acme Corp",   "Technology")
@@ -219,7 +219,7 @@ class SearchTypeFilterTests(APITestCase):
 
     def setUp(self):
         self.user    = make_user("rec@test.com")
-        self.manager = make_user("mgr@test.com", role=Role.ACCOUNT_MANAGER)
+        self.manager = make_user("mgr@test.com", role=Role.VP)
         # Search as manager so all three entity types are visible
         auth(self.client, self.manager)
         acme = make_client_obj("Engineer Corp")
@@ -256,7 +256,7 @@ class SearchIsolationTests(APITestCase):
         self.recruiter_a = make_user("rec_a@iso.com", role=Role.RECRUITER)
         self.recruiter_b = make_user("rec_b@iso.com", role=Role.RECRUITER)
         self.team_lead   = make_user("tl@iso.com",    role=Role.TEAM_LEAD)
-        self.manager     = make_user("mgr@iso.com",   role=Role.ACCOUNT_MANAGER)
+        self.manager     = make_user("mgr@iso.com",   role=Role.VP)
 
         # recruiter_b reports to team_lead — they are in the TL's pod
         self.recruiter_b.reports_to = self.team_lead

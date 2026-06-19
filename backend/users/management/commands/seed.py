@@ -166,7 +166,7 @@ class Command(BaseCommand):
             username="manager1",
             defaults=dict(
                 email="manager1@talentdesk.io", first_name="Marcus", last_name="Cole",
-                role=Role.ACCOUNT_MANAGER,
+                role=Role.VP,
             ),
         )
         if _: manager.set_password("pass1234"); manager.save()

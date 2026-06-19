@@ -45,7 +45,7 @@ class ClientSerializer(serializers.ModelSerializer):
 class ClientWriteSerializer(serializers.ModelSerializer):
     # On writes, account_manager is a plain FK integer — no nesting
     account_manager = serializers.PrimaryKeyRelatedField(
-        queryset=User.objects.filter(role__in=["account_manager", "ceo"]),
+        queryset=User.objects.filter(role__in=["vp", "ceo"]),
         required=False,
         allow_null=True,
     )

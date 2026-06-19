@@ -14,7 +14,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from users.models import User
-from users.permissions import IsCEO, IsAccountManagerOrAbove, IsTeamLeadOrAbove
+from users.permissions import IsVPOrAbove, IsTeamLeadOrAbove
 from users.serializers import RegisterSerializer, UserSerializer, ChangePasswordSerializer
 
 class RegisterView(generics.CreateAPIView):
@@ -23,7 +23,7 @@ class RegisterView(generics.CreateAPIView):
     Creates a new staff user. Account Manager and CEO only.
     """
     serializer_class = RegisterSerializer
-    permission_classes = [IsAccountManagerOrAbove]
+    permission_classes = [IsVPOrAbove]
 
 class MeView(APIView):
     """
@@ -59,8 +59,7 @@ class ChangePasswordView(APIView):
 class UserListView(generics.ListAPIView):
     """
     GET /api/users/
-    - CEO: all users
-    - Account Manager: recruiters and team leads
+    - CEO / VP: all users
     - Team Lead: own direct reports only
     """
     serializer_class = UserSerializer
@@ -69,28 +68,24 @@ class UserListView(generics.ListAPIView):
     def get_queryset(self):
         from users.models import Role
         user = self.request.user
-        if user.is_ceo:
+        if user.can_manage_all():
             return User.objects.all().order_by("last_name")
         if user.role == Role.TEAM_LEAD:
             return User.objects.filter(reports_to=user).order_by("last_name")
-        # Account Manager
-        return User.objects.filter(
-            role__in=[Role.RECRUITER, Role.TEAM_LEAD]
-        ).order_by("last_name")
+        return User.objects.none()
 
 class UserDetailView(generics.RetrieveUpdateAPIView):
     """
     GET   /api/users/<id>/   — retrieve a single user
     PATCH /api/users/<id>/   — update role, is_active, reports_to (AM and CEO)
     """
-    permission_classes = [IsAccountManagerOrAbove]
+    permission_classes = [IsVPOrAbove]
     serializer_class = UserSerializer
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_ceo:
+        if user.can_manage_all():
             return User.objects.all()
-        # Account managers can only edit recruiters and team leads, not other managers
         from users.models import Role
         return User.objects.filter(role__in=[Role.RECRUITER, Role.TEAM_LEAD])
 

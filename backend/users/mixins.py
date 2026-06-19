@@ -26,4 +26,4 @@ class RoleQuerysetMixin:
         return None  # AM / CEO — unrestricted
 
     def is_manager(self):
-        return self.request.user.role in (Role.ACCOUNT_MANAGER, Role.CEO)
+        return self.request.user.role in (Role.VP, Role.CEO)

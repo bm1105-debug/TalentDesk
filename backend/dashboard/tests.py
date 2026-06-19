@@ -99,7 +99,7 @@ class RecruiterScopeTests(APITestCase):
     """Recruiter should only see jobs assigned to them and submittals they own."""
 
     def setUp(self):
-        self.manager   = make_user("manager@test.com", role=Role.ACCOUNT_MANAGER)
+        self.manager   = make_user("manager@test.com", role=Role.VP)
         self.recruiter = make_user("rec@test.com",     role=Role.RECRUITER)
         self.other_rec = make_user("other@test.com",   role=Role.RECRUITER)
         acme = make_client_obj()
@@ -135,7 +135,7 @@ class ManagerScopeTests(APITestCase):
     """Manager should see all open jobs and all active submittals firm-wide."""
 
     def setUp(self):
-        self.manager  = make_user("manager@test.com", role=Role.ACCOUNT_MANAGER)
+        self.manager  = make_user("manager@test.com", role=Role.VP)
         self.rec1     = make_user("rec1@test.com",    role=Role.RECRUITER)
         self.rec2     = make_user("rec2@test.com",    role=Role.RECRUITER)
         acme = make_client_obj()
@@ -164,7 +164,7 @@ class ManagerScopeTests(APITestCase):
 class UrgentJobTests(APITestCase):
 
     def setUp(self):
-        self.manager   = make_user("manager@test.com", role=Role.ACCOUNT_MANAGER)
+        self.manager   = make_user("manager@test.com", role=Role.VP)
         self.recruiter = make_user("rec@test.com",     role=Role.RECRUITER)
         acme = make_client_obj()
 
@@ -192,7 +192,7 @@ class UrgentJobTests(APITestCase):
 class OverdueJobTests(APITestCase):
 
     def setUp(self):
-        self.manager   = make_user("manager@test.com", role=Role.ACCOUNT_MANAGER)
+        self.manager   = make_user("manager@test.com", role=Role.VP)
         self.recruiter = make_user("rec@test.com",     role=Role.RECRUITER)
         acme = make_client_obj()
 
@@ -224,7 +224,7 @@ class OverdueJobTests(APITestCase):
 class StaleSubmittalTests(APITestCase):
 
     def setUp(self):
-        self.manager   = make_user("manager@test.com", role=Role.ACCOUNT_MANAGER)
+        self.manager   = make_user("manager@test.com", role=Role.VP)
         self.recruiter = make_user("rec@test.com",     role=Role.RECRUITER)
         acme = make_client_obj()
         job  = make_job(acme, self.manager)
@@ -257,7 +257,7 @@ class StaleSubmittalTests(APITestCase):
 class AnalyticsScaffoldTests(APITestCase):
 
     def setUp(self):
-        self.user = make_user("am@analytics.com", role=Role.ACCOUNT_MANAGER)
+        self.user = make_user("am@analytics.com", role=Role.VP)
         auth(self.client, self.user)
         self.url = reverse("dashboard-analytics")
 
@@ -288,7 +288,7 @@ class AnalyticsScaffoldTests(APITestCase):
 class AnalyticsCandidatePoolTests(APITestCase):
 
     def setUp(self):
-        self.user = make_user("pool@analytics.com", role=Role.ACCOUNT_MANAGER)
+        self.user = make_user("pool@analytics.com", role=Role.VP)
         auth(self.client, self.user)
         self.url = reverse("dashboard-analytics")
         Candidate.objects.create(first_name="A", last_name="B", email="a@x.com", phone="1", status="active",   source="linkedin")
@@ -337,7 +337,7 @@ class AnalyticsCandidatePoolTests(APITestCase):
 class AnalyticsOpenJobsTests(APITestCase):
 
     def setUp(self):
-        self.user = make_user("openjobs@analytics.com", role=Role.ACCOUNT_MANAGER)
+        self.user = make_user("openjobs@analytics.com", role=Role.VP)
         auth(self.client, self.user)
         self.url = reverse("dashboard-analytics")
         client_obj = make_client_obj()
@@ -380,7 +380,7 @@ class AnalyticsOpenJobsTests(APITestCase):
 class AnalyticsLeaderboardTests(APITestCase):
 
     def setUp(self):
-        self.me = make_user("me@analytics.com", role=Role.ACCOUNT_MANAGER)
+        self.me = make_user("me@analytics.com", role=Role.VP)
         self.other = make_user("other@analytics.com")
         auth(self.client, self.me)
         self.url = reverse("dashboard-analytics")
@@ -441,7 +441,7 @@ def make_interview(submittal, created_by, status="completed", score=None):
 class AnalyticsInterviewOutcomesTests(APITestCase):
 
     def setUp(self):
-        self.user = make_user("iv@analytics.com", role=Role.ACCOUNT_MANAGER)
+        self.user = make_user("iv@analytics.com", role=Role.VP)
         auth(self.client, self.user)
         self.url = reverse("dashboard-analytics")
         client_obj = make_client_obj()
@@ -483,7 +483,7 @@ class AnalyticsInterviewOutcomesTests(APITestCase):
 class AnalyticsPipelineFunnelTests(APITestCase):
 
     def setUp(self):
-        self.user = make_user("funnel@analytics.com", role=Role.ACCOUNT_MANAGER)
+        self.user = make_user("funnel@analytics.com", role=Role.VP)
         auth(self.client, self.user)
         self.url = reverse("dashboard-analytics")
         client_obj = make_client_obj()
@@ -545,7 +545,7 @@ class AnalyticsPipelineFunnelTests(APITestCase):
 class AnalyticsTimeToFillTests(APITestCase):
 
     def setUp(self):
-        self.user = make_user("ttf@analytics.com", role=Role.ACCOUNT_MANAGER)
+        self.user = make_user("ttf@analytics.com", role=Role.VP)
         auth(self.client, self.user)
         self.url = reverse("dashboard-analytics")
         client_obj = make_client_obj()
@@ -686,7 +686,7 @@ class DashboardTrendsTests(APITestCase):
     """
 
     def setUp(self):
-        self.user = make_user("trends@test.com", role=Role.ACCOUNT_MANAGER)
+        self.user = make_user("trends@test.com", role=Role.VP)
         auth(self.client, self.user)
         self.client_obj = make_client_obj()
 
@@ -772,7 +772,7 @@ class UserAnalyticsPermissionTests(APITestCase):
 
     def setUp(self):
         self.recruiter = make_user("rec@ua.com", role=Role.RECRUITER)
-        self.manager   = make_user("mgr@ua.com", role=Role.ACCOUNT_MANAGER)
+        self.manager   = make_user("mgr@ua.com", role=Role.VP)
 
     def test_unauthenticated_rejected(self):
         res = self.client.get(ua_url(self.recruiter.id))
@@ -812,7 +812,7 @@ class UserAnalyticsScopingTests(APITestCase):
     def setUp(self):
         self.rec_a   = make_user("rec_a@ua.com", role=Role.RECRUITER)
         self.rec_b   = make_user("rec_b@ua.com", role=Role.RECRUITER)
-        self.manager = make_user("mgr@ua.com",   role=Role.ACCOUNT_MANAGER)
+        self.manager = make_user("mgr@ua.com",   role=Role.VP)
         auth(self.client, self.manager)
 
         self.client_obj = make_client_obj()
@@ -940,7 +940,7 @@ class UserAnalyticsTeamLeadTests(APITestCase):
             self.assertIn(key, res.data)
 
     def test_am_still_accesses_any_recruiter(self):
-        am = make_user("am2@ua.com", role=Role.ACCOUNT_MANAGER)
+        am = make_user("am2@ua.com", role=Role.VP)
         auth(self.client, am)
         res = self.client.get(ua_url(self.rec_other.id))
         self.assertEqual(res.status_code, status.HTTP_200_OK)

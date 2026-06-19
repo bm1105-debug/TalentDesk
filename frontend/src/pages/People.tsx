@@ -1,8 +1,16 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import { Search, ChevronDown, Users } from 'lucide-react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { Search, ChevronDown, Users, UserPlus } from 'lucide-react'
 import api from '@/api/client'
+import { useAuth } from '@/context/AuthContext'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import type {
   CandidatePool, SourceEntry, FunnelStage, InterviewOutcomes,
   OpenJobs, TimeToFill,
@@ -55,6 +63,154 @@ function RecruiterStatsWidget({ data, loading }: { data: RecruiterStats | undefi
         <StatCard key={label} label={label} value={value as number | null} loading={loading} />
       ))}
     </div>
+  )
+}
+
+// ── Add User dialog ────────────────────────────────────────────────────────────
+
+const addUserSchema = z.object({
+  first_name: z.string().min(1, 'Required'),
+  last_name:  z.string().min(1, 'Required'),
+  username:   z.string().min(1, 'Required'),
+  email:      z.string().email('Valid email required'),
+  role:       z.enum(['recruiter', 'team_lead', 'vp', 'ceo']),
+  reports_to: z.coerce.number().optional().nullable(),
+  password:   z.string().min(8, 'Min 8 characters'),
+  password2:  z.string().min(1, 'Required'),
+}).refine(d => d.password === d.password2, {
+  message: 'Passwords do not match', path: ['password2'],
+})
+
+type AddUserValues = z.infer<typeof addUserSchema>
+
+function AddUserDialog({ teamLeads, onSuccess }: { teamLeads: UserEntry[]; onSuccess: () => void }) {
+  const [open, setOpen] = useState(false)
+  const [serverError, setServerError] = useState('')
+  const qc = useQueryClient()
+
+  const { register, handleSubmit, watch, reset, formState: { errors, isSubmitting } } = useForm<AddUserValues>({
+    resolver: zodResolver(addUserSchema),
+    defaultValues: { role: 'recruiter' },
+  })
+
+  const role = watch('role')
+  const needsReportsTo = ['recruiter', 'team_lead'].includes(role)
+
+  const mutation = useMutation({
+    mutationFn: (data: AddUserValues) => {
+      const payload: Record<string, unknown> = { ...data }
+      if (!needsReportsTo || !payload.reports_to) delete payload.reports_to
+      return api.post('/users/register/', payload)
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['users-list'] })
+      setOpen(false)
+      reset()
+      setServerError('')
+      onSuccess()
+    },
+    onError: (err: any) => {
+      const data = err?.response?.data
+      const msg = data
+        ? Object.values(data).flat().join(' ')
+        : 'Failed to create user.'
+      setServerError(msg)
+    },
+  })
+
+  function onSubmit(values: AddUserValues) {
+    setServerError('')
+    mutation.mutate(values)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={o => { setOpen(o); if (!o) { reset(); setServerError('') } }}>
+      <DialogTrigger asChild>
+        <Button className="flex items-center gap-2 h-10 px-4 text-sm">
+          <UserPlus className="h-4 w-4" />
+          Add User
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Add Team Member</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-2">
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>First Name</Label>
+              <Input {...register('first_name')} placeholder="Jane" />
+              {errors.first_name && <p className="text-xs text-red-400">{errors.first_name.message}</p>}
+            </div>
+            <div className="space-y-1.5">
+              <Label>Last Name</Label>
+              <Input {...register('last_name')} placeholder="Smith" />
+              {errors.last_name && <p className="text-xs text-red-400">{errors.last_name.message}</p>}
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Username</Label>
+            <Input {...register('username')} placeholder="jane.smith" autoComplete="off" />
+            {errors.username && <p className="text-xs text-red-400">{errors.username.message}</p>}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Email</Label>
+            <Input {...register('email')} type="email" placeholder="jane@company.com" />
+            {errors.email && <p className="text-xs text-red-400">{errors.email.message}</p>}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Role</Label>
+            <select {...register('role')}
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+            >
+              <option value="recruiter">Recruiter</option>
+              <option value="team_lead">Team Lead</option>
+              <option value="vp">VP</option>
+              <option value="ceo">CEO</option>
+            </select>
+          </div>
+
+          {needsReportsTo && (
+            <div className="space-y-1.5">
+              <Label>Reports To <span className="text-slate-500">(optional)</span></Label>
+              <select {...register('reports_to')}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+              >
+                <option value="">— None —</option>
+                {teamLeads.map(tl => (
+                  <option key={tl.id} value={tl.id}>{tl.first_name} {tl.last_name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>Password</Label>
+              <Input {...register('password')} type="password" placeholder="Min 8 chars" autoComplete="new-password" />
+              {errors.password && <p className="text-xs text-red-400">{errors.password.message}</p>}
+            </div>
+            <div className="space-y-1.5">
+              <Label>Confirm Password</Label>
+              <Input {...register('password2')} type="password" placeholder="••••••••" autoComplete="new-password" />
+              {errors.password2 && <p className="text-xs text-red-400">{errors.password2.message}</p>}
+            </div>
+          </div>
+
+          {serverError && (
+            <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{serverError}</p>
+          )}
+
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? 'Creating…' : 'Create User'}
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -149,6 +305,9 @@ function EmployeePicker({
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function People() {
+  const { user: authUser } = useAuth()
+  const isManager = ['vp', 'ceo'].includes(authUser?.role ?? '')
+
   const [searchParams, setSearchParams] = useSearchParams()
   const selectedId = searchParams.get('user') ? Number(searchParams.get('user')) : null
 
@@ -175,6 +334,7 @@ export default function People() {
   }, [isError, error, clearSelection])
 
   const selected = users.find(u => u.id === selectedId)
+  const teamLeads = users.filter(u => u.role === 'team_lead')
   const sources  = data?.source_effectiveness ?? []
   const maxCandidates = sources.length > 0 ? Math.max(...sources.map(s => s.candidates)) : 1
 
@@ -188,7 +348,10 @@ export default function People() {
       {/* ── Header + picker ── */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-slate-400">View performance and analytics for any team member</p>
-        <EmployeePicker users={users} selectedId={selectedId} onSelect={selectUser} />
+        <div className="flex items-center gap-3">
+          {isManager && <AddUserDialog teamLeads={teamLeads} onSuccess={() => {}} />}
+          <EmployeePicker users={users} selectedId={selectedId} onSelect={selectUser} />
+        </div>
       </div>
 
       {/* ── Empty state ── */}

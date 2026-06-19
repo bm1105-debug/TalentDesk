@@ -44,7 +44,7 @@ class TaskViewSet(RoleQuerysetMixin, viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         task = self.get_object()
         # Only the owner or a manager can delete
-        if task.assignee != request.user and request.user.role not in (Role.ACCOUNT_MANAGER, Role.CEO):
+        if task.assignee != request.user and request.user.role not in (Role.VP, Role.CEO):
             return Response(status=status.HTTP_403_FORBIDDEN)
         return super().destroy(request, *args, **kwargs)
 

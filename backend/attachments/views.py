@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser, FormParser
 
-from users.permissions import IsRecruiterOrAbove, IsAccountManagerOrAbove
+from users.permissions import IsRecruiterOrAbove, IsVPOrAbove
 from .models import Attachment
 from .serializers import AttachmentSerializer
 from .parsers import parse_resume
@@ -46,7 +46,7 @@ class AttachmentListCreateView(ListCreateAPIView):
 class AttachmentDestroyView(DestroyAPIView):
     queryset = Attachment.objects.all()
     serializer_class = AttachmentSerializer
-    permission_classes = [IsAccountManagerOrAbove]
+    permission_classes = [IsVPOrAbove]
 
 
 class AttachmentDownloadView(APIView):

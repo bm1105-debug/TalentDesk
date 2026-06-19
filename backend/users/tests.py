@@ -104,7 +104,7 @@ class ReportsToPodTests(APITestCase):
 
     def setUp(self):
         self.am = User.objects.create_user(
-            username="am", password="Str0ng!Pass", role=Role.ACCOUNT_MANAGER,
+            username="am", password="Str0ng!Pass", role=Role.VP,
             first_name="Alice", last_name="Manager", email="am@test.com",
         )
         self.team_lead = User.objects.create_user(
@@ -267,7 +267,7 @@ class UserListTeamLeadTests(APITestCase):
 
     def setUp(self):
         self.am = User.objects.create_user(
-            username="am", password="Str0ng!Pass", role=Role.ACCOUNT_MANAGER,
+            username="am", password="Str0ng!Pass", role=Role.VP,
             first_name="Alice", last_name="Manager", email="am@tl.com",
         )
         self.tl = User.objects.create_user(
@@ -324,11 +324,11 @@ class UserListTeamLeadTests(APITestCase):
         res = self.client.get(self.url)
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_account_manager_still_sees_recruiters_and_team_leads(self):
+    def test_vp_sees_all_users(self):
         _auth(self.client, self.am)
         res = self.client.get(self.url)
-        ids = [u["id"] for u in (res.data.get("results") or res.data)]
+        ids = [u["id"] for u in (res.data.get("results") if "results" in res.data else res.data)]
         self.assertIn(self.rec_in_pod.id, ids)
         self.assertIn(self.rec_other_pod.id, ids)
         self.assertIn(self.tl.id, ids)
-        self.assertNotIn(self.am.id, ids)
+        self.assertIn(self.am.id, ids)  # VP sees themselves too

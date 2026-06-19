@@ -1,7 +1,7 @@
-'''  
-Replaces Django's default User with our custom one. 
-Adds a role field with 4 choices (Recruiter, Account Manager, Team Lead, CEO). 
-The AUTH_USER_MODEL = "users.User" in settings points here. 
+'''
+Replaces Django's default User with our custom one.
+Adds a role field with 4 choices (Recruiter, Team Lead, VP, CEO).
+The AUTH_USER_MODEL = "users.User" in settings points here.
 Must be defined before the first migration
 '''
 
@@ -11,8 +11,8 @@ from django.db import models
 
 class Role(models.TextChoices):
     RECRUITER = "recruiter", "Recruiter"
-    ACCOUNT_MANAGER = "account_manager", "Account Manager"
     TEAM_LEAD = "team_lead", "Team Lead"
+    VP = "vp", "VP"
     CEO = "ceo", "CEO / Admin"
 
 class User(AbstractUser):
@@ -45,8 +45,8 @@ class User(AbstractUser):
         return self.role == Role.RECRUITER
 
     @property
-    def is_account_manager(self):
-        return self.role == Role.ACCOUNT_MANAGER
+    def is_vp(self):
+        return self.role == Role.VP
 
     @property
     def is_team_lead(self):
@@ -58,7 +58,7 @@ class User(AbstractUser):
 
     def can_manage_all(self):
         """True for roles that can see all recruiters' data."""
-        return self.role in (Role.CEO, Role.ACCOUNT_MANAGER)
+        return self.role in (Role.CEO, Role.VP)
 
     def clean(self):
         from django.core.exceptions import ValidationError

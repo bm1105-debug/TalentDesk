@@ -174,7 +174,7 @@ class CandidateUpdateDeleteTests(APITestCase):
 
     def setUp(self):
         self.recruiter = make_user("recruiter@test.com", role=Role.RECRUITER)
-        self.manager   = make_user("manager@test.com",   role=Role.ACCOUNT_MANAGER)
+        self.manager   = make_user("manager@test.com",   role=Role.VP)
         self.candidate = make_candidate(created_by=self.recruiter)
 
     def test_recruiter_can_update(self):
@@ -373,7 +373,7 @@ class CandidateIsolationTests(APITestCase):
         self.rec_a.reports_to = self.team_lead
         self.rec_a.save()
         self.rec_b = make_user("recb@iso.com", role=Role.RECRUITER)  # outside pod
-        self.am = make_user("am@iso.com", role=Role.ACCOUNT_MANAGER)
+        self.am = make_user("am@iso.com", role=Role.VP)
 
         self.c_a = make_candidate(
             email="cand_a@iso.com", phone="7001", created_by=self.rec_a

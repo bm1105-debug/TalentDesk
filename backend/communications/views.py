@@ -22,7 +22,7 @@ from .serializers import (
     PreviewEmailSerializer,
     SentEmailSerializer,
 )
-from users.permissions import IsAccountManagerOrAbove, IsRecruiterOrAbove
+from users.permissions import IsRecruiterOrAbove, IsVPOrAbove
 from candidates.models import Candidate
 from jobs.models import Job
 
@@ -40,7 +40,7 @@ class EmailTemplateViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         # Recruiters need read access to pick a template before sending
         if self.action in ("create", "update", "partial_update", "destroy"):
-            return [IsAccountManagerOrAbove()]
+            return [IsVPOrAbove()]
         return [IsRecruiterOrAbove()]
 
 
@@ -145,7 +145,7 @@ class SentEmailViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
     Managers only — contains recipient contact details.
     """
     serializer_class   = SentEmailSerializer
-    permission_classes = [IsAccountManagerOrAbove]
+    permission_classes = [IsVPOrAbove]
     filter_backends    = [filters.SearchFilter, filters.OrderingFilter]
     search_fields      = ["to_email", "to_name", "subject"]
     ordering_fields    = ["sent_at", "status"]
