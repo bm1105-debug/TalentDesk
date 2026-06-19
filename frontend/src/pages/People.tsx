@@ -154,7 +154,9 @@ export default function People() {
 
   const { data: users = [] } = useQuery<UserEntry[]>({
     queryKey: ['users-list'],
-    queryFn:  () => api.get('/users/').then(r => r.data),
+    queryFn:  () => api.get('/users/', { params: { page_size: 200 } })
+                       .then(r => (r.data.results ?? r.data) as UserEntry[])
+                       .then(list => list.filter(u => ['recruiter', 'team_lead'].includes(u.role))),
   })
 
   const { data, isLoading } = useQuery<UserAnalyticsData>({
