@@ -3,6 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Count
+from django.utils import timezone
 
 from .models import Job, PipelineStage
 from .serializers import JobSerializer, PipelineStageSerializer
@@ -35,6 +36,9 @@ class JobViewSet(RoleQuerysetMixin, viewsets.ModelViewSet):
         if assigned_param == "true":
             # Recruiters can filter to only see jobs assigned to them
             qs = qs.filter(assigned_to=self.request.user)
+
+        if self.request.query_params.get("overdue") == "true":
+            qs = qs.filter(status="open", target_date__lt=timezone.now().date())
 
         allowed = self.allowed_author_ids()
         if allowed is not None:

@@ -189,16 +189,18 @@ export default function Jobs() {
   const [search,     setSearch]     = useState('')
   const [status,     setStatus]     = useState('')
   const [priority,   setPriority]   = useState(searchParams.get('priority') ?? '')
+  const [overdue]                    = useState(searchParams.get('filter') === 'overdue')
   const [page,       setPage]       = useState(1)
   const [dialogOpen, setDialogOpen] = useState(false)
 
   const { data, isLoading } = useQuery<PaginatedJobs>({
-    queryKey: ['jobs', search, status, priority, page],
+    queryKey: ['jobs', search, status, priority, overdue, page],
     queryFn:  () => api.get('/jobs/', {
       params: {
         search:   search   || undefined,
         status:   status   || undefined,
         priority: priority || undefined,
+        overdue:  overdue  ? 'true' : undefined,
         page,
       },
     }).then(r => r.data),

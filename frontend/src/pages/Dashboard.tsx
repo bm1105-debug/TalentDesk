@@ -140,8 +140,9 @@ function DashboardSkeleton() {
 
 // ── Status pills ───────────────────────────────────────────────────────────────
 
-function StatusPill({ label, color }: { label: string; color: 'red' | 'purple' | 'cyan' }) {
+function StatusPill({ label, color, to }: { label: string; color: 'red' | 'purple' | 'cyan'; to?: string }) {
   void color  // retained for call-site compatibility; pills are now uniformly glassmorphic
+  if (to) return <Link to={to} className="status-pill">{label}</Link>
   return <span className="status-pill">{label}</span>
 }
 
@@ -160,17 +161,14 @@ const CARD_STYLES: GradientCardConfig[] = [
 ]
 
 function TrendBadge({ trend }: { trend: Trend }) {
-  if (trend.direction === 'flat') {
-    return (
-      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-white/15 text-white/70">
-        —
-      </span>
-    )
-  }
+  if (trend.direction === 'flat') return null
   const isUp = trend.direction === 'up'
   const Icon = isUp ? TrendingUp : TrendingDown
   return (
-    <span className="flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-white/20 text-white">
+    <span
+      className={`flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${isUp ? 'bg-emerald-500/15 text-emerald-400' : 'bg-red-500/15 text-red-400'}`}
+      title={`${isUp ? '+' : '-'}${trend.pct}% vs last week`}
+    >
       <Icon className="h-3 w-3" />
       {trend.pct}%
     </span>
@@ -668,7 +666,7 @@ export default function Dashboard() {
     { label: 'Open Jobs',         value: summary.open_jobs_count,         cfg: CARD_STYLES[0], accent: false, to: '/jobs',                          trend: t?.open_jobs },
     { label: 'Active Submittals', value: summary.active_submittals_count, cfg: CARD_STYLES[1], accent: false, to: '/submittals',                    trend: t?.active_submittals },
     { label: 'Urgent Jobs',       value: summary.urgent_jobs_count,       cfg: CARD_STYLES[2], accent: true,  to: '/jobs?priority=urgent',          trend: t?.urgent_jobs },
-    { label: 'Overdue Jobs',      value: summary.overdue_jobs_count,      cfg: CARD_STYLES[3], accent: true,  to: '/jobs',                          trend: t?.overdue_jobs },
+    { label: 'Overdue Jobs',      value: summary.overdue_jobs_count,      cfg: CARD_STYLES[3], accent: true,  to: '/jobs?filter=overdue',           trend: t?.overdue_jobs },
     { label: 'Pending Offers',    value: summary.pending_offers_count,    cfg: CARD_STYLES[4], accent: true,  to: '/offers',                        trend: t?.pending_offers },
   ]
 
@@ -716,11 +714,11 @@ export default function Dashboard() {
           </p>
           <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
             {summary.urgent_jobs_count > 0
-              ? <StatusPill label={`${summary.urgent_jobs_count} urgent job${summary.urgent_jobs_count > 1 ? 's' : ''} need attention`} color="red" />
+              ? <StatusPill label={`${summary.urgent_jobs_count} urgent job${summary.urgent_jobs_count > 1 ? 's' : ''} need attention`} color="red" to="/jobs?priority=urgent" />
               : <StatusPill label="No urgent jobs" color="red" />}
-            <StatusPill label={`${summary.active_submittals_count} active submittal${summary.active_submittals_count !== 1 ? 's' : ''}`} color="purple" />
+            <StatusPill label={`${summary.active_submittals_count} active submittal${summary.active_submittals_count !== 1 ? 's' : ''}`} color="purple" to="/submittals" />
             {summary.interviews_today_count > 0
-              ? <StatusPill label={`${summary.interviews_today_count} interview${summary.interviews_today_count > 1 ? 's' : ''} today`} color="cyan" />
+              ? <StatusPill label={`${summary.interviews_today_count} interview${summary.interviews_today_count > 1 ? 's' : ''} today`} color="cyan" to="/interviews" />
               : <StatusPill label="No interviews today" color="cyan" />}
           </div>
         </div>

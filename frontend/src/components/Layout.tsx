@@ -186,6 +186,8 @@ export default function Layout() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const pageTitle = getPageTitle(location.pathname)
+  const TitleTag = location.pathname === '/dashboard' ? 'h2' : 'h1'
   const [pwOpen, setPwOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(() => {
     return localStorage.getItem('td_sidebar_collapsed') === 'true'
@@ -210,6 +212,10 @@ export default function Layout() {
       activeEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
     }
   }, [location.pathname])
+
+  useEffect(() => {
+    document.title = pageTitle !== 'TalentDesk' ? `${pageTitle} — TalentDesk` : 'TalentDesk'
+  }, [pageTitle])
 
   function handleNavScroll() {
     const el = scrollRef.current
@@ -304,13 +310,21 @@ export default function Layout() {
                   <ChevronRight className={`h-3 w-3 transition-transform duration-200 ${managementOpen ? 'rotate-90' : ''}`} />
                 </button>
             }
-            {(collapsed || managementOpen) && MANAGEMENT_ITEMS.filter(item => {
-              if (item.to === '/scorecard' && user?.role === 'ceo') return false
-              if (item.to === '/people' && !['account_manager', 'ceo', 'team_lead'].includes(user?.role ?? '')) return false
-              return true
-            }).map(item => (
-              <NavItem key={item.to} {...item} collapsed={collapsed} />
-            ))}
+            <div style={{
+              display: 'grid',
+              gridTemplateRows: (collapsed || managementOpen) ? '1fr' : '0fr',
+              transition: 'grid-template-rows 0.25s ease',
+            }}>
+              <div style={{ overflow: 'hidden' }}>
+                {MANAGEMENT_ITEMS.filter(item => {
+                  if (item.to === '/scorecard' && user?.role === 'ceo') return false
+                  if (item.to === '/people' && !['account_manager', 'ceo', 'team_lead'].includes(user?.role ?? '')) return false
+                  return true
+                }).map(item => (
+                  <NavItem key={item.to} {...item} collapsed={collapsed} />
+                ))}
+              </div>
+            </div>
 
             {isManager && (
               <>
@@ -325,73 +339,18 @@ export default function Layout() {
                       <ChevronRight className={`h-3 w-3 transition-transform duration-200 ${adminOpen ? 'rotate-90' : ''}`} />
                     </button>
                 }
-                {(collapsed || adminOpen) && (
-                  <NavItem to="/activity" label="Audit Log" icon={ScrollText} collapsed={collapsed} />
-                )}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateRows: (collapsed || adminOpen) ? '1fr' : '0fr',
+                  transition: 'grid-template-rows 0.25s ease',
+                }}>
+                  <div style={{ overflow: 'hidden' }}>
+                    <NavItem to="/activity" label="Audit Log" icon={ScrollText} collapsed={collapsed} />
+                  </div>
+                </div>
               </>
             )}
           </nav>
-        </div>
-
-        {/* User area */}
-        <div
-          className={cn('p-2', collapsed && 'flex justify-center')}
-          style={{ borderTop: '1px solid var(--td-border-subtle)' }}
-        >
-          <DropdownMenu.Root>
-            <DropdownMenu.Trigger asChild>
-              <button className={cn(
-                'flex items-center gap-2.5 rounded-lg hover:bg-white/5 transition-colors',
-                collapsed ? 'p-1' : 'w-full px-2 py-1.5 text-left'
-              )}>
-                {user && (
-                  <InitialsAvatar
-                    id={user.id}
-                    firstName={user.first_name ?? ''}
-                    lastName={user.last_name ?? ''}
-                    size="sm"
-                    style={{
-                      background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                      boxShadow:  '0 0 0 2px rgba(99,102,241,0.5), 0 4px 12px rgba(99,102,241,0.4)',
-                    }}
-                  />
-                )}
-                {!collapsed && user && (
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-medium text-slate-200 truncate">
-                      {user.first_name} {user.last_name}
-                    </p>
-                    <p className="text-[10px] text-slate-600 capitalize">{user.role?.replace('_', ' ')}</p>
-                  </div>
-                )}
-              </button>
-            </DropdownMenu.Trigger>
-            <DropdownMenu.Portal>
-              <DropdownMenu.Content
-                side="right"
-                align="end"
-                sideOffset={8}
-                className="min-w-[168px] rounded-xl shadow-2xl p-1 z-50"
-                style={{ background: 'var(--td-surface)', border: '1px solid var(--td-border)' }}
-              >
-                <DropdownMenu.Item
-                  onSelect={() => setPwOpen(true)}
-                  className="flex items-center gap-2 px-3 py-2 text-sm text-slate-400 rounded-lg hover:bg-white/5 hover:text-slate-200 cursor-pointer outline-none transition-colors"
-                >
-                  <KeyRound className="h-3.5 w-3.5" />
-                  Change password
-                </DropdownMenu.Item>
-                <DropdownMenu.Separator className="my-1 border-t border-white/5" />
-                <DropdownMenu.Item
-                  onSelect={handleLogout}
-                  className="flex items-center gap-2 px-3 py-2 text-sm text-red-400 rounded-lg hover:bg-red-500/10 cursor-pointer outline-none"
-                >
-                  <LogOut className="h-3.5 w-3.5" />
-                  Sign out
-                </DropdownMenu.Item>
-              </DropdownMenu.Content>
-            </DropdownMenu.Portal>
-          </DropdownMenu.Root>
         </div>
 
         <ChangePasswordDialog open={pwOpen} onClose={() => setPwOpen(false)} />
@@ -411,9 +370,9 @@ export default function Layout() {
             boxShadow:      '0 1px 0 rgba(255,255,255,0.05), 0 4px 20px rgba(0,0,0,0.2)',
           }}
         >
-          <span style={{ fontSize: '15px', fontWeight: 700, color: '#f1f5f9', letterSpacing: '-0.3px' }}>
-            {getPageTitle(location.pathname)}
-          </span>
+          <TitleTag style={{ fontSize: '15px', fontWeight: 700, color: '#f1f5f9', letterSpacing: '-0.3px', margin: 0 }}>
+            {pageTitle}
+          </TitleTag>
 
           {/* Search trigger — opens Command Bar */}
           <button
@@ -428,7 +387,61 @@ export default function Layout() {
             >⌘K</kbd>
           </button>
 
-          <NotificationBell />
+          <div className="flex items-center gap-1">
+            <NotificationBell />
+
+            <DropdownMenu.Root>
+              <DropdownMenu.Trigger asChild>
+                <button className="p-1 rounded-lg hover:bg-white/5 transition-colors" aria-label="Account menu">
+                  {user && (
+                    <InitialsAvatar
+                      id={user.id}
+                      firstName={user.first_name ?? ''}
+                      lastName={user.last_name ?? ''}
+                      size="sm"
+                      style={{
+                        background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                        boxShadow:  '0 0 0 2px rgba(99,102,241,0.5), 0 4px 12px rgba(99,102,241,0.4)',
+                      }}
+                    />
+                  )}
+                </button>
+              </DropdownMenu.Trigger>
+              <DropdownMenu.Portal>
+                <DropdownMenu.Content
+                  side="bottom"
+                  align="end"
+                  sideOffset={8}
+                  className="min-w-[168px] rounded-xl shadow-2xl p-1 z-50"
+                  style={{ background: 'var(--td-surface)', border: '1px solid var(--td-border)' }}
+                >
+                  {user && (
+                    <>
+                      <div className="px-3 py-2 border-b border-white/5 mb-1">
+                        <p className="text-xs font-medium text-slate-200 truncate">{user.first_name} {user.last_name}</p>
+                        <p className="text-[10px] text-slate-500 capitalize">{user.role?.replace('_', ' ')}</p>
+                      </div>
+                    </>
+                  )}
+                  <DropdownMenu.Item
+                    onSelect={() => setPwOpen(true)}
+                    className="flex items-center gap-2 px-3 py-2 text-sm text-slate-400 rounded-lg hover:bg-white/5 hover:text-slate-200 cursor-pointer outline-none transition-colors"
+                  >
+                    <KeyRound className="h-3.5 w-3.5" />
+                    Change password
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Separator className="my-1 border-t border-white/5" />
+                  <DropdownMenu.Item
+                    onSelect={handleLogout}
+                    className="flex items-center gap-2 px-3 py-2 text-sm text-red-400 rounded-lg hover:bg-red-500/10 cursor-pointer outline-none"
+                  >
+                    <LogOut className="h-3.5 w-3.5" />
+                    Sign out
+                  </DropdownMenu.Item>
+                </DropdownMenu.Content>
+              </DropdownMenu.Portal>
+            </DropdownMenu.Root>
+          </div>
         </header>
 
         {/* ── Main content: direct style injection on main ─────────── */}
