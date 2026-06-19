@@ -7,7 +7,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Search, Plus, ChevronLeft, ChevronRight, FileUp, Loader2, LayoutGrid, List } from 'lucide-react'
+import { Search, Plus, ChevronLeft, ChevronRight, FileUp, Loader2, LayoutGrid, List,
+  Globe, Link2, Users, MoreHorizontal, Briefcase, Clock, ExternalLink } from 'lucide-react'
 import InitialsAvatar from '@/components/InitialsAvatar'
 import { useNavigate } from 'react-router-dom'
 import { useRef } from 'react'
@@ -323,50 +324,85 @@ function CardSkeleton() {
   )
 }
 
+const STATUS_STYLES: Record<string, string> = {
+  active:      'bg-emerald-500/15 text-emerald-300 border border-emerald-500/25',
+  passive:     'bg-amber-500/15 text-amber-300 border border-amber-500/25',
+  placed:      'bg-blue-500/15 text-blue-300 border border-blue-500/25',
+  blacklisted: 'bg-red-500/15 text-red-400 border border-red-500/25',
+}
+
+function SourceIcon({ source }: { source: string }) {
+  const cls = 'h-3 w-3 shrink-0'
+  switch (source) {
+    case 'job_board': return <Globe className={cls} />
+    case 'direct':    return <Link2 className={cls} />
+    case 'referral':  return <Users className={cls} />
+    case 'linkedin':  return <ExternalLink className={cls} />
+    default:          return <MoreHorizontal className={cls} />
+  }
+}
+
 function CandidateCard({ candidate }: { candidate: Candidate }) {
   const navigate = useNavigate()
+  const statusClass = STATUS_STYLES[candidate.status] ?? STATUS_STYLES.active
+  const visibleSkills = candidate.skills.slice(0, 3)
+  const overflowCount = candidate.skills.length - 3
+
   return (
     <div
-      onClick={() => navigate(`/candidates/${candidate.id}`)}
-      className="bg-[#1a1a2e] border border-white/[0.06] rounded-xl p-4 cursor-pointer hover:border-white/[0.12] transition-all flex flex-col"
+      onClick={() => navigate(`/candidates/${candidate.id}`, { state: { name: `${candidate.first_name} ${candidate.last_name}` } })}
+      className="bg-[#1a1a2e] border border-white/[0.08] rounded-xl shadow-md p-4 cursor-pointer transition-all duration-200 hover:border-white/20 hover:scale-[1.01] hover:shadow-[0_8px_30px_rgba(139,92,246,0.12)] flex flex-col gap-3"
     >
-      <div className="flex items-start gap-3 mb-1">
-        <InitialsAvatar id={candidate.id} firstName={candidate.first_name} lastName={candidate.last_name} size="md" />
+      {/* Avatar + name + status badge */}
+      <div className="flex items-start gap-3">
+        <InitialsAvatar id={candidate.id} firstName={candidate.first_name} lastName={candidate.last_name} size="lg" />
         <div className="min-w-0 flex-1">
-          <p className="font-semibold text-slate-100 truncate">
+          <p className="font-semibold text-slate-100 text-base truncate">
             {candidate.first_name} {candidate.last_name}
           </p>
-          <p className="text-sm text-slate-500 truncate">
+          <p className="text-sm text-slate-400 truncate">
             {candidate.current_title || '—'}
             {candidate.years_of_experience != null && (
               <span className="ml-1 text-slate-500">· {candidate.years_of_experience} yrs</span>
             )}
           </p>
         </div>
-        <StatusBadge status={candidate.status} />
+        <span className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold capitalize ${statusClass}`}>
+          {candidate.status}
+        </span>
       </div>
 
-      <span className="inline-block self-start text-xs bg-white/[0.06] text-slate-400 px-2 py-0.5 rounded mb-3 capitalize">
-        {candidate.source.replace('_', ' ')}
-      </span>
-
-      <div className="flex flex-wrap gap-1 mb-auto">
-        {candidate.skills.slice(0, 4).map(s => (
-          <Badge key={s.id} variant="secondary" className="text-xs">{s.name}</Badge>
+      {/* Source pill + skill tags */}
+      <div className="flex flex-wrap gap-1.5 items-center">
+        <span className="inline-flex items-center gap-1 bg-white/5 text-slate-400 border border-white/[0.08] rounded-full px-2 py-0.5 text-[11px] capitalize">
+          <SourceIcon source={candidate.source} />
+          {candidate.source.replace('_', ' ')}
+        </span>
+        {visibleSkills.map(s => (
+          <span key={s.id} className="bg-slate-800 text-slate-300 border border-white/[0.08] rounded-md px-2 py-0.5 text-xs font-medium">
+            {s.name}
+          </span>
         ))}
-        {candidate.skills.length > 4 && (
-          <Badge variant="secondary" className="text-xs">+{candidate.skills.length - 4}</Badge>
+        {overflowCount > 0 && (
+          <span className="text-xs text-slate-500 px-1">+{overflowCount}</span>
         )}
         {candidate.skills.length === 0 && (
-          <span className="text-xs text-slate-600">No skills</span>
+          <span className="text-xs text-slate-600 italic">No skills</span>
         )}
       </div>
 
-      <div className="flex items-center justify-between text-xs text-slate-500 border-t border-white/[0.04] pt-3 mt-3">
-        <span>
-          {candidate.active_submittals_count} active submittal{candidate.active_submittals_count !== 1 ? 's' : ''}
+      {/* Divider + footer stats */}
+      <div className="border-t border-white/5 pt-2 flex items-center justify-between">
+        <span className="flex items-center gap-1.5 text-xs text-slate-400">
+          <Briefcase className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          {candidate.active_submittals_count} submittal{candidate.active_submittals_count !== 1 ? 's' : ''}
         </span>
-        <span>{fmtLastContacted(candidate.last_contacted_at)}</span>
+        <span className="flex items-center gap-1 text-xs text-slate-500">
+          <Clock className="h-3 w-3 shrink-0" aria-hidden="true" />
+          {candidate.last_contacted_at
+            ? `Last: ${fmtLastContacted(candidate.last_contacted_at)}`
+            : 'Never'}
+        </span>
       </div>
     </div>
   )
@@ -557,7 +593,7 @@ export default function Candidates() {
               )}
               {data?.results.map(c => (
                 <tr key={c.id} className="hover:bg-white/[0.03] transition-colors cursor-pointer"
-                  onClick={() => navigate(`/candidates/${c.id}`)}>
+                  onClick={() => navigate(`/candidates/${c.id}`, { state: { name: `${c.first_name} ${c.last_name}` } })}>
                   <td className="px-4 py-3 w-10" onClick={e => e.stopPropagation()}>
                     <input
                       type="checkbox"

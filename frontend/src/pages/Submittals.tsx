@@ -7,13 +7,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, ChevronLeft, ChevronRight, ArrowRight, StickyNote, HandCoins, Star, XCircle } from 'lucide-react'
+import { Plus, ChevronLeft, ChevronRight, ArrowRight, StickyNote, HandCoins, Star, XCircle, ChevronUp, ChevronDown } from 'lucide-react'
 import api from '@/api/client'
 import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { StatusBadge } from '@/components/StatusBadge'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -153,7 +152,7 @@ function AdvanceStageDialog({ submittal, onDone }: { submittal: Submittal; onDon
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs text-blue-600 hover:text-blue-700">
+        <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs text-blue-400 hover:text-blue-300 hover:bg-blue-500/10">
           <ArrowRight className="h-3.5 w-3.5" /> Advance
         </Button>
       </DialogTrigger>
@@ -236,7 +235,7 @@ function MakeOfferDialog({ submittal, onDone }: { submittal: Submittal; onDone: 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs text-emerald-600 hover:text-emerald-700">
+        <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10">
           <HandCoins className="h-3.5 w-3.5" /> Offer
         </Button>
       </DialogTrigger>
@@ -324,7 +323,7 @@ function AddNoteDialog({ submittal, onDone }: { submittal: Submittal; onDone: ()
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs text-gray-500 hover:text-gray-700">
+        <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs text-slate-400 hover:text-slate-300 hover:bg-white/[0.05]">
           <StickyNote className="h-3.5 w-3.5" /> Note
         </Button>
       </DialogTrigger>
@@ -428,7 +427,7 @@ function ChangeStatusDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs text-red-500 hover:text-red-700">
+        <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10">
           <XCircle className="h-3.5 w-3.5" /> Close
         </Button>
       </DialogTrigger>
@@ -468,14 +467,46 @@ function ChangeStatusDialog({
   )
 }
 
+// ── Status badge ──────────────────────────────────────────────────────────────
+
+const SUBMITTAL_STATUS_STYLES: Record<string, string> = {
+  active:    'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25',
+  placed:    'bg-blue-500/15 text-blue-400 border border-blue-500/25',
+  rejected:  'bg-red-500/15 text-red-400 border border-red-500/25',
+  withdrawn: 'bg-slate-500/15 text-slate-400 border border-slate-500/25',
+}
+function SubmittalStatusBadge({ status }: { status: string }) {
+  const cls = SUBMITTAL_STATUS_STYLES[status] ?? 'bg-slate-500/15 text-slate-400 border border-slate-500/25'
+  return <span className={`priority-badge ${cls}`}>{status}</span>
+}
+
+function SortTh({ label, col, sortCol, sortDir, onSort }: {
+  label: string; col: string; sortCol: string | null; sortDir: 'asc' | 'desc'
+  onSort: (col: string) => void
+}) {
+  const active = sortCol === col
+  return (
+    <th onClick={() => onSort(col)}
+      className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer select-none">
+      <div className="flex items-center gap-1">
+        {label}
+        {active
+          ? (sortDir === 'asc' ? <ChevronUp className="h-3 w-3 text-violet-400" /> : <ChevronDown className="h-3 w-3 text-violet-400" />)
+          : <ChevronDown className="h-3 w-3 text-slate-700" />
+        }
+      </div>
+    </th>
+  )
+}
+
 // ── Match Score Badge ──────────────────────────────────────────────────────────
 
 function MatchBadge({ score }: { score: number | null }) {
-  if (score === null) return <span className="text-gray-300 text-xs">—</span>
+  if (score === null) return <span className="text-slate-500 text-xs">—</span>
   const cls =
-    score >= 70 ? 'bg-emerald-100 text-emerald-700' :
-    score >= 40 ? 'bg-amber-100 text-amber-700' :
-                  'bg-red-100 text-red-700'
+    score >= 70 ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25' :
+    score >= 40 ? 'bg-amber-500/15 text-amber-400 border border-amber-500/25' :
+                  'bg-red-500/15 text-red-400 border border-red-500/25'
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${cls}`}>
       {score}
@@ -499,7 +530,7 @@ function StarButton({ submittal }: { submittal: Submittal }) {
       onClick={() => toggle.mutate()}
       disabled={toggle.isPending}
       title={submittal.is_shortlisted ? 'Remove from shortlist' : 'Add to shortlist'}
-      className="p-1 rounded hover:bg-amber-50 transition-colors disabled:opacity-40"
+      className="p-1 rounded hover:bg-amber-500/10 transition-colors disabled:opacity-40"
     >
       <Star
         className={`h-4 w-4 transition-colors ${
@@ -523,6 +554,13 @@ export default function Submittals() {
   const [page,            setPage]            = useState(1)
   const [dialogOpen,      setDialogOpen]      = useState(false)
   const [rejectionHint,   setRejectionHint]   = useState<RejectionHint | null>(null)
+  const [sortCol,         setSortCol]         = useState<string | null>(null)
+  const [sortDir,         setSortDir]         = useState<'asc' | 'desc'>('asc')
+
+  function handleSort(col: string) {
+    if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortCol(col); setSortDir('asc') }
+  }
 
   const { data, isLoading } = useQuery<PaginatedSubmittals>({
     queryKey: ['submittals', status, showShortlisted, page],
@@ -572,8 +610,8 @@ export default function Submittals() {
           onClick={() => { setShowShortlisted(v => !v); setPage(1) }}
           className={`flex items-center gap-1.5 h-9 px-3 rounded-md border text-sm transition-colors ${
             showShortlisted
-              ? 'border-amber-400 bg-amber-50 text-amber-700 font-medium'
-              : 'border-input bg-transparent text-slate-400 hover:bg-white/[0.03]'
+              ? 'border-amber-400/50 bg-amber-500/15 text-amber-400 font-medium'
+              : 'border-white/[0.12] bg-[#1a1a2e] text-slate-400 hover:bg-white/[0.03]'
           }`}
         >
           <Star className={`h-3.5 w-3.5 ${showShortlisted ? 'fill-amber-400 stroke-amber-400' : 'stroke-gray-400'}`} />
@@ -582,21 +620,22 @@ export default function Submittals() {
       </div>
 
       {/* ── Table ── */}
-      <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.06] overflow-hidden">
+      <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.08] overflow-hidden shadow-sm"
+        style={{ borderTop: '2px solid #8b5cf6' }}>
         <table className="w-full text-sm">
-          <thead className="bg-white/[0.04] border-b border-white/[0.06]">
+          <thead className="bg-[#12121f] border-b border-white/[0.08] sticky top-0 z-10">
             <tr>
               <th className="px-3 py-3 w-8"></th>
-              <th className="text-left px-4 py-3 font-medium text-slate-400">Candidate</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-400">Job</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-400">Stage</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-400">Fit</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-400">Status</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-400">Submitted by</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-400">Actions</th>
+              <SortTh label="Candidate"    col="candidate"    sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Job</th>
+              <SortTh label="Stage"        col="stage"        sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Fit</th>
+              <SortTh label="Status"       col="status"       sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Submitted by</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/[0.04]">
+          <tbody className="divide-y divide-white/[0.05]">
             {isLoading && (
               <tr><td colSpan={8} className="px-4 py-8 text-center text-slate-500">Loading…</td></tr>
             )}
@@ -604,20 +643,18 @@ export default function Submittals() {
               <tr><td colSpan={8} className="px-4 py-8 text-center text-slate-500">No submittals found</td></tr>
             )}
             {data?.results.map(s => (
-              <tr key={s.id} className={`hover:bg-white/[0.03] transition-colors ${s.is_shortlisted ? 'bg-amber-500/5' : ''}`}>
+              <tr key={s.id} className={`hover:bg-white/[0.03] transition-colors duration-100 ${s.is_shortlisted ? 'bg-amber-500/5' : ''}`}>
                 <td className="px-3 py-3"><StarButton submittal={s} /></td>
                 <td className="px-4 py-3 font-medium text-slate-100">{s.candidate_name}</td>
                 <td className="px-4 py-3 text-slate-400">{s.job_title}</td>
-                <td className="px-4 py-3 text-slate-400">
+                <td className="px-4 py-3">
                   {s.current_stage_name
-                    ? <span className="text-indigo-400 font-medium">{s.current_stage_name}</span>
+                    ? <span className="text-violet-400 font-medium">{s.current_stage_name}</span>
                     : <span className="text-slate-500">Not started</span>
                   }
                 </td>
                 <td className="px-4 py-3"><MatchBadge score={s.match_score} /></td>
-                <td className="px-4 py-3">
-                  <StatusBadge status={s.status} />
-                </td>
+                <td className="px-4 py-3"><SubmittalStatusBadge status={s.status} /></td>
                 <td className="px-4 py-3 text-slate-500 text-xs">{s.submitted_by}</td>
                 <td className="px-4 py-3">
                   {s.status === 'active' && (

@@ -96,46 +96,26 @@
   transition:    border-color 0.15s ease, box-shadow 0.15s ease;
 }
 .header-search:hover {
-  border-color: rgba(99, 102, 241, 0.5);
-  box-shadow:   0 0 0 3px rgba(99, 102, 241, 0.15);
-}
-
-/* ── Greeting hero — glassmorphic status pills ──────────────────────────── */
-.status-pill {
-  display:         inline-flex;
-  align-items:     center;
-  background:      rgba(255, 255, 255, 0.06);
-  border:          1px solid rgba(255, 255, 255, 0.12);
-  color:           rgba(255, 255, 255, 0.75);
-  backdrop-filter: blur(8px);
-  border-radius:   999px;
-  padding:         5px 14px;
-  font-size:       12px;
-  font-weight:     500;
-  transition:      border-color 0.15s ease, background 0.15s ease;
-  white-space:     nowrap;
-}
-.status-pill:hover {
-  border-color: rgba(99, 102, 241, 0.5);
-  background:   rgba(99, 102, 241, 0.15);
+  border-color: rgba(139, 92, 246, 0.4);
+  box-shadow:   0 0 0 3px rgba(139, 92, 246, 0.12);
 }
 
 /* ── Sidebar nav links ───────────────────────────────────────────────────── */
 .nav-link {
-  color: rgba(255, 255, 255, 0.55);
+  color: #94a3b8;
   font-size: 13px;
   font-weight: 500;
-  border-left: 3px solid transparent;
+  border-left: 2px solid transparent;
 }
 .nav-link:hover {
-  background: rgba(255, 255, 255, 0.07);
-  color: white;
+  background: rgba(255, 255, 255, 0.05);
+  color: #e2e8f0;
   border-radius: 8px;
 }
 .nav-link.active {
-  background: linear-gradient(90deg, rgba(99, 102, 241, 0.3), rgba(99, 102, 241, 0.1));
-  border-left: 3px solid #6366f1;
-  color: #a5b4fc;
+  background: rgba(139, 92, 246, 0.1);
+  border-left: 2px solid #8b5cf6;
+  color: white;
   font-weight: 600;
 }
 

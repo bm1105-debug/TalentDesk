@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { ArrowLeft, ArrowRight, StickyNote, HandCoins, Star, LayoutGrid, List } from 'lucide-react'
+import { ChevronLeft, ArrowRight, StickyNote, HandCoins, Star, LayoutGrid, List } from 'lucide-react'
 import {
   DndContext, PointerSensor, useSensor, useSensors,
   useDraggable, useDroppable,
@@ -476,9 +476,12 @@ export default function JobDetail() {
 
   if (isError) return (
     <div className="space-y-4">
-      <Button variant="ghost" size="sm" onClick={() => navigate('/jobs')}>
-        <ArrowLeft className="h-4 w-4 mr-1" /> Back to Jobs
-      </Button>
+      <button
+        onClick={() => navigate('/jobs')}
+        className="flex items-center gap-1.5 bg-white/[0.05] hover:bg-white/[0.10] border border-white/[0.10] rounded-lg px-3 py-1.5 text-sm text-slate-300 transition-colors"
+      >
+        <ChevronLeft className="h-4 w-4" /> Back to Jobs
+      </button>
       <p className="text-red-500">Job not found.</p>
     </div>
   )
@@ -487,9 +490,12 @@ export default function JobDetail() {
     <div className="space-y-6">
 
       {/* ── Back link ── */}
-      <Button variant="ghost" size="sm" className="gap-1 -ml-2 text-slate-500" onClick={() => navigate('/jobs')}>
-        <ArrowLeft className="h-4 w-4" /> Jobs
-      </Button>
+      <button
+        onClick={() => navigate('/jobs')}
+        className="flex items-center gap-1.5 bg-white/[0.05] hover:bg-white/[0.10] border border-white/[0.10] rounded-lg px-3 py-1.5 text-sm text-slate-300 transition-colors"
+      >
+        <ChevronLeft className="h-4 w-4" /> Back to Jobs
+      </button>
 
       {/* ── Header ── */}
       {jobLoading ? (

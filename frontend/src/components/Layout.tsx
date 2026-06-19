@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
-import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
+import { NavLink, Link, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, Users, Briefcase, FileText,
   Calendar, Mail, Search, LogOut, KeyRound, BarChart2, TrendingUp, Award,
-  ScrollText, FileCheck, ChevronLeft, ChevronRight, Contact,
+  ScrollText, FileCheck, ChevronLeft, ChevronRight, ChevronDown, Contact, Layers,
 } from 'lucide-react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { useAuth } from '@/context/AuthContext'
@@ -142,21 +142,29 @@ function SectionLabel({ label, collapsed, divider = false }: { label: string; co
 
 // ── Nav items ──────────────────────────────────────────────────────────────
 
-const RECRUITING_ITEMS = [
-  { to: '/dashboard',      label: 'Dashboard',      icon: LayoutDashboard },
-  { to: '/candidates',     label: 'Candidates',     icon: Users },
-  { to: '/jobs',           label: 'Jobs',           icon: Briefcase },
-  { to: '/submittals',     label: 'Submittals',     icon: FileText },
+const PIPELINE_ITEMS = [
+  { to: '/dashboard',  label: 'Dashboard',  icon: LayoutDashboard },
+  { to: '/candidates', label: 'Candidates', icon: Users },
+  { to: '/jobs',       label: 'Jobs',       icon: Briefcase },
+  { to: '/submittals', label: 'Submittals', icon: FileText },
+]
+
+const WORKFLOW_ITEMS = [
   { to: '/interviews',     label: 'Interviews',     icon: Calendar },
   { to: '/communications', label: 'Communications', icon: Mail },
 ]
 
-const MANAGEMENT_ITEMS = [
-  { to: '/reports',    label: 'Reports',      icon: BarChart2 },
-  { to: '/analytics',  label: 'Analytics',    icon: TrendingUp },
-  { to: '/people',     label: 'People',       icon: Contact },
-  { to: '/scorecard',  label: 'My Scorecard', icon: Award },
-  { to: '/offers',     label: 'Offers',       icon: FileCheck },
+const INSIGHTS_ITEMS = [
+  { to: '/search',    label: 'Search',       icon: Search },
+  { to: '/reports',   label: 'Reports',      icon: BarChart2 },
+  { to: '/analytics', label: 'Analytics',    icon: TrendingUp },
+  { to: '/scorecard', label: 'My Scorecard', icon: Award },
+]
+
+const ADMIN_ITEMS = [
+  { to: '/people',   label: 'People',    icon: Contact },
+  { to: '/offers',   label: 'Offers',    icon: FileCheck },
+  { to: '/activity', label: 'Audit Log', icon: ScrollText },
 ]
 
 function NavItem({ to, label, icon: Icon, collapsed }: {
@@ -189,22 +197,18 @@ export default function Layout() {
   const pageTitle = getPageTitle(location.pathname)
   const TitleTag = location.pathname === '/dashboard' ? 'h2' : 'h1'
   const [pwOpen, setPwOpen] = useState(false)
+
+  // breadcrumb state for detail routes (e.g. /candidates/123)
+  const isDetail = location.pathname.split('/').filter(Boolean).length > 1
+  const parentSegment = '/' + location.pathname.split('/')[1]
+  const parentLabel = isDetail ? (ROUTE_LABELS[parentSegment] ?? '') : ''
+  const entityName = (location.state as { name?: string } | null)?.name
   const [collapsed, setCollapsed] = useState(() => {
     return localStorage.getItem('td_sidebar_collapsed') === 'true'
   })
   const scrollRef = useRef<HTMLDivElement>(null)
   const [showTopFade, setShowTopFade] = useState(false)
   const [showBottomFade, setShowBottomFade] = useState(true)
-  const [managementOpen, setManagementOpen] = useState(false)
-  const [adminOpen, setAdminOpen] = useState(false)
-
-  useEffect(() => {
-    const managementRoutes = ['/reports', '/analytics', '/people', '/offers']
-    const adminRoutes = ['/activity']
-    if (managementRoutes.some(r => location.pathname.startsWith(r))) setManagementOpen(true)
-    if (adminRoutes.some(r => location.pathname.startsWith(r))) setAdminOpen(true)
-  }, [location.pathname])
-
   useEffect(() => {
     const scrollEl = scrollRef.current
     const activeEl = scrollEl?.querySelector('a.active')
@@ -246,111 +250,86 @@ export default function Layout() {
 
       {/* ── Sidebar: direct style injection on the sidebar container ──── */}
       <aside
-        className={cn('flex-shrink-0 flex flex-col transition-all duration-200', collapsed ? 'w-14' : 'w-60')}
+        className={cn('flex-shrink-0 flex flex-col transition-all duration-200', collapsed ? 'w-14' : 'w-[220px]')}
         style={{
-          background:   'linear-gradient(180deg, #1e1b4b 0%, #1a1a2e 100%)',
-          borderRight:  '1px solid rgba(255,255,255,0.06)',
-          boxShadow:    '4px 0 24px rgba(0,0,0,0.3)',
-          transition:   'width 0.2s ease',
+          background:  '#12121f',
+          borderRight: '1px solid rgba(255,255,255,0.05)',
+          boxShadow:   '4px 0 24px rgba(0,0,0,0.3)',
+          transition:  'width 0.2s ease',
         }}
       >
 
-        {/* Logo + collapse toggle */}
+        {/* Logo */}
         <div
-          className={cn('h-14 flex items-center flex-shrink-0', collapsed ? 'justify-center px-2' : 'justify-between px-4')}
-          style={{ borderBottom: '1px solid var(--td-border-subtle)' }}
+          className={cn('h-14 flex items-center flex-shrink-0 gap-2.5', collapsed ? 'justify-center px-2' : 'px-4')}
+          style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
         >
+          <div className="flex-shrink-0 rounded-lg p-1.5" style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+            <Layers className="h-4 w-4 text-white" aria-hidden="true" />
+          </div>
           {!collapsed && (
             <span style={{
-              background:             'linear-gradient(135deg, #6366f1, #8b5cf6, #06b6d4)',
-              WebkitBackgroundClip:   'text',
-              WebkitTextFillColor:    'transparent',
-              backgroundClip:         'text',
-              fontSize:               '18px',
-              fontWeight:             900,
-              letterSpacing:          '-0.5px',
+              background:           'linear-gradient(135deg, #6366f1, #8b5cf6, #06b6d4)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor:  'transparent',
+              backgroundClip:       'text',
+              fontSize:             '17px',
+              fontWeight:           900,
+              letterSpacing:        '-0.5px',
+              whiteSpace:           'nowrap',
             }}>TalentDesk</span>
           )}
-          <button
-            onClick={toggleCollapsed}
-            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            className="p-1 rounded-md transition-colors text-slate-600 hover:text-slate-200 hover:bg-white/5"
-          >
-            {collapsed ? <ChevronRight className="h-4 w-4" aria-hidden="true" /> : <ChevronLeft className="h-4 w-4" aria-hidden="true" />}
-          </button>
         </div>
 
         {/* Nav links — scroll-aware fade overlays */}
         <div ref={scrollRef} onScroll={handleNavScroll} className="sidebar-scroll flex-1 overflow-y-scroll relative">
           {showTopFade && (
-            <div className="pointer-events-none absolute top-0 left-0 right-0 h-10 z-10 bg-gradient-to-b from-[#0f0f1a] to-transparent" />
+            <div className="pointer-events-none absolute top-0 left-0 right-0 h-10 z-10 bg-gradient-to-b from-[#12121f] to-transparent" />
           )}
           {showBottomFade && (
-            <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-16 z-10 bg-gradient-to-t from-[#0f0f1a] to-transparent" />
+            <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-16 z-10 bg-gradient-to-t from-[#12121f] to-transparent" />
           )}
           <nav className="py-2 px-2 space-y-0.5">
-            <SectionLabel label="Recruiting" collapsed={collapsed} />
-            {RECRUITING_ITEMS.map(item => (
+            <SectionLabel label="Pipeline" collapsed={collapsed} />
+            {PIPELINE_ITEMS.map(item => (
               <NavItem key={item.to} {...item} collapsed={collapsed} />
             ))}
 
-            <hr className="mx-3 my-2 border-t border-white/[0.06]" />
-            <NavItem to="/search" label="Search" icon={Search} collapsed={collapsed} />
-            <hr className="mx-3 my-2 border-t border-white/[0.06]" />
+            <SectionLabel label="Workflow" collapsed={collapsed} divider />
+            {WORKFLOW_ITEMS.map(item => (
+              <NavItem key={item.to} {...item} collapsed={collapsed} />
+            ))}
 
-            {collapsed
-              ? <SectionLabel label="Management" collapsed={collapsed} />
-              : <button
-                  onClick={() => setManagementOpen(o => !o)}
-                  className="w-full flex items-center justify-between px-3 pt-3 pb-1 uppercase select-none hover:text-white/60 transition-colors"
-                  style={{ color: 'rgba(255,255,255,0.4)', fontSize: '9px', letterSpacing: '0.15em', fontWeight: 700 }}
-                >
-                  <span>Management</span>
-                  <ChevronRight className={`h-3 w-3 transition-transform duration-200 ${managementOpen ? 'rotate-90' : ''}`} />
-                </button>
-            }
-            <div style={{
-              display: 'grid',
-              gridTemplateRows: (collapsed || managementOpen) ? '1fr' : '0fr',
-              transition: 'grid-template-rows 0.25s ease',
-            }}>
-              <div style={{ overflow: 'hidden' }}>
-                {MANAGEMENT_ITEMS.filter(item => {
-                  if (item.to === '/scorecard' && user?.role === 'ceo') return false
-                  if (item.to === '/people' && !['vp', 'ceo', 'team_lead'].includes(user?.role ?? '')) return false
-                  return true
-                }).map(item => (
-                  <NavItem key={item.to} {...item} collapsed={collapsed} />
-                ))}
-              </div>
-            </div>
+            <SectionLabel label="Insights" collapsed={collapsed} divider />
+            {INSIGHTS_ITEMS.filter(item =>
+              !(item.to === '/scorecard' && user?.role === 'ceo')
+            ).map(item => (
+              <NavItem key={item.to} {...item} collapsed={collapsed} />
+            ))}
 
-            {isManager && (
-              <>
-                {collapsed
-                  ? <SectionLabel label="Admin" collapsed={collapsed} divider />
-                  : <button
-                      onClick={() => setAdminOpen(o => !o)}
-                      className="w-full flex items-center justify-between px-3 pt-3 pb-1 uppercase select-none hover:text-white/60 transition-colors"
-                      style={{ color: 'rgba(255,255,255,0.4)', fontSize: '9px', letterSpacing: '0.15em', fontWeight: 700 }}
-                    >
-                      <span>Admin</span>
-                      <ChevronRight className={`h-3 w-3 transition-transform duration-200 ${adminOpen ? 'rotate-90' : ''}`} />
-                    </button>
-                }
-                <div style={{
-                  display: 'grid',
-                  gridTemplateRows: (collapsed || adminOpen) ? '1fr' : '0fr',
-                  transition: 'grid-template-rows 0.25s ease',
-                }}>
-                  <div style={{ overflow: 'hidden' }}>
-                    <NavItem to="/activity" label="Audit Log" icon={ScrollText} collapsed={collapsed} />
-                  </div>
-                </div>
-              </>
-            )}
+            <SectionLabel label="Admin" collapsed={collapsed} divider />
+            {ADMIN_ITEMS.filter(item => {
+              if ((item.to === '/people' || item.to === '/activity') && !isManager) return false
+              return true
+            }).map(item => (
+              <NavItem key={item.to} {...item} collapsed={collapsed} />
+            ))}
           </nav>
+        </div>
+
+        {/* Bottom collapse toggle */}
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', flexShrink: 0 }}>
+          <button
+            onClick={toggleCollapsed}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            className="w-full flex items-center justify-center gap-2 py-3 text-slate-500 hover:text-slate-200 hover:bg-white/5 transition-colors text-xs font-medium"
+          >
+            <ChevronLeft
+              className={`h-4 w-4 transition-transform duration-200 ${collapsed ? 'rotate-180' : ''}`}
+              aria-hidden="true"
+            />
+            {!collapsed && <span>Collapse</span>}
+          </button>
         </div>
 
         <ChangePasswordDialog open={pwOpen} onClose={() => setPwOpen(false)} />
@@ -362,48 +341,71 @@ export default function Layout() {
 
         {/* ── Header: direct style injection on the header bar ──────── */}
         <header
-          className="h-14 flex items-center justify-between px-6"
+          className="h-14 flex items-center justify-between px-6 shrink-0"
           style={{
-            background:     'rgba(18, 18, 31, 0.85)',
-            backdropFilter: 'blur(20px) saturate(180%)',
+            background:     'rgba(15, 15, 26, 0.8)',
+            backdropFilter: 'blur(12px)',
             borderBottom:   '1px solid rgba(255,255,255,0.08)',
-            boxShadow:      '0 1px 0 rgba(255,255,255,0.05), 0 4px 20px rgba(0,0,0,0.2)',
+            boxShadow:      '0 4px 24px rgba(0,0,0,0.2)',
           }}
         >
-          <TitleTag style={{ fontSize: '15px', fontWeight: 700, color: '#f1f5f9', letterSpacing: '-0.3px', margin: 0 }}>
-            {pageTitle}
-          </TitleTag>
+          {/* Left: breadcrumb on detail routes, plain title on list routes */}
+          {isDetail && parentLabel ? (
+            <nav className="flex items-center gap-1.5 min-w-0 shrink-0" aria-label="Breadcrumb">
+              <Link
+                to={parentSegment}
+                className="text-sm text-slate-400 hover:text-slate-200 transition-colors whitespace-nowrap"
+              >
+                {parentLabel}
+              </Link>
+              <ChevronRight className="h-3.5 w-3.5 text-slate-600 shrink-0" />
+              <span className="text-sm font-semibold text-slate-100 truncate max-w-[200px]">
+                {entityName ?? '…'}
+              </span>
+            </nav>
+          ) : (
+            <TitleTag className="text-lg font-semibold text-slate-100 shrink-0" style={{ margin: 0, letterSpacing: '-0.3px' }}>
+              {pageTitle}
+            </TitleTag>
+          )}
 
-          {/* Search trigger — opens Command Bar */}
+          {/* Center: search trigger — opens Command Bar */}
           <button
             onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true }))}
-            className="header-search hidden md:flex items-center gap-2 px-3 py-1.5 text-sm"
+            className="header-search hidden md:flex items-center gap-2 px-3 py-1.5 text-sm w-full max-w-md mx-6"
           >
-            <Search className="h-3.5 w-3.5" />
-            <span>Search jobs, candidates…</span>
-            <kbd
-              className="ml-1 text-[10px] font-semibold px-1 py-0.5"
-              style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.4)', borderRadius: '5px' }}
-            >⌘K</kbd>
+            <Search className="h-3.5 w-3.5 shrink-0" />
+            <span className="flex-1 text-left">Search jobs, candidates…</span>
+            <kbd className="ml-1 bg-white/[0.08] border border-white/[0.12] text-slate-500 text-[11px] rounded px-1.5 py-0.5 font-sans shrink-0">
+              ⌘K
+            </kbd>
           </button>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 shrink-0">
             <NotificationBell />
 
             <DropdownMenu.Root>
               <DropdownMenu.Trigger asChild>
-                <button className="p-1 rounded-lg hover:bg-white/5 transition-colors" aria-label="Account menu">
+                <button
+                  className="flex items-center gap-1.5 p-1.5 rounded-lg hover:bg-white/[0.05] transition-colors group"
+                  aria-label="Account menu"
+                >
                   {user && (
-                    <InitialsAvatar
-                      id={user.id}
-                      firstName={user.first_name ?? ''}
-                      lastName={user.last_name ?? ''}
-                      size="sm"
-                      style={{
-                        background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                        boxShadow:  '0 0 0 2px rgba(99,102,241,0.5), 0 4px 12px rgba(99,102,241,0.4)',
-                      }}
-                    />
+                    <>
+                      <div className="rounded-full transition-all group-hover:ring-2 group-hover:ring-violet-500/50">
+                        <InitialsAvatar
+                          id={user.id}
+                          firstName={user.first_name ?? ''}
+                          lastName={user.last_name ?? ''}
+                          size="md"
+                          style={{
+                            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                            boxShadow:  '0 0 0 2px rgba(99,102,241,0.5), 0 4px 12px rgba(99,102,241,0.4)',
+                          }}
+                        />
+                      </div>
+                      <ChevronDown className="h-3 w-3 text-slate-500 group-hover:text-slate-300 transition-colors" />
+                    </>
                   )}
                 </button>
               </DropdownMenu.Trigger>

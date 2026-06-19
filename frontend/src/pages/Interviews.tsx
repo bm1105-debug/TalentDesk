@@ -3,13 +3,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, ChevronLeft, ChevronRight, CheckCircle, XCircle, Star, List, CalendarDays } from 'lucide-react'
+import { Plus, ChevronLeft, ChevronRight, CheckCircle, XCircle, Star, List, CalendarDays, ChevronUp, ChevronDown } from 'lucide-react'
 import api from '@/api/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { StatusBadge } from '@/components/StatusBadge'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -37,6 +36,36 @@ interface SubmittalOption {
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
+
+const INTERVIEW_STATUS_STYLES: Record<string, string> = {
+  scheduled: 'bg-violet-500/15 text-violet-400 border border-violet-500/25',
+  completed: 'bg-blue-500/15 text-blue-400 border border-blue-500/25',
+  cancelled: 'bg-slate-500/15 text-slate-400 border border-slate-500/25',
+  no_show:   'bg-orange-500/15 text-orange-400 border border-orange-500/25',
+}
+function InterviewStatusBadge({ status }: { status: string }) {
+  const cls = INTERVIEW_STATUS_STYLES[status] ?? 'bg-slate-500/15 text-slate-400 border border-slate-500/25'
+  return <span className={`priority-badge ${cls}`}>{status.replace('_', ' ')}</span>
+}
+
+function SortTh({ label, col, sortCol, sortDir, onSort }: {
+  label: string; col: string; sortCol: string | null; sortDir: 'asc' | 'desc'
+  onSort: (col: string) => void
+}) {
+  const active = sortCol === col
+  return (
+    <th onClick={() => onSort(col)}
+      className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer select-none">
+      <div className="flex items-center gap-1">
+        {label}
+        {active
+          ? (sortDir === 'asc' ? <ChevronUp className="h-3 w-3 text-violet-400" /> : <ChevronDown className="h-3 w-3 text-violet-400" />)
+          : <ChevronDown className="h-3 w-3 text-slate-700" />
+        }
+      </div>
+    </th>
+  )
+}
 
 const CALENDAR_CHIP: Record<string, string> = {
   scheduled: 'bg-indigo-500/15 text-indigo-300',
@@ -208,12 +237,12 @@ function StatusButtons({ interview }: { interview: Interview }) {
     <div className="flex items-center gap-1">
       <button onClick={() => update.mutate('completed')} disabled={update.isPending}
         title="Mark completed"
-        className="p-1 rounded text-green-600 hover:bg-green-50 transition-colors">
+        className="p-1 rounded text-green-400 hover:bg-green-500/10 transition-colors">
         <CheckCircle className="h-4 w-4" />
       </button>
       <button onClick={() => update.mutate('cancelled')} disabled={update.isPending}
         title="Cancel"
-        className="p-1 rounded text-gray-400 hover:bg-gray-100 transition-colors">
+        className="p-1 rounded text-slate-400 hover:bg-white/[0.06] transition-colors">
         <XCircle className="h-4 w-4" />
       </button>
     </div>
@@ -253,9 +282,9 @@ function ScoreDialog({ interview }: { interview: Interview }) {
       >
         <Star className="h-3 w-3 text-amber-400" />
         {interview.score != null ? (
-          <span className="font-semibold text-gray-700">{interview.score}/100</span>
+          <span className="font-semibold text-slate-200">{interview.score}/100</span>
         ) : (
-          <span className="text-gray-400">Score</span>
+          <span className="text-slate-400">Score</span>
         )}
       </button>
 
@@ -397,7 +426,7 @@ function CalendarView({ year, month }: { year: number; month: number }) {
                 <p className="font-semibold text-slate-100">{selected.candidate_name}</p>
                 <p className="text-sm text-slate-500">{selected.job_title}</p>
               </div>
-              <StatusBadge status={selected.status} />
+              <InterviewStatusBadge status={selected.status} />
             </div>
             <dl className="text-sm space-y-1.5">
               <div className="flex gap-2">
@@ -419,7 +448,7 @@ function CalendarView({ year, month }: { year: number; month: number }) {
                   <dt className="text-slate-500 w-20 shrink-0">Link</dt>
                   <dd>
                     <a href={selected.meeting_link} target="_blank" rel="noreferrer"
-                      className="text-blue-600 hover:underline truncate block max-w-[180px]">
+                      className="text-violet-400 hover:underline truncate block max-w-[180px]">
                       Join
                     </a>
                   </dd>
@@ -456,6 +485,14 @@ function ListView({ statusFilter, page, setPage }: {
   page: number
   setPage: (fn: (p: number) => number) => void
 }) {
+  const [sortCol, setSortCol] = useState<string | null>(null)
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
+
+  function handleSort(col: string) {
+    if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortCol(col); setSortDir('asc') }
+  }
+
   const { data, isLoading } = useQuery<PaginatedInterviews>({
     queryKey: ['interviews', statusFilter, page],
     queryFn:  () => api.get('/interviews/', {
@@ -468,19 +505,20 @@ function ListView({ statusFilter, page, setPage }: {
 
   return (
     <>
-      <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.06] overflow-hidden">
+      <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.08] overflow-hidden shadow-sm"
+        style={{ borderTop: '2px solid #10b981' }}>
         <table className="w-full text-sm">
-          <thead className="bg-white/[0.04] border-b border-white/[0.06]">
+          <thead className="bg-[#12121f] border-b border-white/[0.08] sticky top-0 z-10">
             <tr>
-              <th className="text-left px-4 py-3 font-medium text-slate-400">Candidate</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-400">Job</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-400">Type</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-400">Scheduled</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-400">Status</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-400">Actions</th>
+              <SortTh label="Candidate" col="candidate" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Job</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Type</th>
+              <SortTh label="Scheduled" col="scheduled" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+              <SortTh label="Status"    col="status"    sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/[0.04]">
+          <tbody className="divide-y divide-white/[0.05]">
             {isLoading && <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-500">Loading…</td></tr>}
             {!isLoading && data?.results.length === 0 && (
               <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-500">No interviews found</td></tr>
@@ -501,7 +539,7 @@ function ListView({ statusFilter, page, setPage }: {
                   )
                 }
                 rows.push(
-                  <tr key={i.id} className="hover:bg-white/[0.03] transition-colors">
+                  <tr key={i.id} className="hover:bg-white/[0.03] transition-colors duration-100">
                     <td className="px-4 py-3 font-medium text-slate-100">{i.candidate_name}</td>
                     <td className="px-4 py-3 text-slate-400">{i.job_title}</td>
                     <td className="px-4 py-3 text-slate-400 capitalize">{i.interview_type.replace('_', ' ')}</td>
@@ -511,9 +549,7 @@ function ListView({ statusFilter, page, setPage }: {
                         <span className="text-slate-500 text-xs">{fmtTime(i.scheduled_at)}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3">
-                      <StatusBadge status={i.status} />
-                    </td>
+                    <td className="px-4 py-3"><InterviewStatusBadge status={i.status} /></td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <StatusButtons interview={i} />

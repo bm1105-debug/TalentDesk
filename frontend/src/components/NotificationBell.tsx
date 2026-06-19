@@ -4,6 +4,9 @@ import { Bell } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import api from '@/api/client'
 
+// tracks whether the bell has already bounced this session
+const didBounceRef = { current: false }
+
 interface Notification {
   id: number
   message: string
@@ -25,6 +28,7 @@ function timeAgo(iso: string) {
 
 export default function NotificationBell() {
   const [open, setOpen] = useState(false)
+  const [bouncing, setBouncing] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
   const qc = useQueryClient()
@@ -42,6 +46,15 @@ export default function NotificationBell() {
     queryFn: () => api.get('/notifications/unread-count/').then(r => r.data),
     refetchInterval: 30000,
   })
+
+  useEffect(() => {
+    if (unread.count > 0 && !didBounceRef.current) {
+      didBounceRef.current = true
+      setBouncing(true)
+      const t = setTimeout(() => setBouncing(false), 900)
+      return () => clearTimeout(t)
+    }
+  }, [unread.count])
 
   const { data: notifications = [] } = useQuery<Notification[]>({
     queryKey: ['notifications'],
@@ -83,14 +96,9 @@ export default function NotificationBell() {
         title="Notifications"
         className="relative p-2 rounded-lg transition-colors text-white/50 hover:text-white hover:bg-white/10"
       >
-        <Bell className="h-5 w-5" aria-hidden="true" />
+        <Bell className={`h-5 w-5 ${bouncing ? 'animate-bounce' : ''}`} aria-hidden="true" />
         {unread.count > 0 && (
-          <span
-            className="absolute top-1 right-1 h-4 w-4 rounded-full text-white text-[10px] font-bold flex items-center justify-center"
-            style={{ background: '#f43f5e', boxShadow: '0 0 6px #f43f5e' }}
-          >
-            {unread.count > 9 ? '9+' : unread.count}
-          </span>
+          <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500" />
         )}
       </button>
 

@@ -7,7 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Search, Plus, ChevronLeft, ChevronRight, Users } from 'lucide-react'
+import { Search, Plus, ChevronLeft, ChevronRight, Users, ChevronUp, ChevronDown } from 'lucide-react'
 import { Link, useSearchParams } from 'react-router-dom'
 import api from '@/api/client'
 import { useAuth } from '@/context/AuthContext'
@@ -15,7 +15,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { StatusBadge } from '@/components/StatusBadge'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -59,6 +58,50 @@ const schema = z.object({
 })
 
 type FormValues = z.infer<typeof schema>
+
+// ── Badge helpers ──────────────────────────────────────────────────────────────
+
+const PRIORITY_STYLES: Record<string, string> = {
+  urgent: 'bg-red-500/15 text-red-400 border border-red-500/25',
+  high:   'bg-orange-500/15 text-orange-400 border border-orange-500/25',
+  medium: 'bg-amber-500/15 text-amber-400 border border-amber-500/25',
+  low:    'bg-slate-500/15 text-slate-400 border border-slate-500/25',
+}
+function PriorityBadge({ priority }: { priority: string }) {
+  const cls = PRIORITY_STYLES[priority] ?? 'bg-slate-500/15 text-slate-400 border border-slate-500/25'
+  return <span className={`priority-badge ${cls}`}>{priority}</span>
+}
+
+const JOB_STATUS_STYLES: Record<string, string> = {
+  open:      'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25',
+  on_hold:   'bg-amber-500/15 text-amber-400 border border-amber-500/25',
+  filled:    'bg-blue-500/15 text-blue-400 border border-blue-500/25',
+  draft:     'bg-slate-500/15 text-slate-400 border border-slate-500/25',
+  cancelled: 'bg-slate-500/10 text-slate-500 border border-slate-500/20',
+}
+function JobStatusBadge({ status }: { status: string }) {
+  const cls = JOB_STATUS_STYLES[status] ?? 'bg-slate-500/15 text-slate-400 border border-slate-500/25'
+  return <span className={`priority-badge ${cls}`}>{status.replace('_', ' ')}</span>
+}
+
+function SortTh({ label, col, sortCol, sortDir, onSort }: {
+  label: string; col: string; sortCol: string | null; sortDir: 'asc' | 'desc'
+  onSort: (col: string) => void
+}) {
+  const active = sortCol === col
+  return (
+    <th onClick={() => onSort(col)}
+      className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer select-none">
+      <div className="flex items-center gap-1">
+        {label}
+        {active
+          ? (sortDir === 'asc' ? <ChevronUp className="h-3 w-3 text-violet-400" /> : <ChevronDown className="h-3 w-3 text-violet-400" />)
+          : <ChevronDown className="h-3 w-3 text-slate-700" />
+        }
+      </div>
+    </th>
+  )
+}
 
 // ── Add Job Form ───────────────────────────────────────────────────────────────
 
@@ -192,6 +235,13 @@ export default function Jobs() {
   const [overdue]                    = useState(searchParams.get('filter') === 'overdue')
   const [page,       setPage]       = useState(1)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [sortCol,    setSortCol]    = useState<string | null>(null)
+  const [sortDir,    setSortDir]    = useState<'asc' | 'desc'>('asc')
+
+  function handleSort(col: string) {
+    if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortCol(col); setSortDir('asc') }
+  }
 
   const { data, isLoading } = useQuery<PaginatedJobs>({
     queryKey: ['jobs', search, status, priority, overdue, page],
@@ -261,20 +311,21 @@ export default function Jobs() {
       </div>
 
       {/* ── Table ── */}
-      <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.06] overflow-hidden">
+      <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.08] overflow-hidden shadow-sm"
+        style={{ borderTop: '2px solid #3b82f6' }}>
         <table className="w-full text-sm">
-          <thead className="bg-white/[0.04] border-b border-white/[0.06]">
+          <thead className="bg-[#12121f] border-b border-white/[0.08] sticky top-0 z-10">
             <tr>
-              <th className="text-left px-4 py-3 font-medium text-slate-400">Title</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-400">Client</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-400">Status</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-400">Priority</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-400">Openings</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-400">Target</th>
-              <th className="text-left px-4 py-3 font-medium text-slate-400">Assigned</th>
+              <SortTh label="Title"    col="title"    sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Client</th>
+              <SortTh label="Status"   col="status"   sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+              <SortTh label="Priority" col="priority" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Openings</th>
+              <SortTh label="Target"   col="target"   sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Assigned</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/[0.04]">
+          <tbody className="divide-y divide-white/[0.05]">
             {isLoading && (
               <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">Loading…</td></tr>
             )}
@@ -282,20 +333,16 @@ export default function Jobs() {
               <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">No jobs found</td></tr>
             )}
             {data?.results.map(j => (
-              <tr key={j.id} className="hover:bg-white/[0.03] transition-colors">
+              <tr key={j.id} className="hover:bg-white/[0.03] transition-colors duration-100">
                 <td className="px-4 py-3 font-medium text-slate-100">
-                  <Link to={`/jobs/${j.id}`} className="hover:text-indigo-400 hover:underline">
+                  <Link to={`/jobs/${j.id}`} state={{ name: j.title }} className="hover:text-violet-400 hover:underline">
                     {j.title}
                   </Link>
                   {j.location && <span className="block text-xs text-slate-500 font-normal">{j.location}</span>}
                 </td>
                 <td className="px-4 py-3 text-slate-400">{j.client_name}</td>
-                <td className="px-4 py-3">
-                  <StatusBadge status={j.status.replace('_', ' ')} />
-                </td>
-                <td className="px-4 py-3">
-                  <StatusBadge status={j.priority} />
-                </td>
+                <td className="px-4 py-3"><JobStatusBadge status={j.status} /></td>
+                <td className="px-4 py-3"><PriorityBadge priority={j.priority} /></td>
                 <td className="px-4 py-3 text-slate-400">{j.openings}</td>
                 <td className="px-4 py-3 text-slate-400">
                   {j.target_date

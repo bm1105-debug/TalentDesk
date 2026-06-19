@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom'
 import {
   Briefcase, FileText, AlertTriangle, Clock,
   HandCoins, TrendingUp, TrendingDown,
-  CalendarDays, Trophy,
+  CalendarDays, Trophy, ArrowRight,
   ListTodo, Plus, ChevronDown, ChevronUp,
 } from 'lucide-react'
 import api from '@/api/client'
@@ -141,23 +141,32 @@ function DashboardSkeleton() {
 // ── Status pills ───────────────────────────────────────────────────────────────
 
 function StatusPill({ label, color, to }: { label: string; color: 'red' | 'purple' | 'cyan'; to?: string }) {
-  void color  // retained for call-site compatibility; pills are now uniformly glassmorphic
-  if (to) return <Link to={to} className="status-pill">{label}</Link>
-  return <span className="status-pill">{label}</span>
+  void color
+  const base = 'inline-flex items-center gap-1 text-white text-xs px-3 py-1 rounded-full border border-white/15 bg-white/10 transition-colors whitespace-nowrap'
+  if (to) return (
+    <Link to={to} className={`${base} hover:bg-white/15 cursor-pointer`}>
+      {label}
+      <ArrowRight className="h-3 w-3" aria-hidden="true" />
+    </Link>
+  )
+  return <span className={base}>{label}</span>
 }
 
-// ── Gradient stat cards ────────────────────────────────────────────────────────
+// ── Stat cards ─────────────────────────────────────────────────────────────────
 
-interface GradientCardConfig {
-  gradient: string; icon: React.ElementType
+interface StatCardConfig {
+  icon: React.ElementType
+  borderColor: string
+  iconBg: string
+  iconText: string
 }
 
-const CARD_STYLES: GradientCardConfig[] = [
-  { gradient: 'linear-gradient(135deg, rgba(99,102,241,0.55), rgba(118,75,162,0.45))',    icon: Briefcase     },  // Open Jobs
-  { gradient: 'linear-gradient(135deg, rgba(192,80,210,0.50), rgba(180,60,90,0.40))',    icon: FileText      },  // Active Submittals
-  { gradient: 'linear-gradient(135deg, rgba(56,130,200,0.55), rgba(0,180,200,0.40))',    icon: AlertTriangle },  // Urgent Jobs
-  { gradient: 'linear-gradient(135deg, rgba(34,180,100,0.50), rgba(30,190,160,0.40))',   icon: Clock         },  // Overdue Jobs
-  { gradient: 'linear-gradient(135deg, rgba(200,80,120,0.50), rgba(200,160,30,0.40))',   icon: HandCoins     },  // Pending Offers
+const STAT_CARD_STYLES: StatCardConfig[] = [
+  { icon: Briefcase,     borderColor: '#3b82f6', iconBg: 'bg-blue-500/20',    iconText: 'text-blue-400'    },
+  { icon: FileText,      borderColor: '#8b5cf6', iconBg: 'bg-violet-500/20',  iconText: 'text-violet-400'  },
+  { icon: AlertTriangle, borderColor: '#f59e0b', iconBg: 'bg-amber-500/20',   iconText: 'text-amber-400'   },
+  { icon: Clock,         borderColor: '#ef4444', iconBg: 'bg-red-500/20',     iconText: 'text-red-400'     },
+  { icon: HandCoins,     borderColor: '#10b981', iconBg: 'bg-emerald-500/20', iconText: 'text-emerald-400' },
 ]
 
 function TrendBadge({ trend }: { trend: Trend }) {
@@ -175,31 +184,21 @@ function TrendBadge({ trend }: { trend: Trend }) {
   )
 }
 
-function GradientCard({ label, value, cfg, accent = false, to, trend }:
-  { label: string; value: number; cfg: GradientCardConfig; accent?: boolean; to?: string; trend?: Trend }) {
+function StatCard({ label, value, cfg, to, trend }:
+  { label: string; value: number; cfg: StatCardConfig; to?: string; trend?: Trend }) {
   const Icon = cfg.icon
-  void accent  // retained in signature for call-site compatibility
   const inner = (
     <div
-      className={`rounded-2xl p-3 text-white relative overflow-hidden h-full ${to ? 'glass-card cursor-pointer' : ''}`}
-      style={{
-        background:     cfg.gradient,
-        backdropFilter: 'blur(20px)',
-        border:         '1px solid rgba(255,255,255,0.2)',
-        boxShadow:      'inset 0 1px 0 rgba(255,255,255,0.25), 0 20px 40px rgba(0,0,0,0.3)',
-      }}
+      className={`bg-[#1a1a2e] border border-white/[0.08] rounded-xl shadow-sm p-4 h-full ${to ? 'transition-all duration-200 hover:border-white/20' : ''}`}
+      style={{ borderLeft: `4px solid ${cfg.borderColor}` }}
     >
-      <div className="relative">
-        <div className="p-1 bg-white/10 border border-white/20 rounded-md w-fit mb-1.5">
-          <Icon className="h-3.5 w-3.5" />
-        </div>
-        <p className="font-black leading-none text-white stat-num" style={{ fontSize: '1.5rem', letterSpacing: '-1px' }}>
-          {value}
-        </p>
-        <div className="flex items-center justify-between mt-1.5">
-          <p className="text-xs text-white/75 font-medium">{label}</p>
-          {trend && <TrendBadge trend={trend} />}
-        </div>
+      <div className={`w-10 h-10 rounded-full ${cfg.iconBg} flex items-center justify-center mb-3`}>
+        <Icon className={`h-4 w-4 ${cfg.iconText}`} />
+      </div>
+      <p className="text-3xl font-bold text-slate-100 stat-num leading-none">{value}</p>
+      <div className="flex items-center justify-between mt-1.5">
+        <p className="text-sm text-slate-400">{label}</p>
+        {trend && <TrendBadge trend={trend} />}
       </div>
     </div>
   )
@@ -373,6 +372,23 @@ const INTERVIEW_TYPE_LABEL: Record<string, string> = {
   panel:     'Panel',
 }
 
+const INTERVIEW_TYPE_BADGE: Record<string, string> = {
+  phone:     'bg-slate-500/15 text-slate-300',
+  video:     'bg-violet-500/15 text-violet-300',
+  onsite:    'bg-blue-500/15 text-blue-300',
+  technical: 'bg-amber-500/15 text-amber-300',
+  panel:     'bg-violet-500/15 text-violet-300',
+}
+
+function InterviewTypeBadge({ type }: { type: string }) {
+  const cls = INTERVIEW_TYPE_BADGE[type] ?? 'bg-slate-500/15 text-slate-300'
+  return (
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium shrink-0 ${cls}`}>
+      {INTERVIEW_TYPE_LABEL[type] ?? type}
+    </span>
+  )
+}
+
 function TodaySchedulePanel({ interviews }: { interviews: InterviewToday[] }) {
   return (
     <div className="panel-card overflow-hidden">
@@ -397,15 +413,15 @@ function TodaySchedulePanel({ interviews }: { interviews: InterviewToday[] }) {
         <div className="divide-y divide-white/[0.04]">
           {interviews.map(i => {
             const time = new Date(i.scheduled_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
-            const label = INTERVIEW_TYPE_LABEL[i.interview_type] ?? i.interview_type
             return (
-              <div key={i.id} className="flex items-center gap-3 px-4 py-3">
-                <p className="text-xs font-bold text-indigo-300 w-12 flex-shrink-0 tabular-nums">{time}</p>
-                <div className="min-w-0 flex-1">
+              <div key={i.id} className="flex items-stretch gap-3 px-4 py-3">
+                <div className="w-0.5 rounded-full bg-violet-500/60 flex-shrink-0" />
+                <p className="text-xs font-bold text-slate-300 w-10 flex-shrink-0 tabular-nums self-center">{time}</p>
+                <div className="min-w-0 flex-1 self-center">
                   <p className="text-sm font-medium text-slate-100 truncate">{i.candidate_name}</p>
                   <p className="text-xs text-slate-500 truncate">{i.job_title}</p>
                 </div>
-                <StatusBadge status={label} />
+                <InterviewTypeBadge type={i.interview_type} />
               </div>
             )
           })}
@@ -663,11 +679,11 @@ export default function Dashboard() {
 
   const t = summary.trends
   const STAT_CARDS = [
-    { label: 'Open Jobs',         value: summary.open_jobs_count,         cfg: CARD_STYLES[0], accent: false, to: '/jobs',                          trend: t?.open_jobs },
-    { label: 'Active Submittals', value: summary.active_submittals_count, cfg: CARD_STYLES[1], accent: false, to: '/submittals',                    trend: t?.active_submittals },
-    { label: 'Urgent Jobs',       value: summary.urgent_jobs_count,       cfg: CARD_STYLES[2], accent: true,  to: '/jobs?priority=urgent',          trend: t?.urgent_jobs },
-    { label: 'Overdue Jobs',      value: summary.overdue_jobs_count,      cfg: CARD_STYLES[3], accent: true,  to: '/jobs?filter=overdue',           trend: t?.overdue_jobs },
-    { label: 'Pending Offers',    value: summary.pending_offers_count,    cfg: CARD_STYLES[4], accent: true,  to: '/offers',                        trend: t?.pending_offers },
+    { label: 'Open Jobs',         value: summary.open_jobs_count,         cfg: STAT_CARD_STYLES[0], to: '/jobs',                trend: t?.open_jobs        },
+    { label: 'Active Submittals', value: summary.active_submittals_count, cfg: STAT_CARD_STYLES[1], to: '/submittals',          trend: t?.active_submittals },
+    { label: 'Urgent Jobs',       value: summary.urgent_jobs_count,       cfg: STAT_CARD_STYLES[2], to: '/jobs?priority=urgent', trend: t?.urgent_jobs     },
+    { label: 'Overdue Jobs',      value: summary.overdue_jobs_count,      cfg: STAT_CARD_STYLES[3], to: '/jobs?filter=overdue', trend: t?.overdue_jobs      },
+    { label: 'Pending Offers',    value: summary.pending_offers_count,    cfg: STAT_CARD_STYLES[4], to: '/offers',              trend: t?.pending_offers    },
   ]
 
   return (
@@ -677,7 +693,7 @@ export default function Dashboard() {
       <div
         className="relative overflow-hidden"
         style={{
-          background:   'linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(139,92,246,0.08) 50%, rgba(6,182,212,0.06) 100%)',
+          background:   'radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 22px 22px, linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(139,92,246,0.08) 50%, rgba(6,182,212,0.06) 100%)',
           border:       '1px solid rgba(99,102,241,0.2)',
           borderRadius: '14px',
           padding:      '14px 20px',
@@ -724,10 +740,12 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ── Gradient stat cards ── */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+      {/* ── Stat cards ── */}
+      <div className="grid grid-cols-12 gap-4">
         {STAT_CARDS.map(s => (
-          <GradientCard key={s.label} label={s.label} value={s.value} cfg={s.cfg} accent={s.accent} to={s.to} trend={s.trend} />
+          <div key={s.label} className="col-span-4">
+            <StatCard label={s.label} value={s.value} cfg={s.cfg} to={s.to} trend={s.trend} />
+          </div>
         ))}
       </div>
 
@@ -739,18 +757,24 @@ export default function Dashboard() {
         background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent)',
       }} />
 
-      {/* ── Main content: performance left, panels + tasks right ── */}
+      {/* ── Main content: performance + schedule + deadlines + tasks ── */}
       <div className="grid grid-cols-12 gap-4">
 
         {/* Performance sidebar — hidden for CEO */}
         {!isCEO && <PerformanceSidebar data={scorecard} loading={scLoading} />}
 
-        {/* Right column: expands to full width when performance sidebar is hidden */}
-        <div className={`${isCEO ? 'col-span-12' : 'col-span-8'} flex flex-col gap-4`}>
-          <div className="grid grid-cols-2 gap-4">
-            <TodaySchedulePanel interviews={data.interviews_today} />
-            <UpcomingDeadlinesPanel deadlines={data.upcoming_deadlines} />
-          </div>
+        {/* Schedule — 6 cols when CEO (full width split), 4 when performance is visible */}
+        <div className={isCEO ? 'col-span-6' : 'col-span-4'}>
+          <TodaySchedulePanel interviews={data.interviews_today} />
+        </div>
+
+        {/* Deadlines */}
+        <div className={isCEO ? 'col-span-6' : 'col-span-4'}>
+          <UpcomingDeadlinesPanel deadlines={data.upcoming_deadlines} />
+        </div>
+
+        {/* Tasks — always full width */}
+        <div className="col-span-12">
           <TaskPanel />
         </div>
 
