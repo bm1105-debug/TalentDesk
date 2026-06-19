@@ -760,3 +760,139 @@ class DashboardTrendsTests(APITestCase):
         t = res.data["summary"]["trends"]["active_submittals"]
         self.assertEqual(t["direction"], "up")
         self.assertEqual(t["pct"], 100)
+
+
+# ── UserAnalyticsView Tests ───────────────────────────────────────────────────
+
+def ua_url(user_id):
+    return reverse("dashboard-user-analytics", kwargs={"user_id": user_id})
+
+
+class UserAnalyticsPermissionTests(APITestCase):
+
+    def setUp(self):
+        self.recruiter = make_user("rec@ua.com", role=Role.RECRUITER)
+        self.manager   = make_user("mgr@ua.com", role=Role.ACCOUNT_MANAGER)
+
+    def test_unauthenticated_rejected(self):
+        res = self.client.get(ua_url(self.recruiter.id))
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_recruiter_cannot_access(self):
+        auth(self.client, self.recruiter)
+        res = self.client.get(ua_url(self.recruiter.id))
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_manager_can_access_recruiter(self):
+        auth(self.client, self.manager)
+        res = self.client.get(ua_url(self.recruiter.id))
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+    def test_non_recruiter_target_returns_404(self):
+        auth(self.client, self.manager)
+        res = self.client.get(ua_url(self.manager.id))
+        self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_nonexistent_user_returns_404(self):
+        auth(self.client, self.manager)
+        res = self.client.get(ua_url(99999))
+        self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_response_has_all_keys(self):
+        auth(self.client, self.manager)
+        res = self.client.get(ua_url(self.recruiter.id))
+        for key in ("candidate_pool", "source_effectiveness", "open_jobs",
+                    "pipeline_funnel", "interview_outcomes", "time_to_fill",
+                    "recruiter_stats"):
+            self.assertIn(key, res.data)
+
+
+class UserAnalyticsScopingTests(APITestCase):
+
+    def setUp(self):
+        self.rec_a   = make_user("rec_a@ua.com", role=Role.RECRUITER)
+        self.rec_b   = make_user("rec_b@ua.com", role=Role.RECRUITER)
+        self.manager = make_user("mgr@ua.com",   role=Role.ACCOUNT_MANAGER)
+        auth(self.client, self.manager)
+
+        self.client_obj = make_client_obj()
+
+        # Candidates owned by rec_a and rec_b
+        self.cand_a = Candidate.objects.create(
+            first_name="Alice", last_name="A", email="a@ua.com",
+            phone="6001", created_by=self.rec_a, source="linkedin",
+        )
+        self.cand_b = Candidate.objects.create(
+            first_name="Bob", last_name="B", email="b@ua.com",
+            phone="6002", created_by=self.rec_b, source="referral",
+        )
+
+        # Jobs assigned to rec_a and rec_b
+        self.job_a = make_job(self.client_obj, self.manager)
+        self.job_a.assigned_to.add(self.rec_a)
+        self.job_b = make_job(self.client_obj, self.manager)
+        self.job_b.assigned_to.add(self.rec_b)
+
+        # Submittals
+        self.sub_a = make_submittal(self.cand_a, self.job_a, self.rec_a, status="active")
+        self.sub_b = make_submittal(self.cand_b, self.job_b, self.rec_b, status="placed")
+
+    def test_candidate_pool_scoped_to_target(self):
+        res = self.client.get(ua_url(self.rec_a.id))
+        pool = res.data["candidate_pool"]
+        # rec_a has 1 active candidate; rec_b's candidate not counted
+        self.assertEqual(pool["active"], 1)
+
+    def test_candidate_pool_excludes_other_recruiter(self):
+        res = self.client.get(ua_url(self.rec_a.id))
+        pool = res.data["candidate_pool"]
+        total = pool["active"] + pool["passive"] + pool["placed"] + pool["blacklisted"]
+        self.assertEqual(total, 1)
+
+    def test_source_effectiveness_scoped_to_target(self):
+        res = self.client.get(ua_url(self.rec_a.id))
+        sources = [s["source"] for s in res.data["source_effectiveness"]]
+        self.assertIn("linkedin", sources)
+        self.assertNotIn("referral", sources)
+
+    def test_open_jobs_scoped_to_assigned(self):
+        res = self.client.get(ua_url(self.rec_a.id))
+        open_jobs = res.data["open_jobs"]
+        total = sum(open_jobs["by_status"].values())
+        self.assertEqual(total, 1)
+
+    def test_pipeline_funnel_scoped_to_submitted_by(self):
+        # sub_a is active with a stage; sub_b belongs to rec_b
+        PipelineStage.objects.filter(job=self.job_a).update(name="Screening")
+        stage = PipelineStage.objects.get(job=self.job_a)
+        self.sub_a.current_stage = stage
+        self.sub_a.save(update_fields=["current_stage"])
+
+        res = self.client.get(ua_url(self.rec_a.id))
+        funnel = res.data["pipeline_funnel"]
+        self.assertEqual(len(funnel), 1)
+        self.assertEqual(funnel[0]["count"], 1)
+
+    def test_recruiter_stats_scoped_to_target(self):
+        # rec_b has 1 placed submittal; rec_a has 1 active
+        res_a = self.client.get(ua_url(self.rec_a.id))
+        res_b = self.client.get(ua_url(self.rec_b.id))
+
+        self.assertEqual(res_a.data["recruiter_stats"]["active"], 1)
+        self.assertEqual(res_a.data["recruiter_stats"]["placed"], 0)
+        self.assertEqual(res_b.data["recruiter_stats"]["placed"], 1)
+        self.assertEqual(res_b.data["recruiter_stats"]["active"], 0)
+
+    def test_recruiter_stats_conversion_rate(self):
+        # rec_b: 1 placed out of 1 total → 100%
+        res = self.client.get(ua_url(self.rec_b.id))
+        self.assertEqual(res.data["recruiter_stats"]["conversion_rate"], 100.0)
+
+    def test_empty_data_returns_zeros(self):
+        empty_rec = make_user("empty@ua.com", role=Role.RECRUITER)
+        res = self.client.get(ua_url(empty_rec.id))
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        pool = res.data["candidate_pool"]
+        self.assertEqual(pool["active"] + pool["passive"] + pool["placed"] + pool["blacklisted"], 0)
+        self.assertEqual(res.data["recruiter_stats"]["total"], 0)
+        self.assertEqual(res.data["recruiter_stats"]["conversion_rate"], 0.0)

@@ -1,16 +1,16 @@
 from datetime import timedelta
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.db.models import Q, Count
+from django.db.models import Q, Count, Avg, Min
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
-from django.db.models import Avg
 from jobs.models import Job
 from submittals.models import Submittal
 from jobs.serializers import JobSerializer
 from submittals.serializers import SubmittalSerializer
-from users.models import Role
+from users.models import User, Role
 from users.permissions import IsRecruiterOrAbove, IsAccountManagerOrAbove
 from candidates.models import Candidate
 from interviews.models import Interview
@@ -328,9 +328,6 @@ class AnalyticsView(APIView):
         ]
 
         # ── Time to fill ──────────────────────────────────────────────────────
-        # For each job with a placed submittal, find the earliest placement date
-        from django.db.models import Min
-
         placed_qs = (
             Submittal.objects
             .filter(status="placed")
@@ -425,4 +422,130 @@ class ScorecardView(APIView):
             },
             "pipeline":          pipeline,
             "recent_placements": recent_placements,
+        })
+
+
+class UserAnalyticsView(APIView):
+    """
+    GET /api/dashboard/analytics/user/<user_id>/
+    Returns all analytics widgets scoped to a single recruiter or team lead.
+    Restricted to Account Manager and above. Returns 404 for non-recruiter/TL targets.
+    """
+    permission_classes = [IsAccountManagerOrAbove]
+
+    def get(self, request, user_id):
+        target = get_object_or_404(User, pk=user_id)
+        if target.role not in (Role.RECRUITER, Role.TEAM_LEAD):
+            return Response({"detail": "Not found."}, status=404)
+
+        # ── Candidate pool ────────────────────────────────────────────────────
+        pool_qs = (
+            Candidate.objects.filter(created_by=target)
+            .values("status")
+            .annotate(count=Count("id"))
+        )
+        pool_map = {row["status"]: row["count"] for row in pool_qs}
+        candidate_pool = {
+            "active":      pool_map.get("active",      0),
+            "passive":     pool_map.get("passive",     0),
+            "placed":      pool_map.get("placed",      0),
+            "blacklisted": pool_map.get("blacklisted", 0),
+        }
+
+        # ── Source effectiveness ───────────────────────────────────────────────
+        source_qs = (
+            Candidate.objects.filter(created_by=target)
+            .values("source")
+            .annotate(
+                candidates=Count("id"),
+                placements=Count("id", filter=Q(status="placed")),
+            )
+            .order_by("-candidates")
+        )
+        source_effectiveness = [
+            {"source": row["source"], "candidates": row["candidates"], "placements": row["placements"]}
+            for row in source_qs
+        ]
+
+        # ── Open jobs ─────────────────────────────────────────────────────────
+        job_qs = Job.objects.filter(assigned_to=target).exclude(status="cancelled")
+        status_map   = {r["status"]:   r["count"] for r in job_qs.values("status").annotate(count=Count("id"))}
+        priority_map = {r["priority"]: r["count"] for r in job_qs.values("priority").annotate(count=Count("id"))}
+        open_jobs = {
+            "by_status": {
+                "open":    status_map.get("open",    0),
+                "on_hold": status_map.get("on_hold", 0),
+                "draft":   status_map.get("draft",   0),
+                "filled":  status_map.get("filled",  0),
+            },
+            "by_priority": {
+                "urgent": priority_map.get("urgent", 0),
+                "high":   priority_map.get("high",   0),
+                "medium": priority_map.get("medium", 0),
+                "low":    priority_map.get("low",    0),
+            },
+        }
+
+        # ── Pipeline funnel ───────────────────────────────────────────────────
+        sub_qs = Submittal.objects.filter(submitted_by=target)
+        funnel_qs = (
+            sub_qs
+            .filter(status="active", current_stage__isnull=False)
+            .values("current_stage__name", "current_stage__order")
+            .annotate(count=Count("id"))
+            .order_by("current_stage__order")
+        )
+        pipeline_funnel = [
+            {"stage": row["current_stage__name"], "count": row["count"]}
+            for row in funnel_qs
+        ]
+
+        # ── Interview outcomes ────────────────────────────────────────────────
+        iv_qs      = Interview.objects.filter(created_by=target)
+        outcome_map = {r["status"]: r["count"] for r in iv_qs.values("status").annotate(count=Count("id"))}
+        raw_avg    = iv_qs.filter(score__isnull=False).aggregate(avg=Avg("score"))["avg"]
+        interview_outcomes = {
+            "completed": outcome_map.get("completed", 0),
+            "cancelled":  outcome_map.get("cancelled",  0),
+            "no_show":    outcome_map.get("no_show",    0),
+            "avg_score":  round(raw_avg, 1) if raw_avg is not None else None,
+        }
+
+        # ── Time to fill ──────────────────────────────────────────────────────
+        placed_qs = (
+            sub_qs.filter(status="placed")
+            .values("job_id")
+            .annotate(first_placed_at=Min("updated_at"))
+        )
+        job_ids    = [row["job_id"] for row in placed_qs]
+        job_lookup = {j.id: j for j in Job.objects.filter(id__in=job_ids).select_related("client")}
+        by_job = []
+        for row in placed_qs:
+            job = job_lookup.get(row["job_id"])
+            if not job:
+                continue
+            days = max((row["first_placed_at"] - job.created_at).days, 0)
+            by_job.append({"id": job.id, "title": job.title, "client": job.client.name, "days": days})
+        by_job.sort(key=lambda x: x["days"], reverse=True)
+        avg_days     = round(sum(r["days"] for r in by_job) / len(by_job)) if by_job else None
+        time_to_fill = {"avg_days": avg_days, "by_job": by_job}
+
+        # ── Recruiter stats (replaces leaderboard for per-user view) ──────────
+        total  = sub_qs.count()
+        placed = sub_qs.filter(status="placed").count()
+        recruiter_stats = {
+            "total":           total,
+            "active":          sub_qs.filter(status="active").count(),
+            "placed":          placed,
+            "conversion_rate": round((placed / total) * 100, 1) if total > 0 else 0.0,
+        }
+
+        return Response({
+            "candidate_pool":       candidate_pool,
+            "source_effectiveness": source_effectiveness,
+            "open_jobs":            open_jobs,
+            "pipeline_funnel":      pipeline_funnel,
+            "interview_outcomes":   interview_outcomes,
+            "time_to_fill":         time_to_fill,
+            "recruiter_stats":      recruiter_stats,
         })

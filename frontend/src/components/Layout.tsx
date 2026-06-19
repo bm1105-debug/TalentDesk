@@ -3,7 +3,7 @@ import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, Users, Briefcase, FileText,
   Calendar, Mail, Search, LogOut, KeyRound, BarChart2, TrendingUp, Award,
-  ClipboardList, HandCoins, ChevronLeft, ChevronRight,
+  ClipboardList, HandCoins, ChevronLeft, ChevronRight, UserSearch,
 } from 'lucide-react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { useAuth } from '@/context/AuthContext'
@@ -32,6 +32,7 @@ const ROUTE_LABELS: Record<string, string> = {
   '/scorecard':      'My Scorecard',
   '/offers':         'Offers',
   '/activity':       'Audit Log',
+  '/people':         'People',
 }
 
 function getPageTitle(pathname: string): string {
@@ -154,6 +155,7 @@ const RECRUITING_ITEMS = [
 const MANAGEMENT_ITEMS = [
   { to: '/reports',    label: 'Reports',      icon: BarChart2 },
   { to: '/analytics',  label: 'Analytics',    icon: TrendingUp },
+  { to: '/people',     label: 'People',       icon: UserSearch },
   { to: '/scorecard',  label: 'My Scorecard', icon: Award },
   { to: '/offers',     label: 'Offers',       icon: HandCoins },
 ]
@@ -259,7 +261,11 @@ export default function Layout() {
             ))}
 
             <SectionLabel label="Management" collapsed={collapsed} divider />
-            {MANAGEMENT_ITEMS.map(item => (
+            {MANAGEMENT_ITEMS.filter(item => {
+              if (item.to === '/scorecard' && user?.role === 'ceo') return false
+              if (item.to === '/people' && !['account_manager', 'ceo'].includes(user?.role ?? '')) return false
+              return true
+            }).map(item => (
               <NavItem key={item.to} {...item} collapsed={collapsed} />
             ))}
             {isManager && (

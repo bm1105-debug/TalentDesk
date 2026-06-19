@@ -643,9 +643,12 @@ export default function Dashboard() {
     refetchInterval: 60_000,
   })
 
+  const isCEO = user?.role === 'ceo'
+
   const { data: scorecard, isLoading: scLoading } = useQuery<ScorecardData>({
     queryKey: ['scorecard'],
     queryFn:  () => api.get('/dashboard/scorecard/').then(r => r.data),
+    enabled:  !isCEO,
   })
 
   if (isLoading) return <DashboardSkeleton />
@@ -741,11 +744,11 @@ export default function Dashboard() {
       {/* ── Main content: performance left, panels + tasks right ── */}
       <div className="grid grid-cols-12 gap-4">
 
-        {/* Performance sidebar */}
-        <PerformanceSidebar data={scorecard} loading={scLoading} />
+        {/* Performance sidebar — hidden for CEO */}
+        {!isCEO && <PerformanceSidebar data={scorecard} loading={scLoading} />}
 
-        {/* Right column: schedule + deadlines + tasks */}
-        <div className="col-span-8 flex flex-col gap-4">
+        {/* Right column: expands to full width when performance sidebar is hidden */}
+        <div className={`${isCEO ? 'col-span-12' : 'col-span-8'} flex flex-col gap-4`}>
           <div className="grid grid-cols-2 gap-4">
             <TodaySchedulePanel interviews={data.interviews_today} />
             <UpcomingDeadlinesPanel deadlines={data.upcoming_deadlines} />
