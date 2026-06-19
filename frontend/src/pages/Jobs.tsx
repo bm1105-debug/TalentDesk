@@ -8,7 +8,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Search, Plus, ChevronLeft, ChevronRight, Users } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import api from '@/api/client'
 import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/button'
@@ -183,11 +183,12 @@ function AddJobForm({ onSuccess }: { onSuccess: () => void }) {
 
 export default function Jobs() {
   const { user } = useAuth()
-  const isManager = user?.role !== 'recruiter'
+  const isManager = ['account_manager', 'ceo'].includes(user?.role ?? '')
 
+  const [searchParams] = useSearchParams()
   const [search,     setSearch]     = useState('')
   const [status,     setStatus]     = useState('')
-  const [priority,   setPriority]   = useState('')
+  const [priority,   setPriority]   = useState(searchParams.get('priority') ?? '')
   const [page,       setPage]       = useState(1)
   const [dialogOpen, setDialogOpen] = useState(false)
 

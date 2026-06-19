@@ -196,8 +196,8 @@ class OverdueJobTests(APITestCase):
         self.recruiter = make_user("rec@test.com",     role=Role.RECRUITER)
         acme = make_client_obj()
 
-        yesterday = date.today() - timedelta(days=1)
-        tomorrow  = date.today() + timedelta(days=1)
+        yesterday = timezone.now().date() - timedelta(days=1)
+        tomorrow  = timezone.now().date() + timedelta(days=1)
 
         self.overdue    = make_job(acme, self.manager, target_date=yesterday)
         self.not_due    = make_job(acme, self.manager, target_date=tomorrow)

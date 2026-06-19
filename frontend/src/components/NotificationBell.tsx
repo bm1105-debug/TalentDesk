@@ -29,7 +29,6 @@ export default function NotificationBell() {
   const navigate = useNavigate()
   const qc = useQueryClient()
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     function handle(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
@@ -76,53 +75,65 @@ export default function NotificationBell() {
 
   return (
     <div ref={ref} className="relative">
+
+      {/* ── Bell button ─────────────────────────────────────────────── */}
       <button
         onClick={() => setOpen(o => !o)}
-        className="relative p-2 rounded-md text-gray-500 hover:bg-gray-100 transition-colors"
+        className="relative p-2 rounded-lg transition-colors text-white/50 hover:text-white hover:bg-white/10"
       >
         <Bell className="h-5 w-5" />
         {unread.count > 0 && (
-          <span className="absolute top-1 right-1 h-4 w-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+          <span
+            className="absolute top-1 right-1 h-4 w-4 rounded-full text-white text-[10px] font-bold flex items-center justify-center"
+            style={{ background: '#f43f5e', boxShadow: '0 0 6px #f43f5e' }}
+          >
             {unread.count > 9 ? '9+' : unread.count}
           </span>
         )}
       </button>
 
+      {/* ── Dropdown panel ──────────────────────────────────────────── */}
       {open && (
-        <div className="absolute right-0 top-10 w-80 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-            <span className="text-sm font-semibold text-gray-800">Notifications</span>
+        <div
+          className="absolute right-0 top-10 w-80 rounded-xl shadow-2xl z-50 overflow-hidden"
+          style={{ background: 'var(--td-surface)', border: '1px solid rgba(255,255,255,0.08)' }}
+        >
+          {/* Header row */}
+          <div
+            className="flex items-center justify-between px-4 py-3"
+            style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+          >
+            <span className="text-sm font-semibold text-slate-200">Notifications</span>
             {unread.count > 0 && (
               <button
                 onClick={() => markAll.mutate()}
-                className="text-xs text-blue-600 hover:underline"
+                className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
               >
                 Mark all read
               </button>
             )}
           </div>
 
-          {/* List */}
-          <div className="max-h-80 overflow-y-auto divide-y divide-gray-50">
+          {/* Notification list */}
+          <div className="max-h-80 overflow-y-auto divide-y divide-white/[0.04]">
             {notifications.length === 0 && (
-              <p className="px-4 py-6 text-sm text-gray-400 text-center">No notifications</p>
+              <p className="px-4 py-6 text-sm text-slate-500 text-center">No notifications</p>
             )}
             {notifications.map(n => (
               <button
                 key={n.id}
                 onClick={() => handleClick(n)}
-                className={`w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors block ${
-                  !n.is_read ? 'bg-blue-50/50' : ''
+                className={`w-full text-left px-4 py-3 transition-colors block hover:bg-white/5 ${
+                  !n.is_read ? 'bg-indigo-500/10' : ''
                 }`}
               >
                 <div className="flex items-start gap-2">
                   {!n.is_read && (
-                    <span className="mt-1.5 h-2 w-2 rounded-full bg-blue-500 shrink-0" />
+                    <span className="mt-1.5 h-2 w-2 rounded-full bg-indigo-400 flex-shrink-0" />
                   )}
                   <div className={!n.is_read ? '' : 'ml-4'}>
-                    <p className="text-sm text-gray-800 leading-snug">{n.message}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{timeAgo(n.created_at)}</p>
+                    <p className="text-sm text-slate-200 leading-snug">{n.message}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{timeAgo(n.created_at)}</p>
                   </div>
                 </div>
               </button>

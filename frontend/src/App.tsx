@@ -46,9 +46,9 @@ export default function App() {
         <Route path="communications" element={<Communications />} />
         <Route path="search"         element={<Search />} />
         <Route path="reports"        element={<Reports />} />
-        <Route path="analytics"      element={<Analytics />} />
+        <Route path="analytics"      element={<ProtectedRoute minRole="account_manager"><Analytics /></ProtectedRoute>} />
         <Route path="scorecard"      element={<Scorecard />} />
-        <Route path="activity"       element={<ActivityLog />} />
+        <Route path="activity"       element={<ProtectedRoute minRole="team_lead"><ActivityLog /></ProtectedRoute>} />
         <Route path="offers"         element={<Offers />} />
       </Route>
 

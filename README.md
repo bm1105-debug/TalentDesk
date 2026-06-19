@@ -1,95 +1,85 @@
-# TalentDesk
+﻿# TalentDesk
 
-A full-stack Applicant Tracking System (ATS) and Recruitment CRM built for HR consulting firms. Replaces spreadsheets and WhatsApp with a unified platform for managing candidates, jobs, clients, and the full recruitment pipeline.
+An ATS + CRM platform built for HR consulting firms — managing clients, candidates, jobs, submittals, interviews, and offers in a single application.
 
 ## Tech Stack
 
-**Backend**
-- Python 3.11 + Django 4.2 + Django REST Framework
-- PostgreSQL
-- SimpleJWT (authentication)
-- xhtml2pdf + python-docx (CV export)
-
-**Frontend**
-- React 18 + Vite + TypeScript
-- Tailwind CSS v4
-- TanStack Query v5
-- React Router v7
-- React Hook Form + Zod
-
-## Features
-
-| Module | Description |
-|--------|-------------|
-| **Candidates** | Manage candidate profiles, skills, status, and source tracking |
-| **Jobs** | Job requisitions with pipeline stages, priority, and recruiter assignment |
-| **Submittals** | Submit candidates to jobs, advance pipeline stages, append notes |
-| **Interviews** | Schedule and track interviews with status updates |
-| **Communications** | Email templates with variable rendering, send and audit log |
-| **CV Export** | Generate candidate CVs as PDF or DOCX |
-| **Search** | Unified full-text search across candidates, jobs, and clients |
-| **Dashboard** | "My Day" view — urgent jobs, overdue roles, stale submittals |
+| Layer | Technology |
+|-------|-----------|
+| Backend | Django 4.2, Django REST Framework, SimpleJWT |
+| Database | PostgreSQL |
+| Frontend | React 18, Vite 8, TypeScript |
+| UI | Tailwind CSS v4, Shadcn/ui, Radix UI |
+| Data fetching | TanStack Query v5 |
+| Routing | React Router v7 |
+| Forms | React Hook Form + Zod |
+| Drag and drop | @dnd-kit/core |
 
 ## Project Structure
 
 ```
 TalentDesk/
-├── backend/                  # Django project
-│   ├── config/               # Settings, URLs, WSGI
-│   ├── users/                # Auth, roles, permissions
-│   ├── clients/              # Client companies and contacts
-│   ├── candidates/           # Candidate profiles and skills
-│   ├── jobs/                 # Job requisitions and pipeline stages
-│   ├── submittals/           # Candidate-to-job submissions
-│   ├── interviews/           # Interview scheduling
-│   ├── communications/       # Email templates and send log
-│   ├── cvgen/                # PDF and DOCX CV generation
-│   ├── search/               # Unified full-text search
-│   ├── activity/             # Auto activity logging middleware
-│   └── dashboard/            # My Day aggregation endpoint
-└── frontend/                 # React + Vite app
+├── backend/
+│   ├── activity/          # Audit log
+│   ├── attachments/       # CV upload, parse, download
+│   ├── candidates/        # Candidate profiles, bulk status, duplicate detection
+│   ├── clients/           # Client companies
+│   ├── communications/    # Email templates and sent emails
+│   ├── cvgen/             # CV document generation
+│   ├── dashboard/         # My Day, Analytics, Scorecard endpoints
+│   ├── interviews/        # Interview scheduling and scoring
+│   ├── jobs/              # Job postings, pipeline stages
+│   ├── notifications/     # In-app notification bell
+│   ├── offers/            # Offer management (accept / decline / withdraw)
+│   ├── search/            # Full-text + boolean search across jobs and candidates
+│   ├── submittals/        # Candidate-to-job pipeline, stage advancement
+│   ├── tasks/             # Task CRUD with due-today notifications
+│   ├── users/             # Auth, roles, password change
+│   └── talentdesk/        # Django project settings + URL root
+└── frontend/
     └── src/
-        ├── pages/            # One file per page
-        ├── components/       # Layout, ProtectedRoute, UI primitives
-        ├── api/              # Axios client with JWT interceptor
-        └── context/          # Auth context
+        ├── api/           # Axios client with JWT interceptor
+        ├── components/    # Layout, CommandBar, NotificationBell, InitialsAvatar, etc.
+        ├── context/       # AuthContext (JWT + role)
+        ├── lib/           # Utilities (cn, etc.)
+        └── pages/         # One file per route
 ```
 
-## Getting Started
+## Roles
 
-### Prerequisites
-- Python 3.11+
-- Node.js 18+
-- PostgreSQL 14+
+| Role | Permissions |
+|------|-------------|
+| `recruiter` | Own jobs/submittals/interviews; read clients and candidates |
+| `team_lead` | All recruiter permissions + team-wide view |
+| `account_manager` | All data; approve offers; access audit log |
+| `ceo` | Full read/write across the platform |
 
-### Backend Setup
+## Setup
+
+### Backend
 
 ```bash
 cd backend
-
-# Create and activate virtual environment
 python -m venv venv
-venv\Scripts\activate        # Windows
-# source venv/bin/activate   # Mac/Linux
-
-# Install dependencies
+venv\Scripts\activate          # Windows
 pip install -r requirements.txt
+```
 
-# Create a .env file
-cp .env.example .env
-# Edit .env and fill in SECRET_KEY and DATABASE_URL
+Create `.env` in `backend/`:
 
-# Run migrations
+```
+SECRET_KEY=your-secret-key
+DEBUG=True
+DATABASE_URL=postgres://user:password@localhost:5432/talentdesk
+```
+
+```bash
 python manage.py migrate
-
-# Seed with 100 test records
-python manage.py seed
-
-# Start the server
+python manage.py createsuperuser
 python manage.py runserver
 ```
 
-### Frontend Setup
+### Frontend
 
 ```bash
 cd frontend
@@ -97,18 +87,18 @@ npm install
 npm run dev
 ```
 
-Open **http://localhost:5173** in your browser.
+The frontend runs on `http://localhost:5173` and proxies API calls to `http://localhost:8000`.
 
-> Vite proxies all `/api/*` requests to `http://localhost:8000` automatically.
+## Authentication
 
-### Default Login Credentials (after seeding)
+SimpleJWT — obtain tokens at:
 
-| Username | Password | Role |
-|----------|----------|------|
-| `ceo` | `pass1234` | CEO |
-| `manager1` | `pass1234` | Account Manager |
-| `recruiter1` | `pass1234` | Recruiter |
-| `recruiter2` | `pass1234` | Recruiter |
+```
+POST /api/token/          # { username, password } → { access, refresh }
+POST /api/token/refresh/  # { refresh } → { access }
+```
+
+All other endpoints require `Authorization: Bearer <access>`.
 
 ## Running Tests
 
@@ -117,27 +107,41 @@ cd backend
 python manage.py test
 ```
 
-171 tests across all apps.
+| App | Tests |
+|-----|-------|
+| users | 7 |
+| clients | 9 |
+| candidates | 29 |
+| jobs | 22 |
+| submittals | 37 |
+| activity | 17 |
+| dashboard | 56 |
+| search | 20 |
+| interviews | 17 |
+| communications | 20 |
+| cvgen | 14 |
+| attachments | 13 |
+| offers | 18 |
+| tasks | 14 |
+| boolean_parser | 16 |
 
-## Role Permissions
+## Key Features
 
-| Action | Recruiter | Account Manager | CEO |
-|--------|-----------|-----------------|-----|
-| View candidates / jobs / submittals | ✓ | ✓ | ✓ |
-| Create candidates / submittals | ✓ | ✓ | ✓ |
-| Create / edit jobs | | ✓ | ✓ |
-| Delete candidates | | ✓ | ✓ |
-| Access email audit log | | ✓ | ✓ |
-| Create users | | | ✓ |
+- **Recruiting pipeline** — submittals move through custom pipeline stages per job; shortlist flag, match score, and rejection email prompt on close
+- **Candidate management** — duplicate detection on create, bulk status update, last-contacted indicator, boolean/advanced search
+- **Kanban view** — drag-and-drop pipeline board on the Job Detail page (optimistic UI with rollback)
+- **Command Bar** — Ctrl+K global search across jobs and candidates with keyboard navigation and recent history
+- **Dashboard** — personalised My Day view with KPI cards, trend indicators, urgent/overdue jobs, stale submittals, and pending offers
+- **Analytics** — candidate pool, source effectiveness, pipeline funnel, interview outcomes, recruiter leaderboard, time-to-fill
+- **Offer management** — accept/decline/withdraw with automatic placement on accept
+- **Document generation** — PDF and DOCX CV download from candidate detail page
+- **Notifications** — in-app bell with unread badge, polled every 30 s
+- **Task management** — personal task list with due-today notifications via management command
+- **Audit log** — full activity history (manager-only)
 
-## Environment Variables
+## Management Commands
 
-Create `backend/.env`:
-
-```env
-SECRET_KEY=your-secret-key-here
-DEBUG=True
-DATABASE_URL=postgres://user:password@localhost:5432/talentdesk
-ALLOWED_HOSTS=localhost,127.0.0.1
-DEFAULT_FROM_EMAIL=noreply@talentdesk.io
+```bash
+# Send notifications for tasks due today (run via cron / scheduler)
+python manage.py notify_due_tasks
 ```

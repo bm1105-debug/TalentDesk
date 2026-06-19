@@ -202,10 +202,10 @@ class MyDayView(APIView):
                     for o in expiring_offers_qs
                 ],
             },
-            "urgent_jobs":      [],
-            "overdue_jobs":     [],
-            "stale_submittals": [],
-            "pending_offers":   [],
+            "urgent_jobs":      [{"id": j.id, "title": j.title, "client": j.client.name, "priority": j.priority} for j in urgent_jobs],
+            "overdue_jobs":     [{"id": j.id, "title": j.title, "client": j.client.name, "target_date": j.target_date.isoformat() if j.target_date else None} for j in overdue_jobs],
+            "stale_submittals": [{"id": s.id, "candidate": f"{s.candidate.first_name} {s.candidate.last_name}", "job": s.job.title, "updated_at": s.updated_at.isoformat()} for s in stale_submittals],
+            "pending_offers":   [{"id": o.id, "candidate": f"{o.submittal.candidate.first_name} {o.submittal.candidate.last_name}", "job": o.submittal.job.title} for o in pending_offers_qs],
         })
 
 

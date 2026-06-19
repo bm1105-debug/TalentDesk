@@ -1,8 +1,4 @@
 # search/tests.py
-#
-# What this file does: tests the unified search endpoint across all three
-# resource types (candidates, jobs, clients). Verifies relevance filtering,
-# type narrowing, empty query handling, and permission enforcement.
 
 from django.test import SimpleTestCase
 from django.urls import reverse
@@ -38,20 +34,23 @@ def make_client_obj(name="Acme Corp", industry="Technology"):
 
 
 def make_candidate(first="Jane", last="Doe", email="jane@example.com",
-                   phone="9000000001", title="", company=""):
+                   phone="9000000001", title="", company="", created_by=None):
     return Candidate.objects.create(
         first_name=first, last_name=last,
         email=email, phone=phone,
         current_title=title, current_company=company,
+        created_by=created_by,
     )
 
 
-def make_job(client_obj, created_by, title="Backend Engineer"):
+def make_job(client_obj, created_by, title="Backend Engineer", assigned_to=None):
     job = Job.objects.create(
         title=title, client=client_obj,
         status="open", created_by=created_by,
     )
     PipelineStage.objects.create(job=job, name="Screening", order=0)
+    if assigned_to:
+        job.assigned_to.set(assigned_to)
     return job
 
 
@@ -61,7 +60,6 @@ URL = reverse("search")
 # ── Auth Tests ────────────────────────────────────────────────────────────────
 
 class SearchAuthTests(APITestCase):
-    """What this class does: confirms the endpoint is protected."""
 
     def test_unauthenticated_rejected(self):
         res = self.client.get(URL, {"q": "python"})
@@ -77,8 +75,6 @@ class SearchAuthTests(APITestCase):
 # ── Empty Query Tests ─────────────────────────────────────────────────────────
 
 class SearchEmptyQueryTests(APITestCase):
-    """What this class does: confirms empty/missing queries return empty results
-    without scanning the database."""
 
     def setUp(self):
         self.user = make_user("rec@test.com")
@@ -97,7 +93,6 @@ class SearchEmptyQueryTests(APITestCase):
         self.assertEqual(res.data["candidates"], [])
 
     def test_response_always_has_all_three_keys(self):
-        # Frontend depends on these keys always being present
         res = self.client.get(URL, {"q": "something"})
         self.assertIn("candidates", res.data)
         self.assertIn("jobs",       res.data)
@@ -107,22 +102,23 @@ class SearchEmptyQueryTests(APITestCase):
 # ── Candidate Search Tests ────────────────────────────────────────────────────
 
 class CandidateSearchTests(APITestCase):
-    """What this class does: verifies candidates are found by name, title,
-    company, and email, and that non-matching records are excluded."""
 
     def setUp(self):
         self.user = make_user("rec@test.com")
         auth(self.client, self.user)
 
+        # Both candidates owned by self.user so the recruiter can see them
         self.alice = make_candidate(
             first="Alice", last="Smith",
             email="alice@example.com", phone="9001",
             title="Python Developer", company="TechCorp",
+            created_by=self.user,
         )
         self.bob = make_candidate(
             first="Bob", last="Jones",
             email="bob@example.com", phone="9002",
             title="Java Engineer", company="JavaHouse",
+            created_by=self.user,
         )
 
     def test_search_by_first_name(self):
@@ -165,18 +161,17 @@ class CandidateSearchTests(APITestCase):
 # ── Job Search Tests ──────────────────────────────────────────────────────────
 
 class JobSearchTests(APITestCase):
-    """What this class does: verifies jobs are found by title and that
-    client_name is included in the result card."""
 
     def setUp(self):
         self.user    = make_user("rec@test.com")
         self.manager = make_user("mgr@test.com", role=Role.ACCOUNT_MANAGER)
-        auth(self.client, self.user)
+        # Search as manager — AM sees all jobs regardless of assignment
+        auth(self.client, self.manager)
         acme = make_client_obj("Acme Corp")
         beta = make_client_obj("Beta Inc")
 
-        self.django_job  = make_job(acme, self.manager, title="Django Backend Engineer")
-        self.react_job   = make_job(beta, self.manager, title="React Frontend Developer")
+        self.django_job = make_job(acme, self.manager, title="Django Backend Engineer")
+        self.react_job  = make_job(beta, self.manager, title="React Frontend Developer")
 
     def test_search_by_job_title(self):
         res = self.client.get(URL, {"q": "Django"})
@@ -198,12 +193,12 @@ class JobSearchTests(APITestCase):
 # ── Client Search Tests ───────────────────────────────────────────────────────
 
 class ClientSearchTests(APITestCase):
-    """What this class does: verifies clients are found by name and industry."""
 
     def setUp(self):
-        self.user = make_user("rec@test.com")
-        auth(self.client, self.user)
-        self.acme    = make_client_obj("Acme Corp",  "Technology")
+        self.manager = make_user("mgr@test.com", role=Role.ACCOUNT_MANAGER)
+        # Search as manager — recruiters/TL get empty client results
+        auth(self.client, self.manager)
+        self.acme    = make_client_obj("Acme Corp",   "Technology")
         self.fintech = make_client_obj("FinBank Ltd", "Finance")
 
     def test_search_by_client_name(self):
@@ -221,22 +216,21 @@ class ClientSearchTests(APITestCase):
 # ── Type Filter Tests ─────────────────────────────────────────────────────────
 
 class SearchTypeFilterTests(APITestCase):
-    """What this class does: verifies the ?type= param narrows results to
-    a single resource type and skips querying the other two tables."""
 
     def setUp(self):
         self.user    = make_user("rec@test.com")
         self.manager = make_user("mgr@test.com", role=Role.ACCOUNT_MANAGER)
-        auth(self.client, self.user)
+        # Search as manager so all three entity types are visible
+        auth(self.client, self.manager)
         acme = make_client_obj("Engineer Corp")
         make_candidate(first="Engineer", last="Doe",
-                       email="eng@example.com", phone="9003", title="Engineer")
+                       email="eng@example.com", phone="9003", title="Engineer",
+                       created_by=self.manager)
         make_job(acme, self.manager, title="Engineering Manager")
 
     def test_type_candidates_returns_only_candidates(self):
         res = self.client.get(URL, {"q": "Engineer", "type": "candidates"})
         self.assertTrue(len(res.data["candidates"]) > 0)
-        # Jobs and clients should be empty — we didn't query them
         self.assertEqual(res.data["jobs"],    [])
         self.assertEqual(res.data["clients"], [])
 
@@ -253,17 +247,113 @@ class SearchTypeFilterTests(APITestCase):
         self.assertEqual(res.data["jobs"],       [])
 
 
+# ── Search Isolation Tests ────────────────────────────────────────────────────
+
+class SearchIsolationTests(APITestCase):
+    """Verify search results are scoped by role per issue #27 Slice 6."""
+
+    def setUp(self):
+        self.recruiter_a = make_user("rec_a@iso.com", role=Role.RECRUITER)
+        self.recruiter_b = make_user("rec_b@iso.com", role=Role.RECRUITER)
+        self.team_lead   = make_user("tl@iso.com",    role=Role.TEAM_LEAD)
+        self.manager     = make_user("mgr@iso.com",   role=Role.ACCOUNT_MANAGER)
+
+        # recruiter_b reports to team_lead — they are in the TL's pod
+        self.recruiter_b.reports_to = self.team_lead
+        self.recruiter_b.save(update_fields=["reports_to"])
+
+        client_obj = make_client_obj("IsoClient Corp", "Tech")
+
+        self.alice = make_candidate(
+            first="Alice", last="IsoTest",
+            email="alice_iso@test.com", phone="7001",
+            title="Python Developer", created_by=self.recruiter_a,
+        )
+        self.bob = make_candidate(
+            first="Bob", last="IsoTest",
+            email="bob_iso@test.com", phone="7002",
+            title="Python Developer", created_by=self.recruiter_b,
+        )
+
+        self.job_a = make_job(client_obj, self.manager, title="Python Senior Dev",
+                              assigned_to=[self.recruiter_a])
+        self.job_b = make_job(client_obj, self.manager, title="Python Junior Dev",
+                              assigned_to=[self.recruiter_b])
+
+    def test_recruiter_sees_own_candidates_only(self):
+        auth(self.client, self.recruiter_a)
+        res = self.client.get(URL, {"q": "IsoTest"})
+        ids = [c["id"] for c in res.data["candidates"]]
+        self.assertIn(self.alice.id, ids)
+        self.assertNotIn(self.bob.id, ids)
+
+    def test_recruiter_cannot_see_other_recruiter_candidate(self):
+        auth(self.client, self.recruiter_b)
+        res = self.client.get(URL, {"q": "IsoTest"})
+        ids = [c["id"] for c in res.data["candidates"]]
+        self.assertIn(self.bob.id, ids)
+        self.assertNotIn(self.alice.id, ids)
+
+    def test_recruiter_sees_assigned_jobs_only(self):
+        auth(self.client, self.recruiter_a)
+        res = self.client.get(URL, {"q": "Python"})
+        ids = [j["id"] for j in res.data["jobs"]]
+        self.assertIn(self.job_a.id, ids)
+        self.assertNotIn(self.job_b.id, ids)
+
+    def test_recruiter_gets_empty_client_results(self):
+        auth(self.client, self.recruiter_a)
+        res = self.client.get(URL, {"q": "IsoClient"})
+        self.assertEqual(res.data["clients"], [])
+
+    def test_team_lead_sees_own_and_pod_candidates(self):
+        auth(self.client, self.team_lead)
+        res = self.client.get(URL, {"q": "IsoTest"})
+        ids = [c["id"] for c in res.data["candidates"]]
+        self.assertIn(self.bob.id, ids)       # pod member's candidate
+        self.assertNotIn(self.alice.id, ids)  # outside pod
+
+    def test_team_lead_sees_pod_jobs(self):
+        auth(self.client, self.team_lead)
+        res = self.client.get(URL, {"q": "Python"})
+        ids = [j["id"] for j in res.data["jobs"]]
+        self.assertIn(self.job_b.id, ids)       # assigned to pod member
+        self.assertNotIn(self.job_a.id, ids)    # outside pod
+
+    def test_team_lead_gets_empty_client_results(self):
+        auth(self.client, self.team_lead)
+        res = self.client.get(URL, {"q": "IsoClient"})
+        self.assertEqual(res.data["clients"], [])
+
+    def test_manager_sees_all_candidates(self):
+        auth(self.client, self.manager)
+        res = self.client.get(URL, {"q": "IsoTest"})
+        ids = [c["id"] for c in res.data["candidates"]]
+        self.assertIn(self.alice.id, ids)
+        self.assertIn(self.bob.id, ids)
+
+    def test_manager_sees_all_jobs(self):
+        auth(self.client, self.manager)
+        res = self.client.get(URL, {"q": "Python"})
+        ids = [j["id"] for j in res.data["jobs"]]
+        self.assertIn(self.job_a.id, ids)
+        self.assertIn(self.job_b.id, ids)
+
+    def test_manager_sees_client_results(self):
+        auth(self.client, self.manager)
+        res = self.client.get(URL, {"q": "IsoClient"})
+        self.assertTrue(len(res.data["clients"]) > 0)
+
+
 # ── Boolean Parser Unit Tests (no DB) ────────────────────────────────────────
 
 def _parse_to_str(query: str) -> str:
-    """Helper: parse query → AST → normalised string."""
     tokens = _tokenize(query)
     ast    = _Parser(tokens).parse()
     return _ast_to_string(ast)
 
 
 class BooleanParserTests(SimpleTestCase):
-    """Unit tests for the standalone parser — no database required."""
 
     def test_single_term(self):
         self.assertEqual(_parse_to_str("python"), "python")
@@ -289,7 +379,6 @@ class BooleanParserTests(SimpleTestCase):
         self.assertIn("vue", result)
 
     def test_case_insensitive_operators(self):
-        # "and" in lowercase should be recognised as an AND operator
         result_lower = _parse_to_str("python and react")
         result_upper = _parse_to_str("python AND react")
         self.assertEqual(result_lower, result_upper)
@@ -316,7 +405,6 @@ class BooleanParserTests(SimpleTestCase):
 # ── Boolean Search Integration Tests ─────────────────────────────────────────
 
 class BooleanSearchIntegrationTests(APITestCase):
-    """Verify the search endpoint returns parsed_query and respects boolean ops."""
 
     def setUp(self):
         self.user  = make_user("bool@test.com")
@@ -325,11 +413,13 @@ class BooleanSearchIntegrationTests(APITestCase):
             first="Alice", last="Dev",
             email="adev@bool.com", phone="8100",
             title="Python Developer", company="TechCo",
+            created_by=self.user,
         )
         self.bob = make_candidate(
             first="Bob", last="Contractor",
             email="bcon@bool.com", phone="8101",
             title="Contractor Python",
+            created_by=self.user,
         )
 
     def test_response_includes_parsed_query_for_boolean_input(self):
@@ -349,6 +439,5 @@ class BooleanSearchIntegrationTests(APITestCase):
     def test_and_narrows_to_matching_candidates(self):
         res = self.client.get(URL, {"q": "Alice AND Developer"})
         self.assertEqual(res.status_code, 200)
-        # Alice matches; Bob has Python but not "Alice"
         ids = [c["id"] for c in res.data["candidates"]]
         self.assertIn(self.alice.id, ids)
