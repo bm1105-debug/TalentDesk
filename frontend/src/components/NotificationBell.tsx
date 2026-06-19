@@ -79,9 +79,11 @@ export default function NotificationBell() {
       {/* ── Bell button ─────────────────────────────────────────────── */}
       <button
         onClick={() => setOpen(o => !o)}
+        aria-label="Notifications"
+        title="Notifications"
         className="relative p-2 rounded-lg transition-colors text-white/50 hover:text-white hover:bg-white/10"
       >
-        <Bell className="h-5 w-5" />
+        <Bell className="h-5 w-5" aria-hidden="true" />
         {unread.count > 0 && (
           <span
             className="absolute top-1 right-1 h-4 w-4 rounded-full text-white text-[10px] font-bold flex items-center justify-center"

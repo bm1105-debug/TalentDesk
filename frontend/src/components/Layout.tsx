@@ -267,10 +267,11 @@ export default function Layout() {
           )}
           <button
             onClick={toggleCollapsed}
-            className="p-1 rounded-md transition-colors text-slate-600 hover:text-slate-200 hover:bg-white/5"
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            className="p-1 rounded-md transition-colors text-slate-600 hover:text-slate-200 hover:bg-white/5"
           >
-            {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+            {collapsed ? <ChevronRight className="h-4 w-4" aria-hidden="true" /> : <ChevronLeft className="h-4 w-4" aria-hidden="true" />}
           </button>
         </div>
 
