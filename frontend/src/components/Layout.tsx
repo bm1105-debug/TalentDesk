@@ -3,7 +3,7 @@ import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, Users, Briefcase, FileText,
   Calendar, Mail, Search, LogOut, KeyRound, BarChart2, TrendingUp, Award,
-  ClipboardList, HandCoins, ChevronLeft, ChevronRight, UserSearch,
+  ScrollText, FileCheck, ChevronLeft, ChevronRight, Contact,
 } from 'lucide-react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { useAuth } from '@/context/AuthContext'
@@ -149,15 +149,14 @@ const RECRUITING_ITEMS = [
   { to: '/submittals',     label: 'Submittals',     icon: FileText },
   { to: '/interviews',     label: 'Interviews',     icon: Calendar },
   { to: '/communications', label: 'Communications', icon: Mail },
-  { to: '/search',         label: 'Search',         icon: Search },
 ]
 
 const MANAGEMENT_ITEMS = [
   { to: '/reports',    label: 'Reports',      icon: BarChart2 },
   { to: '/analytics',  label: 'Analytics',    icon: TrendingUp },
-  { to: '/people',     label: 'People',       icon: UserSearch },
+  { to: '/people',     label: 'People',       icon: Contact },
   { to: '/scorecard',  label: 'My Scorecard', icon: Award },
-  { to: '/offers',     label: 'Offers',       icon: HandCoins },
+  { to: '/offers',     label: 'Offers',       icon: FileCheck },
 ]
 
 function NavItem({ to, label, icon: Icon, collapsed }: {
@@ -260,16 +259,24 @@ export default function Layout() {
               <NavItem key={item.to} {...item} collapsed={collapsed} />
             ))}
 
-            <SectionLabel label="Management" collapsed={collapsed} divider />
+            <hr className="mx-3 my-2 border-t border-white/[0.06]" />
+            <NavItem to="/search" label="Search" icon={Search} collapsed={collapsed} />
+            <hr className="mx-3 my-2 border-t border-white/[0.06]" />
+
+            <SectionLabel label="Management" collapsed={collapsed} />
             {MANAGEMENT_ITEMS.filter(item => {
               if (item.to === '/scorecard' && user?.role === 'ceo') return false
-              if (item.to === '/people' && !['account_manager', 'ceo'].includes(user?.role ?? '')) return false
+              if (item.to === '/people' && !['account_manager', 'ceo', 'team_lead'].includes(user?.role ?? '')) return false
               return true
             }).map(item => (
               <NavItem key={item.to} {...item} collapsed={collapsed} />
             ))}
+
             {isManager && (
-              <NavItem to="/activity" label="Audit Log" icon={ClipboardList} collapsed={collapsed} />
+              <>
+                <SectionLabel label="Admin" collapsed={collapsed} divider />
+                <NavItem to="/activity" label="Audit Log" icon={ScrollText} collapsed={collapsed} />
+              </>
             )}
           </nav>
         </div>
