@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, Users, Briefcase, FileText,
@@ -190,6 +190,33 @@ export default function Layout() {
   const [collapsed, setCollapsed] = useState(() => {
     return localStorage.getItem('td_sidebar_collapsed') === 'true'
   })
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [showTopFade, setShowTopFade] = useState(false)
+  const [showBottomFade, setShowBottomFade] = useState(true)
+  const [managementOpen, setManagementOpen] = useState(false)
+  const [adminOpen, setAdminOpen] = useState(false)
+
+  useEffect(() => {
+    const managementRoutes = ['/reports', '/analytics', '/people', '/offers']
+    const adminRoutes = ['/activity']
+    if (managementRoutes.some(r => location.pathname.startsWith(r))) setManagementOpen(true)
+    if (adminRoutes.some(r => location.pathname.startsWith(r))) setAdminOpen(true)
+  }, [location.pathname])
+
+  useEffect(() => {
+    const scrollEl = scrollRef.current
+    const activeEl = scrollEl?.querySelector('a.active')
+    if (scrollEl && activeEl) {
+      activeEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    }
+  }, [location.pathname])
+
+  function handleNavScroll() {
+    const el = scrollRef.current
+    if (!el) return
+    setShowTopFade(el.scrollTop > 10)
+    setShowBottomFade(el.scrollTop + el.clientHeight < el.scrollHeight - 10)
+  }
 
   function toggleCollapsed() {
     setCollapsed(c => {
@@ -247,12 +274,14 @@ export default function Layout() {
           </button>
         </div>
 
-        {/* Nav links — fade gradient hint at bottom */}
-        <div className="flex-1 overflow-y-auto relative">
-          <div
-            className="pointer-events-none absolute bottom-0 left-0 right-0 z-10"
-            style={{ height: '60px', background: 'linear-gradient(to top, #12121f 0%, transparent 100%)' }}
-          />
+        {/* Nav links — scroll-aware fade overlays */}
+        <div ref={scrollRef} onScroll={handleNavScroll} className="sidebar-scroll flex-1 overflow-y-scroll relative">
+          {showTopFade && (
+            <div className="pointer-events-none absolute top-0 left-0 right-0 h-10 z-10 bg-gradient-to-b from-[#0f0f1a] to-transparent" />
+          )}
+          {showBottomFade && (
+            <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-16 z-10 bg-gradient-to-t from-[#0f0f1a] to-transparent" />
+          )}
           <nav className="py-2 px-2 space-y-0.5">
             <SectionLabel label="Recruiting" collapsed={collapsed} />
             {RECRUITING_ITEMS.map(item => (
@@ -263,8 +292,18 @@ export default function Layout() {
             <NavItem to="/search" label="Search" icon={Search} collapsed={collapsed} />
             <hr className="mx-3 my-2 border-t border-white/[0.06]" />
 
-            <SectionLabel label="Management" collapsed={collapsed} />
-            {MANAGEMENT_ITEMS.filter(item => {
+            {collapsed
+              ? <SectionLabel label="Management" collapsed={collapsed} />
+              : <button
+                  onClick={() => setManagementOpen(o => !o)}
+                  className="w-full flex items-center justify-between px-3 pt-3 pb-1 uppercase select-none hover:text-white/60 transition-colors"
+                  style={{ color: 'rgba(255,255,255,0.4)', fontSize: '9px', letterSpacing: '0.15em', fontWeight: 700 }}
+                >
+                  <span>Management</span>
+                  <ChevronRight className={`h-3 w-3 transition-transform duration-200 ${managementOpen ? 'rotate-90' : ''}`} />
+                </button>
+            }
+            {(collapsed || managementOpen) && MANAGEMENT_ITEMS.filter(item => {
               if (item.to === '/scorecard' && user?.role === 'ceo') return false
               if (item.to === '/people' && !['account_manager', 'ceo', 'team_lead'].includes(user?.role ?? '')) return false
               return true
@@ -274,8 +313,20 @@ export default function Layout() {
 
             {isManager && (
               <>
-                <SectionLabel label="Admin" collapsed={collapsed} divider />
-                <NavItem to="/activity" label="Audit Log" icon={ScrollText} collapsed={collapsed} />
+                {collapsed
+                  ? <SectionLabel label="Admin" collapsed={collapsed} divider />
+                  : <button
+                      onClick={() => setAdminOpen(o => !o)}
+                      className="w-full flex items-center justify-between px-3 pt-3 pb-1 uppercase select-none hover:text-white/60 transition-colors"
+                      style={{ color: 'rgba(255,255,255,0.4)', fontSize: '9px', letterSpacing: '0.15em', fontWeight: 700 }}
+                    >
+                      <span>Admin</span>
+                      <ChevronRight className={`h-3 w-3 transition-transform duration-200 ${adminOpen ? 'rotate-90' : ''}`} />
+                    </button>
+                }
+                {(collapsed || adminOpen) && (
+                  <NavItem to="/activity" label="Audit Log" icon={ScrollText} collapsed={collapsed} />
+                )}
               </>
             )}
           </nav>
