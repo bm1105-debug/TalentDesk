@@ -11,7 +11,7 @@ from submittals.models import Submittal
 from jobs.serializers import JobSerializer
 from submittals.serializers import SubmittalSerializer
 from users.models import User, Role
-from users.permissions import IsRecruiterOrAbove, IsAccountManagerOrAbove
+from users.permissions import IsRecruiterOrAbove, IsAccountManagerOrAbove, IsTeamLeadOrAbove
 from candidates.models import Candidate
 from interviews.models import Interview
 from offers.models import Offer
@@ -429,14 +429,16 @@ class UserAnalyticsView(APIView):
     """
     GET /api/dashboard/analytics/user/<user_id>/
     Returns all analytics widgets scoped to a single recruiter or team lead.
-    Restricted to Account Manager and above. Returns 404 for non-recruiter/TL targets.
+    Team Leads can only access their own direct reports. Returns 404 for non-recruiter/TL targets.
     """
-    permission_classes = [IsAccountManagerOrAbove]
+    permission_classes = [IsTeamLeadOrAbove]
 
     def get(self, request, user_id):
         target = get_object_or_404(User, pk=user_id)
         if target.role not in (Role.RECRUITER, Role.TEAM_LEAD):
             return Response({"detail": "Not found."}, status=404)
+        if request.user.role == Role.TEAM_LEAD and target not in request.user.direct_reports.all():
+            return Response({"detail": "Forbidden."}, status=403)
 
         # ── Candidate pool ────────────────────────────────────────────────────
         pool_qs = (

@@ -254,3 +254,81 @@ class ChangePasswordTests(APITestCase):
         self.client.credentials()
         res = self.client.post(self.url, {}, format="json")
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+def _auth(client, user, password="Str0ng!Pass"):
+    url = reverse("token_obtain")
+    res = client.post(url, {"username": user.username, "password": password})
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {res.data['access']}")
+
+
+class UserListTeamLeadTests(APITestCase):
+    """Team Lead can list users; sees only their own direct reports."""
+
+    def setUp(self):
+        self.am = User.objects.create_user(
+            username="am", password="Str0ng!Pass", role=Role.ACCOUNT_MANAGER,
+            first_name="Alice", last_name="Manager", email="am@tl.com",
+        )
+        self.tl = User.objects.create_user(
+            username="tl", password="Str0ng!Pass", role=Role.TEAM_LEAD,
+            first_name="Tom", last_name="Lead", email="tl@tl.com",
+        )
+        self.tl2 = User.objects.create_user(
+            username="tl2", password="Str0ng!Pass", role=Role.TEAM_LEAD,
+            first_name="Tina", last_name="Lead2", email="tl2@tl.com",
+        )
+        self.rec_in_pod = User.objects.create_user(
+            username="rec1", password="Str0ng!Pass", role=Role.RECRUITER,
+            first_name="Pod", last_name="Member", email="rec1@tl.com",
+            reports_to=self.tl,
+        )
+        self.rec_other_pod = User.objects.create_user(
+            username="rec2", password="Str0ng!Pass", role=Role.RECRUITER,
+            first_name="Other", last_name="Pod", email="rec2@tl.com",
+            reports_to=self.tl2,
+        )
+        self.recruiter_no_pod = User.objects.create_user(
+            username="rec3", password="Str0ng!Pass", role=Role.RECRUITER,
+            first_name="No", last_name="Pod", email="rec3@tl.com",
+        )
+        self.url = reverse("user_list")
+
+    def test_team_lead_can_access_user_list(self):
+        _auth(self.client, self.tl)
+        res = self.client.get(self.url)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+    def test_team_lead_sees_only_direct_reports(self):
+        _auth(self.client, self.tl)
+        res = self.client.get(self.url)
+        ids = [u["id"] for u in (res.data.get("results") or res.data)]
+        self.assertIn(self.rec_in_pod.id, ids)
+        self.assertNotIn(self.rec_other_pod.id, ids)
+        self.assertNotIn(self.recruiter_no_pod.id, ids)
+        self.assertNotIn(self.tl.id, ids)
+        self.assertNotIn(self.am.id, ids)
+
+    def test_team_lead_with_no_direct_reports_gets_empty_list(self):
+        _auth(self.client, self.tl2)
+        # tl2 has rec_other_pod assigned; remove them to test truly empty pod
+        self.rec_other_pod.reports_to = None
+        self.rec_other_pod.save()
+        res = self.client.get(self.url)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        results = res.data.get("results") if "results" in res.data else res.data
+        self.assertEqual(len(results), 0)
+
+    def test_recruiter_cannot_access_user_list(self):
+        _auth(self.client, self.rec_in_pod)
+        res = self.client.get(self.url)
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_account_manager_still_sees_recruiters_and_team_leads(self):
+        _auth(self.client, self.am)
+        res = self.client.get(self.url)
+        ids = [u["id"] for u in (res.data.get("results") or res.data)]
+        self.assertIn(self.rec_in_pod.id, ids)
+        self.assertIn(self.rec_other_pod.id, ids)
+        self.assertIn(self.tl.id, ids)
+        self.assertNotIn(self.am.id, ids)

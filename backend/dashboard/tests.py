@@ -896,3 +896,51 @@ class UserAnalyticsScopingTests(APITestCase):
         self.assertEqual(pool["active"] + pool["passive"] + pool["placed"] + pool["blacklisted"], 0)
         self.assertEqual(res.data["recruiter_stats"]["total"], 0)
         self.assertEqual(res.data["recruiter_stats"]["conversion_rate"], 0.0)
+
+
+# ── UserAnalyticsView — Team Lead pod-boundary tests ──────────────────────────
+
+class UserAnalyticsTeamLeadTests(APITestCase):
+    """Team Lead can view analytics for their direct reports only."""
+
+    def setUp(self):
+        self.tl        = make_user("tl@ua.com",    role=Role.TEAM_LEAD)
+        self.tl_other  = make_user("tl2@ua.com",   role=Role.TEAM_LEAD)
+        self.rec_mine  = make_user("mine@ua.com",  role=Role.RECRUITER)
+        self.rec_other = make_user("other@ua.com", role=Role.RECRUITER)
+
+        self.rec_mine.reports_to  = self.tl
+        self.rec_mine.save()
+        self.rec_other.reports_to = self.tl_other
+        self.rec_other.save()
+
+        auth(self.client, self.tl)
+
+    def test_tl_can_view_own_direct_report(self):
+        res = self.client.get(ua_url(self.rec_mine.id))
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+    def test_tl_blocked_from_other_pod_recruiter(self):
+        res = self.client.get(ua_url(self.rec_other.id))
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_tl_blocked_from_viewing_self(self):
+        res = self.client.get(ua_url(self.tl.id))
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_tl_blocked_from_other_team_lead(self):
+        res = self.client.get(ua_url(self.tl_other.id))
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_tl_direct_report_response_has_all_keys(self):
+        res = self.client.get(ua_url(self.rec_mine.id))
+        for key in ("candidate_pool", "source_effectiveness", "open_jobs",
+                    "pipeline_funnel", "interview_outcomes", "time_to_fill",
+                    "recruiter_stats"):
+            self.assertIn(key, res.data)
+
+    def test_am_still_accesses_any_recruiter(self):
+        am = make_user("am2@ua.com", role=Role.ACCOUNT_MANAGER)
+        auth(self.client, am)
+        res = self.client.get(ua_url(self.rec_other.id))
+        self.assertEqual(res.status_code, status.HTTP_200_OK)

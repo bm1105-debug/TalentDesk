@@ -14,7 +14,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from users.models import User
-from users.permissions import IsCEO, IsAccountManagerOrAbove
+from users.permissions import IsCEO, IsAccountManagerOrAbove, IsTeamLeadOrAbove
 from users.serializers import RegisterSerializer, UserSerializer, ChangePasswordSerializer
 
 class RegisterView(generics.CreateAPIView):
@@ -58,20 +58,22 @@ class ChangePasswordView(APIView):
     
 class UserListView(generics.ListAPIView):
     """
-    GET  /api/users/          — list all users (CEO and Account Manager only)
-    PATCH /api/users/<id>/    — update role or active status (CEO only)
+    GET /api/users/
+    - CEO: all users
+    - Account Manager: recruiters and team leads
+    - Team Lead: own direct reports only
     """
     serializer_class = UserSerializer
-    permission_classes = [IsAccountManagerOrAbove]
+    permission_classes = [IsTeamLeadOrAbove]
 
     def get_queryset(self):
-        # CEO sees everyone; Account Manager sees only recruiters and team leads
-        # select_related not needed here (no FK on User), but filter at DB level
+        from users.models import Role
         user = self.request.user
         if user.is_ceo:
             return User.objects.all().order_by("last_name")
-        # Account managers should not manage other account managers or the CEO
-        from users.models import Role
+        if user.role == Role.TEAM_LEAD:
+            return User.objects.filter(reports_to=user).order_by("last_name")
+        # Account Manager
         return User.objects.filter(
             role__in=[Role.RECRUITER, Role.TEAM_LEAD]
         ).order_by("last_name")

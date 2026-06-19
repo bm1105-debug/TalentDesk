@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Search, ChevronDown, Users } from 'lucide-react'
@@ -152,18 +152,27 @@ export default function People() {
   const [searchParams, setSearchParams] = useSearchParams()
   const selectedId = searchParams.get('user') ? Number(searchParams.get('user')) : null
 
-  const { data: users = [] } = useQuery<UserEntry[]>({
+  const { data: users = [], isSuccess: usersLoaded } = useQuery<UserEntry[]>({
     queryKey: ['users-list'],
     queryFn:  () => api.get('/users/', { params: { page_size: 200 } })
                        .then(r => (r.data.results ?? r.data) as UserEntry[])
                        .then(list => list.filter(u => ['recruiter', 'team_lead'].includes(u.role))),
   })
 
-  const { data, isLoading } = useQuery<UserAnalyticsData>({
+  const { data, isLoading, isError, error } = useQuery<UserAnalyticsData>({
     queryKey: ['user-analytics', selectedId],
     queryFn:  () => api.get(`/dashboard/analytics/user/${selectedId}/`).then(r => r.data),
     enabled:  selectedId !== null,
+    retry:    false,
   })
+
+  // Clear selection if the analytics request is forbidden (e.g. stale out-of-pod URL)
+  const clearSelection = useCallback(() => setSearchParams({}), [setSearchParams])
+  useEffect(() => {
+    if (isError && (error as any)?.response?.status === 403) {
+      clearSelection()
+    }
+  }, [isError, error, clearSelection])
 
   const selected = users.find(u => u.id === selectedId)
   const sources  = data?.source_effectiveness ?? []
@@ -188,8 +197,17 @@ export default function People() {
           <div className="p-3 rounded-full bg-indigo-500/10">
             <Users className="h-6 w-6 text-indigo-400" />
           </div>
-          <p className="text-sm font-medium text-slate-300">Select an employee to view their performance</p>
-          <p className="text-xs text-slate-500">Use the dropdown above to choose a recruiter or team lead</p>
+          {usersLoaded && users.length === 0 ? (
+            <>
+              <p className="text-sm font-medium text-slate-300">No team members assigned yet.</p>
+              <p className="text-xs text-slate-500">Ask your manager to assign recruiters to your pod.</p>
+            </>
+          ) : (
+            <>
+              <p className="text-sm font-medium text-slate-300">Select an employee to view their performance</p>
+              <p className="text-xs text-slate-500">Use the dropdown above to choose a recruiter or team lead</p>
+            </>
+          )}
         </div>
       )}
 

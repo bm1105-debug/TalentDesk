@@ -48,7 +48,7 @@ export default function App() {
         <Route path="search"         element={<Search />} />
         <Route path="reports"        element={<Reports />} />
         <Route path="analytics"      element={<ProtectedRoute minRole="account_manager"><Analytics /></ProtectedRoute>} />
-        <Route path="people"         element={<ProtectedRoute minRole="account_manager"><People /></ProtectedRoute>} />
+        <Route path="people"         element={<ProtectedRoute minRole="team_lead"><People /></ProtectedRoute>} />
         <Route path="scorecard"      element={<ProtectedRoute maxRole="account_manager"><Scorecard /></ProtectedRoute>} />
         <Route path="activity"       element={<ProtectedRoute minRole="team_lead"><ActivityLog /></ProtectedRoute>} />
         <Route path="offers"         element={<Offers />} />
