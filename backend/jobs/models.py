@@ -75,7 +75,16 @@ class Job(models.Model):
 
 
 # Applied automatically when a job is created — recruiters can edit stages afterwards
-DEFAULT_PIPELINE = ["Screening", "Interview", "Technical Assessment", "Offer", "Placed"]
+DEFAULT_PIPELINE = [
+    "Screened",
+    "Submitted",
+    "Shortlisted",
+    "L1 Interview",
+    "L2 Interview",
+    "Offer Released",
+    "Offer Accepted",
+    "Joined",
+]
 
 
 class PipelineStage(models.Model):

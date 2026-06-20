@@ -67,9 +67,22 @@ class SubmittalViewSet(RoleQuerysetMixin, viewsets.ModelViewSet):
         return [IsRecruiterOrAbove()]
 
     def perform_create(self, serializer):
-        candidate = serializer.validated_data["candidate"]
-        job       = serializer.validated_data["job"]
-        serializer.save(match_score=calculate_match_score(candidate, job))
+        candidate   = serializer.validated_data["candidate"]
+        job         = serializer.validated_data["job"]
+        first_stage = job.stages.order_by("order").first()
+        instance    = serializer.save(
+            match_score   = calculate_match_score(candidate, job),
+            current_stage = first_stage,
+        )
+        if first_stage:
+            SubmittalEvent.objects.create(
+                submittal  = instance,
+                event_type = SubmittalEvent.EventType.STAGE_CHANGE,
+                from_stage = None,
+                to_stage   = first_stage,
+                notes      = "",
+                created_by = self.request.user,
+            )
 
     @action(detail=True, methods=["post"], url_path="advance")
     def advance(self, request, pk=None):

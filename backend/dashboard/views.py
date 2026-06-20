@@ -557,53 +557,39 @@ class ConversionFunnelView(APIView):
     """
     GET /api/dashboard/conversion-funnel/
     Returns the 9-stage hiring conversion funnel with unique candidate counts
-    at each gate. Each stage is a subset of the previous, producing a true funnel.
+    at each gate. Stages 1-7 use current_stage__order cumulative counts so
+    the funnel directly reflects where submittals sit in the pipeline.
+
+    Pipeline order:
+      0 Screened | 1 Submitted | 2 Shortlisted | 3 L1 Interview |
+      4 L2 Interview | 5 Offer Released | 6 Offer Accepted | 7 Joined
     """
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # Candidates with 2+ interviews (for L2 stage)
-        candidates_with_2plus_interviews = (
-            Interview.objects
-            .values('submittal__candidate')
-            .annotate(cnt=Count('id'))
-            .filter(cnt__gte=2)
-            .values_list('submittal__candidate', flat=True)
-        )
-
-        sourced        = Candidate.objects.count()
-        screened       = (Submittal.objects
-                          .values('candidate').distinct().count())
-        submitted      = (Submittal.objects
-                          .exclude(status='withdrawn')
-                          .values('candidate').distinct().count())
-        shortlisted    = (Interview.objects
-                          .values('submittal__candidate').distinct().count())
-        l1_interview   = (Interview.objects
-                          .filter(status='completed')
-                          .values('submittal__candidate').distinct().count())
-        l2_interview   = (Interview.objects
-                          .filter(submittal__candidate__in=candidates_with_2plus_interviews)
-                          .values('submittal__candidate').distinct().count())
-        offer_released = (Offer.objects
-                          .values('submittal__candidate').distinct().count())
-        offer_accepted = (Offer.objects
-                          .filter(status='accepted')
-                          .values('submittal__candidate').distinct().count())
-        joined         = (Submittal.objects
-                          .filter(status='placed')
-                          .values('candidate').distinct().count())
+        def at_or_beyond(order):
+            """Unique candidates whose active/placed submittal is at stage order >= threshold."""
+            return (
+                Submittal.objects
+                .filter(
+                    current_stage__order__gte=order,
+                    status__in=['active', 'placed'],
+                )
+                .values('candidate')
+                .distinct()
+                .count()
+            )
 
         stages = [
-            {"stage": "Sourced",        "count": sourced},
-            {"stage": "Screened",        "count": screened},
-            {"stage": "Submitted",       "count": submitted},
-            {"stage": "Shortlisted",     "count": shortlisted},
-            {"stage": "L1 Interview",    "count": l1_interview},
-            {"stage": "L2 Interview",    "count": l2_interview},
-            {"stage": "Offer Released",  "count": offer_released},
-            {"stage": "Offer Accepted",  "count": offer_accepted},
-            {"stage": "Joined",          "count": joined},
+            {"stage": "Sourced",       "count": Candidate.objects.count()},
+            {"stage": "Screened",      "count": at_or_beyond(0)},
+            {"stage": "Submitted",     "count": at_or_beyond(1)},
+            {"stage": "Shortlisted",   "count": at_or_beyond(2)},
+            {"stage": "L1 Interview",  "count": at_or_beyond(3)},
+            {"stage": "L2 Interview",  "count": at_or_beyond(4)},
+            {"stage": "Offer Released","count": at_or_beyond(5)},
+            {"stage": "Offer Accepted","count": at_or_beyond(6)},
+            {"stage": "Joined",        "count": Submittal.objects.filter(status='placed').values('candidate').distinct().count()},
         ]
 
         return Response({"stages": stages})

@@ -666,70 +666,116 @@ const FUNNEL_COLORS = [
   '#22c55e', // Joined
 ]
 
-function ConversionFunnel({ stages, loading }: { stages: FunnelStage[]; loading: boolean }) {
-  const max = stages[0]?.count ?? 1
-  const last = stages[stages.length - 1]
+function ConversionFunnel({ stages, loading, error }: {
+  stages: FunnelStage[]
+  loading: boolean
+  error: boolean
+}) {
+  const max      = stages[0]?.count ?? 1
+  const last     = stages[stages.length - 1]
   const endToEnd = max > 0 && last ? Math.round((last.count / max) * 100) : 0
 
   return (
     <div className="panel-card p-5">
+      {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
-          <div className="p-1.5 bg-violet-500/10 rounded-lg">
+          <div className="p-1.5 rounded-lg" style={{ background: 'rgba(139,92,246,0.12)' }}>
             <Filter className="h-4 w-4 text-violet-400" />
           </div>
           <span style={{ color: '#e2e8f0', fontWeight: 700, fontSize: '13px' }}>Conversion Funnel</span>
         </div>
-        {!loading && stages.length > 0 && (
-          <span className="text-xs text-slate-500">
-            <span className="text-violet-400 font-semibold">{endToEnd}%</span> end-to-end conversion
+        {!loading && !error && stages.length > 0 && (
+          <span className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
+            <span style={{ color: '#a78bfa', fontWeight: 600 }}>{endToEnd}%</span> end-to-end conversion
           </span>
         )}
       </div>
 
-      {loading ? (
-        <div className="space-y-2">
+      {/* Loading skeleton */}
+      {loading && (
+        <div className="space-y-2.5">
           {Array.from({ length: 9 }).map((_, i) => (
             <div key={i} className="flex items-center gap-3">
-              <div className="w-28 h-3 bg-white/10 rounded animate-pulse shrink-0" />
-              <div className="flex-1 h-6 bg-white/10 rounded animate-pulse" style={{ width: `${90 - i * 8}%` }} />
-              <div className="w-8 h-3 bg-white/10 rounded animate-pulse shrink-0" />
+              <div className="w-28 h-3 rounded animate-pulse shrink-0" style={{ background: 'rgba(255,255,255,0.08)' }} />
+              <div className="flex-1 h-5 rounded animate-pulse" style={{ background: 'rgba(255,255,255,0.06)', maxWidth: `${Math.max(15, 90 - i * 9)}%` }} />
+              <div className="w-8 h-3 rounded animate-pulse shrink-0" style={{ background: 'rgba(255,255,255,0.08)' }} />
             </div>
           ))}
         </div>
-      ) : (
-        <div className="space-y-0">
+      )}
+
+      {/* Error state */}
+      {!loading && error && (
+        <p className="text-sm py-4 text-center" style={{ color: 'rgba(255,255,255,0.3)' }}>
+          Could not load funnel data
+        </p>
+      )}
+
+      {/* Empty state */}
+      {!loading && !error && stages.length === 0 && (
+        <p className="text-sm py-4 text-center" style={{ color: 'rgba(255,255,255,0.3)' }}>
+          No data yet
+        </p>
+      )}
+
+      {/* Funnel rows */}
+      {!loading && !error && stages.length > 0 && (
+        <div>
           {stages.map((s, i) => {
-            const barPct = max > 0 ? Math.round((s.count / max) * 100) : 0
-            const prev   = i > 0 ? stages[i - 1].count : null
+            const barPct  = max > 0 ? (s.count / max) * 100 : 0
+            const prev    = i > 0 ? stages[i - 1].count : null
             const convPct = prev != null && prev > 0
               ? Math.round((s.count / prev) * 100)
               : null
-            const color  = FUNNEL_COLORS[i] ?? '#6366f1'
+            const color   = FUNNEL_COLORS[i] ?? '#6366f1'
+            const isEmpty = s.count === 0
 
             return (
               <div key={s.stage}>
                 <div className="flex items-center gap-3 py-1">
-                  <span className="w-28 shrink-0 text-right text-xs font-medium text-slate-400 leading-none">
+                  {/* Stage label */}
+                  <span className="w-28 shrink-0 text-right text-xs font-medium leading-none"
+                    style={{ color: isEmpty ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.55)' }}>
                     {s.stage}
                   </span>
-                  <div className="flex-1 h-6 bg-white/[0.04] rounded overflow-hidden">
-                    <div
-                      className="h-full rounded transition-all duration-700"
-                      style={{ width: `${barPct}%`, background: color, opacity: 0.75 }}
-                    />
+
+                  {/* Bar track */}
+                  <div className="flex-1 h-6 rounded overflow-hidden" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                    {isEmpty ? (
+                      /* Dashed empty state bar */
+                      <div className="h-full flex items-center px-2">
+                        <div className="h-px w-full" style={{ background: 'rgba(255,255,255,0.08)', borderTop: '1px dashed rgba(255,255,255,0.12)' }} />
+                      </div>
+                    ) : (
+                      <div
+                        className="h-full rounded"
+                        style={{
+                          width: `${Math.max(barPct, 2)}%`,
+                          background: color,
+                          opacity: 0.8,
+                          transition: 'width 0.7s ease',
+                          boxShadow: `0 0 8px ${color}40`,
+                        }}
+                      />
+                    )}
                   </div>
-                  <span className="w-10 shrink-0 text-right text-sm font-bold text-slate-100 stat-num">
+
+                  {/* Count */}
+                  <span className="w-10 shrink-0 text-right text-sm font-bold stat-num"
+                    style={{ color: isEmpty ? 'rgba(255,255,255,0.2)' : '#f1f5f9' }}>
                     {s.count}
                   </span>
                 </div>
+
+                {/* Conversion rate between stages */}
                 {convPct !== null && (
-                  <div className="flex items-center gap-3 h-4">
+                  <div className="flex items-center gap-3" style={{ height: '14px' }}>
                     <div className="w-28 shrink-0" />
-                    <div className="flex items-center gap-1.5 pl-2">
-                      <div className="w-px h-4 bg-white/10" />
-                      <span className="text-[10px] text-slate-600 leading-none">
-                        {convPct}% converted
+                    <div className="flex items-center gap-1.5 pl-3">
+                      <div className="w-px h-3.5" style={{ background: 'rgba(255,255,255,0.08)' }} />
+                      <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.2)', lineHeight: 1 }}>
+                        {convPct}% passed
                       </span>
                     </div>
                   </div>
@@ -762,9 +808,10 @@ export default function Dashboard() {
     enabled:  !isCEO,
   })
 
-  const { data: funnelData, isLoading: funnelLoading } = useQuery<{ stages: FunnelStage[] }>({
+  const { data: funnelData, isLoading: funnelLoading, isError: funnelError } = useQuery<{ stages: FunnelStage[] }>({
     queryKey: ['conversion-funnel'],
     queryFn:  () => api.get('/dashboard/conversion-funnel/').then(r => r.data),
+    retry: 1,
   })
 
   if (isLoading) return <DashboardSkeleton />
@@ -860,7 +907,7 @@ export default function Dashboard() {
       }} />
 
       {/* ── Conversion Funnel ── */}
-      <ConversionFunnel stages={funnelData?.stages ?? []} loading={funnelLoading} />
+      <ConversionFunnel stages={funnelData?.stages ?? []} loading={funnelLoading} error={funnelError} />
 
       {/* ── Main content: performance + schedule + deadlines + tasks ── */}
       <div className="grid grid-cols-12 gap-4">
