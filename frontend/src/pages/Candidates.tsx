@@ -44,6 +44,10 @@ interface Candidate {
   last_contacted_at: string | null
   active_submittals_count: number
   years_of_experience: number | null
+  education: string
+  current_ctc: string | null
+  expected_ctc: string | null
+  notice_period_days: number | null
 }
 
 interface PaginatedResponse {
@@ -68,6 +72,10 @@ const schema = z.object({
   notes:              z.string().optional(),
   skill_names:        z.string().optional(),
   years_of_experience: z.coerce.number().int().min(0).max(60).optional().nullable(),
+  education:           z.string().optional(),
+  current_ctc:         z.coerce.number().min(0).optional().nullable(),
+  expected_ctc:        z.coerce.number().min(0).optional().nullable(),
+  notice_period_days:  z.coerce.number().int().min(0).optional().nullable(),
 })
 
 type FormValues = z.infer<typeof schema>
@@ -247,9 +255,31 @@ function AddCandidateForm({ onSuccess }: { onSuccess: () => void }) {
         </div>
       </div>
 
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1">
+          <Label>Years of experience</Label>
+          <Input {...register('years_of_experience')} type="number" min={0} max={60} placeholder="e.g. 5" />
+        </div>
+        <div className="space-y-1">
+          <Label>Notice period (days)</Label>
+          <Input {...register('notice_period_days')} type="number" min={0} placeholder="e.g. 30" />
+        </div>
+      </div>
+
       <div className="space-y-1">
-        <Label>Years of experience</Label>
-        <Input {...register('years_of_experience')} type="number" min={0} max={60} placeholder="e.g. 5" />
+        <Label>Education</Label>
+        <Input {...register('education')} placeholder="B.Tech CSE, IIT Delhi" />
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1">
+          <Label>Current CTC (LPA)</Label>
+          <Input {...register('current_ctc')} type="number" min={0} step="0.01" placeholder="e.g. 12.5" />
+        </div>
+        <div className="space-y-1">
+          <Label>Expected CTC (LPA)</Label>
+          <Input {...register('expected_ctc')} type="number" min={0} step="0.01" placeholder="e.g. 18" />
+        </div>
       </div>
 
       <div className="space-y-1">

@@ -1,7 +1,7 @@
 from datetime import timedelta
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.db.models import Q, Count, Avg, Min
+from django.db.models import Q, Count, Avg, Min, OuterRef, Subquery
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -551,3 +551,59 @@ class UserAnalyticsView(APIView):
             "time_to_fill":         time_to_fill,
             "recruiter_stats":      recruiter_stats,
         })
+
+
+class ConversionFunnelView(APIView):
+    """
+    GET /api/dashboard/conversion-funnel/
+    Returns the 9-stage hiring conversion funnel with unique candidate counts
+    at each gate. Each stage is a subset of the previous, producing a true funnel.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Candidates with 2+ interviews (for L2 stage)
+        candidates_with_2plus_interviews = (
+            Interview.objects
+            .values('submittal__candidate')
+            .annotate(cnt=Count('id'))
+            .filter(cnt__gte=2)
+            .values_list('submittal__candidate', flat=True)
+        )
+
+        sourced        = Candidate.objects.count()
+        screened       = (Submittal.objects
+                          .values('candidate').distinct().count())
+        submitted      = (Submittal.objects
+                          .exclude(status='withdrawn')
+                          .values('candidate').distinct().count())
+        shortlisted    = (Interview.objects
+                          .values('submittal__candidate').distinct().count())
+        l1_interview   = (Interview.objects
+                          .filter(status='completed')
+                          .values('submittal__candidate').distinct().count())
+        l2_interview   = (Interview.objects
+                          .filter(submittal__candidate__in=candidates_with_2plus_interviews)
+                          .values('submittal__candidate').distinct().count())
+        offer_released = (Offer.objects
+                          .values('submittal__candidate').distinct().count())
+        offer_accepted = (Offer.objects
+                          .filter(status='accepted')
+                          .values('submittal__candidate').distinct().count())
+        joined         = (Submittal.objects
+                          .filter(status='placed')
+                          .values('candidate').distinct().count())
+
+        stages = [
+            {"stage": "Sourced",        "count": sourced},
+            {"stage": "Screened",        "count": screened},
+            {"stage": "Submitted",       "count": submitted},
+            {"stage": "Shortlisted",     "count": shortlisted},
+            {"stage": "L1 Interview",    "count": l1_interview},
+            {"stage": "L2 Interview",    "count": l2_interview},
+            {"stage": "Offer Released",  "count": offer_released},
+            {"stage": "Offer Accepted",  "count": offer_accepted},
+            {"stage": "Joined",          "count": joined},
+        ]
+
+        return Response({"stages": stages})

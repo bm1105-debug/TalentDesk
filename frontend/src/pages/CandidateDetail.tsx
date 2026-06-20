@@ -34,6 +34,10 @@ interface Candidate {
   notes: string
   skills: Skill[]
   years_of_experience: number | null
+  education: string
+  current_ctc: string | null
+  expected_ctc: string | null
+  notice_period_days: number | null
   created_at: string
 }
 
@@ -496,21 +500,9 @@ export default function CandidateDetail() {
             <div className="card p-5 space-y-3">
               <p className="section-label">Details</p>
               <dl className="space-y-2.5">
-                <div className="flex items-start gap-3">
-                  <dt className="flex items-center gap-1.5 text-slate-400 text-sm w-24 shrink-0 pt-px">
-                    <Share2 className="h-3.5 w-3.5 shrink-0" /> Source
-                  </dt>
-                  <dd className="text-slate-100 text-sm capitalize">{sourceLabel(candidate.source)}</dd>
-                </div>
-                <div className="flex items-start gap-3">
-                  <dt className="flex items-center gap-1.5 text-slate-400 text-sm w-24 shrink-0 pt-px">
-                    <Calendar className="h-3.5 w-3.5 shrink-0" /> Added
-                  </dt>
-                  <dd className="text-slate-100 text-sm">{fmtDate(candidate.created_at)}</dd>
-                </div>
                 {candidate.years_of_experience != null && (
                   <div className="flex items-start gap-3">
-                    <dt className="flex items-center gap-1.5 text-slate-400 text-sm w-24 shrink-0 pt-px">
+                    <dt className="flex items-center gap-1.5 text-slate-400 text-sm w-32 shrink-0 pt-px">
                       <FileText className="h-3.5 w-3.5 shrink-0" /> Experience
                     </dt>
                     <dd className="text-slate-100 text-sm">
@@ -518,6 +510,52 @@ export default function CandidateDetail() {
                     </dd>
                   </div>
                 )}
+                {candidate.education && (
+                  <div className="flex items-start gap-3">
+                    <dt className="flex items-center gap-1.5 text-slate-400 text-sm w-32 shrink-0 pt-px">
+                      <FileText className="h-3.5 w-3.5 shrink-0" /> Education
+                    </dt>
+                    <dd className="text-slate-100 text-sm">{candidate.education}</dd>
+                  </div>
+                )}
+                {candidate.current_ctc != null && (
+                  <div className="flex items-start gap-3">
+                    <dt className="flex items-center gap-1.5 text-slate-400 text-sm w-32 shrink-0 pt-px">
+                      <FileText className="h-3.5 w-3.5 shrink-0" /> Current CTC
+                    </dt>
+                    <dd className="text-slate-100 text-sm">₹{Number(candidate.current_ctc).toFixed(2)} LPA</dd>
+                  </div>
+                )}
+                {candidate.expected_ctc != null && (
+                  <div className="flex items-start gap-3">
+                    <dt className="flex items-center gap-1.5 text-slate-400 text-sm w-32 shrink-0 pt-px">
+                      <FileText className="h-3.5 w-3.5 shrink-0" /> Expected CTC
+                    </dt>
+                    <dd className="text-slate-100 text-sm">₹{Number(candidate.expected_ctc).toFixed(2)} LPA</dd>
+                  </div>
+                )}
+                {candidate.notice_period_days != null && (
+                  <div className="flex items-start gap-3">
+                    <dt className="flex items-center gap-1.5 text-slate-400 text-sm w-32 shrink-0 pt-px">
+                      <Calendar className="h-3.5 w-3.5 shrink-0" /> Notice Period
+                    </dt>
+                    <dd className="text-slate-100 text-sm">
+                      {candidate.notice_period_days === 0 ? 'Immediate' : `${candidate.notice_period_days} days`}
+                    </dd>
+                  </div>
+                )}
+                <div className="flex items-start gap-3">
+                  <dt className="flex items-center gap-1.5 text-slate-400 text-sm w-32 shrink-0 pt-px">
+                    <Share2 className="h-3.5 w-3.5 shrink-0" /> Source
+                  </dt>
+                  <dd className="text-slate-100 text-sm capitalize">{sourceLabel(candidate.source)}</dd>
+                </div>
+                <div className="flex items-start gap-3">
+                  <dt className="flex items-center gap-1.5 text-slate-400 text-sm w-32 shrink-0 pt-px">
+                    <Calendar className="h-3.5 w-3.5 shrink-0" /> Added
+                  </dt>
+                  <dd className="text-slate-100 text-sm">{fmtDate(candidate.created_at)}</dd>
+                </div>
               </dl>
             </div>
           </div>

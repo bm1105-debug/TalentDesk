@@ -165,7 +165,7 @@ function AddUserDialog({ teamLeads, onSuccess }: { teamLeads: UserEntry[]; onSuc
           <div className="space-y-1.5">
             <Label>Role</Label>
             <select {...register('role')}
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+              className="h-9 w-full rounded-md border border-white/[0.12] bg-[#1a1a2e] text-slate-200 px-3 py-1 text-sm"
             >
               <option value="recruiter">Recruiter</option>
               <option value="team_lead">Team Lead</option>
@@ -178,7 +178,7 @@ function AddUserDialog({ teamLeads, onSuccess }: { teamLeads: UserEntry[]; onSuc
             <div className="space-y-1.5">
               <Label>Reports To <span className="text-slate-500">(optional)</span></Label>
               <select {...register('reports_to')}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+                className="h-9 w-full rounded-md border border-white/[0.12] bg-[#1a1a2e] text-slate-200 px-3 py-1 text-sm"
               >
                 <option value="">— None —</option>
                 {teamLeads.map(tl => (

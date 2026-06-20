@@ -33,6 +33,8 @@ class CandidateSerializer(serializers.ModelSerializer):
             "current_title", "current_company", "location", "linkedin_url",
             "status", "source", "notes",
             "years_of_experience",
+            "education",
+            "current_ctc", "expected_ctc", "notice_period_days",
             "skills", "skill_names",
             "created_by", "created_at", "updated_at",
             "last_contacted_at", "active_submittals_count",

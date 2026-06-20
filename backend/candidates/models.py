@@ -54,6 +54,14 @@ class Candidate(models.Model):
 
     years_of_experience = models.PositiveSmallIntegerField(null=True, blank=True, db_index=True)
 
+    # Compensation & availability
+    current_ctc      = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    expected_ctc     = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    notice_period_days = models.PositiveSmallIntegerField(null=True, blank=True)
+
+    # Education
+    education = models.CharField(max_length=300, blank=True)
+
     # Audit fields
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,

@@ -9,7 +9,7 @@ import {
   HandCoins, TrendingUp, TrendingDown,
   CalendarDays, Trophy, ArrowRight,
   ListTodo, Plus, ChevronDown, ChevronUp,
-  CheckSquare, CalendarCheck,
+  CheckSquare, CalendarCheck, Filter,
 } from 'lucide-react'
 import { EmptyState } from '@/components/EmptyState'
 import api from '@/api/client'
@@ -650,6 +650,99 @@ function TaskPanel() {
   )
 }
 
+// ── Conversion Funnel ─────────────────────────────────────────────────────────
+
+interface FunnelStage { stage: string; count: number }
+
+const FUNNEL_COLORS = [
+  '#6366f1', // Sourced
+  '#7c3aed', // Screened
+  '#8b5cf6', // Submitted
+  '#a855f7', // Shortlisted
+  '#06b6d4', // L1 Interview
+  '#0ea5e9', // L2 Interview
+  '#f59e0b', // Offer Released
+  '#10b981', // Offer Accepted
+  '#22c55e', // Joined
+]
+
+function ConversionFunnel({ stages, loading }: { stages: FunnelStage[]; loading: boolean }) {
+  const max = stages[0]?.count ?? 1
+  const last = stages[stages.length - 1]
+  const endToEnd = max > 0 && last ? Math.round((last.count / max) * 100) : 0
+
+  return (
+    <div className="panel-card p-5">
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 bg-violet-500/10 rounded-lg">
+            <Filter className="h-4 w-4 text-violet-400" />
+          </div>
+          <span style={{ color: '#e2e8f0', fontWeight: 700, fontSize: '13px' }}>Conversion Funnel</span>
+        </div>
+        {!loading && stages.length > 0 && (
+          <span className="text-xs text-slate-500">
+            <span className="text-violet-400 font-semibold">{endToEnd}%</span> end-to-end conversion
+          </span>
+        )}
+      </div>
+
+      {loading ? (
+        <div className="space-y-2">
+          {Array.from({ length: 9 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-3">
+              <div className="w-28 h-3 bg-white/10 rounded animate-pulse shrink-0" />
+              <div className="flex-1 h-6 bg-white/10 rounded animate-pulse" style={{ width: `${90 - i * 8}%` }} />
+              <div className="w-8 h-3 bg-white/10 rounded animate-pulse shrink-0" />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-0">
+          {stages.map((s, i) => {
+            const barPct = max > 0 ? Math.round((s.count / max) * 100) : 0
+            const prev   = i > 0 ? stages[i - 1].count : null
+            const convPct = prev != null && prev > 0
+              ? Math.round((s.count / prev) * 100)
+              : null
+            const color  = FUNNEL_COLORS[i] ?? '#6366f1'
+
+            return (
+              <div key={s.stage}>
+                <div className="flex items-center gap-3 py-1">
+                  <span className="w-28 shrink-0 text-right text-xs font-medium text-slate-400 leading-none">
+                    {s.stage}
+                  </span>
+                  <div className="flex-1 h-6 bg-white/[0.04] rounded overflow-hidden">
+                    <div
+                      className="h-full rounded transition-all duration-700"
+                      style={{ width: `${barPct}%`, background: color, opacity: 0.75 }}
+                    />
+                  </div>
+                  <span className="w-10 shrink-0 text-right text-sm font-bold text-slate-100 stat-num">
+                    {s.count}
+                  </span>
+                </div>
+                {convPct !== null && (
+                  <div className="flex items-center gap-3 h-4">
+                    <div className="w-28 shrink-0" />
+                    <div className="flex items-center gap-1.5 pl-2">
+                      <div className="w-px h-4 bg-white/10" />
+                      <span className="text-[10px] text-slate-600 leading-none">
+                        {convPct}% converted
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
@@ -667,6 +760,11 @@ export default function Dashboard() {
     queryKey: ['scorecard'],
     queryFn:  () => api.get('/dashboard/scorecard/').then(r => r.data),
     enabled:  !isCEO,
+  })
+
+  const { data: funnelData, isLoading: funnelLoading } = useQuery<{ stages: FunnelStage[] }>({
+    queryKey: ['conversion-funnel'],
+    queryFn:  () => api.get('/dashboard/conversion-funnel/').then(r => r.data),
   })
 
   if (isLoading) return <DashboardSkeleton />
@@ -760,6 +858,9 @@ export default function Dashboard() {
         margin:     '4px 0',
         background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent)',
       }} />
+
+      {/* ── Conversion Funnel ── */}
+      <ConversionFunnel stages={funnelData?.stages ?? []} loading={funnelLoading} />
 
       {/* ── Main content: performance + schedule + deadlines + tasks ── */}
       <div className="grid grid-cols-12 gap-4">
