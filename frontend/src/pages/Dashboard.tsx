@@ -9,7 +9,9 @@ import {
   HandCoins, TrendingUp, TrendingDown,
   CalendarDays, Trophy, ArrowRight,
   ListTodo, Plus, ChevronDown, ChevronUp,
+  CheckSquare, CalendarCheck,
 } from 'lucide-react'
+import { EmptyState } from '@/components/EmptyState'
 import api from '@/api/client'
 import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/button'
@@ -453,10 +455,11 @@ function UpcomingDeadlinesPanel({ deadlines }: { deadlines: DashboardData['upcom
       </div>
 
       {isEmpty ? (
-        <div className="px-4 py-6 text-center space-y-1.5">
-          <Clock className="h-5 w-5 mx-auto text-slate-600" />
-          <p className="text-sm text-slate-500">No deadlines this week</p>
-        </div>
+        <EmptyState
+          icon={CalendarCheck}
+          title="No upcoming deadlines"
+          description="No jobs or offers expiring this week."
+        />
       ) : (
         <div className="divide-y divide-white/[0.04]">
           {jobs_due_soon.map(j => (
@@ -608,10 +611,11 @@ function TaskPanel() {
             <p className="px-4 py-4 text-sm text-slate-500">Loading…</p>
           )}
           {!isLoading && tasks.length === 0 && (
-            <div className="px-4 py-6 text-center text-slate-500 space-y-1.5">
-              <ListTodo className="h-5 w-5 mx-auto opacity-40" />
-              <p className="text-sm">No open tasks — you're all caught up!</p>
-            </div>
+            <EmptyState
+              icon={CheckSquare}
+              title="You're all caught up"
+              description="No open tasks right now."
+            />
           )}
           {tasks.map(task => (
             <div key={task.id}

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { BarChart2 } from 'lucide-react'
 import api from '@/api/client'
+import { EmptyState } from '@/components/EmptyState'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -96,10 +97,12 @@ export default function Reports() {
 
       {/* ── Empty state ── */}
       {!selectedJobId && (
-        <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.07] min-h-[280px] flex flex-col items-center justify-center gap-3">
-          <BarChart2 className="h-6 w-6 text-slate-600" />
-          <p className="text-base font-medium text-slate-300">No report selected</p>
-          <p className="text-sm text-slate-500">Choose a job from the dropdown above to view its hiring pipeline.</p>
+        <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.07] min-h-[280px] flex items-center justify-center">
+          <EmptyState
+            icon={BarChart2}
+            title="Select a job to view its pipeline"
+            description="Choose a job from the dropdown above to see hiring metrics."
+          />
         </div>
       )}
 

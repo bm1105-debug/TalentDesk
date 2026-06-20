@@ -8,7 +8,8 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Search, Plus, ChevronLeft, ChevronRight, FileUp, Loader2, LayoutGrid, List,
-  Globe, Link2, Users, MoreHorizontal, Briefcase, Clock, ExternalLink } from 'lucide-react'
+  Globe, Link2, Users, MoreHorizontal, Briefcase, Clock, ExternalLink, X } from 'lucide-react'
+import { toast } from '@/hooks/use-toast'
 import InitialsAvatar from '@/components/InitialsAvatar'
 import { useNavigate } from 'react-router-dom'
 import { useRef } from 'react'
@@ -108,6 +109,7 @@ function AddCandidateForm({ onSuccess }: { onSuccess: () => void }) {
       reset()
       setDuplicate(null)
       onSuccess()
+      toast('Candidate added successfully')
     },
     onError: (err: any) => {
       const data = err?.response?.data
@@ -300,28 +302,70 @@ function AddCandidateForm({ onSuccess }: { onSuccess: () => void }) {
 
 // ── Card View Components ───────────────────────────────────────────────────────
 
-function CardSkeleton() {
+function CandidateCardSkeleton() {
   return (
     <div className="bg-[#1a1a2e] border border-white/[0.06] rounded-xl p-4 animate-pulse">
       <div className="flex justify-between mb-2">
         <div className="space-y-1.5 flex-1">
-          <div className="h-4 bg-white/[0.08] rounded w-3/4" />
-          <div className="h-3 bg-white/[0.05] rounded w-1/2" />
+          <div className="h-4 bg-slate-700/50 rounded w-3/4" />
+          <div className="h-3 bg-slate-700/40 rounded w-1/2" />
         </div>
-        <div className="h-5 bg-white/[0.05] rounded w-14 ml-2" />
+        <div className="h-5 bg-slate-700/40 rounded w-14 ml-2" />
       </div>
-      <div className="h-4 bg-white/[0.05] rounded w-1/4 mb-3" />
+      <div className="h-4 bg-slate-700/40 rounded w-1/4 mb-3" />
       <div className="flex gap-1 mb-4">
-        {[12, 16, 10].map(w => (
-          <div key={w} className={`h-5 bg-white/[0.05] rounded w-${w}`} />
+        {[48, 56, 40].map(w => (
+          <div key={w} className="h-5 bg-slate-700/40 rounded" style={{ width: w }} />
         ))}
       </div>
       <div className="border-t border-white/[0.04] pt-3 flex justify-between">
-        <div className="h-3 bg-white/[0.05] rounded w-24" />
-        <div className="h-3 bg-white/[0.05] rounded w-16" />
+        <div className="h-3 bg-slate-700/40 rounded w-24" />
+        <div className="h-3 bg-slate-700/40 rounded w-16" />
       </div>
     </div>
   )
+}
+
+function TableRowSkeleton() {
+  return (
+    <tr className="border-b border-white/[0.04]">
+      <td className="px-4 py-3 w-10"><div className="h-4 w-4 bg-slate-700/50 animate-pulse rounded" /></td>
+      <td className="px-4 py-3"><div className="h-4 bg-slate-700/50 animate-pulse rounded w-32" /></td>
+      <td className="px-4 py-3"><div className="h-4 bg-slate-700/50 animate-pulse rounded w-40" /></td>
+      <td className="px-4 py-3">
+        <div className="space-y-1.5">
+          <div className="h-3.5 bg-slate-700/50 animate-pulse rounded w-36" />
+          <div className="h-3 bg-slate-700/40 animate-pulse rounded w-24" />
+        </div>
+      </td>
+      <td className="px-4 py-3">
+        <div className="flex gap-1">
+          <div className="h-5 bg-slate-700/50 animate-pulse rounded w-14" />
+          <div className="h-5 bg-slate-700/40 animate-pulse rounded w-16" />
+        </div>
+      </td>
+      <td className="px-4 py-3"><div className="h-3.5 bg-slate-700/50 animate-pulse rounded w-14" /></td>
+      <td className="px-4 py-3"><div className="h-5 bg-slate-700/50 animate-pulse rounded-full w-14" /></td>
+    </tr>
+  )
+}
+
+function FilterChip({ label, onRemove }: { label: string; onRemove: () => void }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 bg-violet-500/10 border border-violet-500/25 text-violet-300 text-xs rounded-full px-3 py-1">
+      {label}
+      <button onClick={onRemove} className="hover:text-white transition-colors" aria-label={`Remove ${label} filter`}>
+        <X className="h-3 w-3" />
+      </button>
+    </span>
+  )
+}
+
+function pageRange(current: number, total: number): (number | '…')[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
+  if (current <= 4) return [1, 2, 3, 4, 5, '…', total]
+  if (current >= total - 3) return [1, '…', total - 4, total - 3, total - 2, total - 1, total]
+  return [1, '…', current - 1, current, current + 1, '…', total]
 }
 
 const STATUS_STYLES: Record<string, string> = {
@@ -526,7 +570,11 @@ export default function Candidates() {
         <select
           value={status}
           onChange={e => { setStatus(e.target.value); setPage(1) }}
-          className="h-9 rounded-lg border border-white/[0.12] bg-[#1a1a2e] px-3 text-sm hover:border-white/[0.25] hover:bg-[#1e1e36] transition-colors"
+          className={`h-9 rounded-lg border bg-[#1a1a2e] px-3 text-sm hover:bg-[#1e1e36] transition-colors ${
+            status
+              ? 'border-violet-500 text-violet-300'
+              : 'border-white/[0.12] text-slate-300 hover:border-white/[0.25]'
+          }`}
         >
           <option value="">All statuses</option>
           <option value="active">Active</option>
@@ -537,20 +585,52 @@ export default function Candidates() {
 
         <button
           onClick={() => { setNotContactedOnly(v => !v); setPage(1) }}
-          className={`h-9 px-3 rounded-md border text-sm transition-colors ${
+          className={`h-9 px-3 rounded-md border text-sm transition-colors flex items-center gap-2 ${
             notContactedOnly
-              ? 'border-orange-400 bg-orange-50 text-orange-700 font-medium'
-              : 'border-input bg-transparent text-slate-400 hover:bg-white/[0.03]'
+              ? 'border-violet-500 bg-violet-500/10 text-violet-300 font-medium'
+              : 'border-white/[0.12] bg-transparent text-slate-400 hover:bg-white/[0.03]'
           }`}
         >
           Not contacted in 30d
+          {notContactedOnly && data && !isLoading && (
+            <span className="bg-violet-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">
+              {data.count}
+            </span>
+          )}
         </button>
+
+        {(search || status || notContactedOnly) && (
+          <button
+            onClick={() => { setSearch(''); setStatus(''); setNotContactedOnly(false); setPage(1) }}
+            className="text-slate-500 hover:text-slate-300 text-xs transition-colors shrink-0"
+          >
+            Clear filters
+          </button>
+        )}
       </div>
+
+      {/* ── Active filter chips ── */}
+      {(search || status || notContactedOnly) && (
+        <div className="flex items-center gap-2 flex-wrap">
+          {search && (
+            <FilterChip label={`"${search}"`} onRemove={() => { setSearch(''); setPage(1) }} />
+          )}
+          {status && (
+            <FilterChip
+              label={status.charAt(0).toUpperCase() + status.slice(1)}
+              onRemove={() => { setStatus(''); setPage(1) }}
+            />
+          )}
+          {notContactedOnly && (
+            <FilterChip label="Not contacted 30d" onRemove={() => { setNotContactedOnly(false); setPage(1) }} />
+          )}
+        </div>
+      )}
 
       {/* ── Card view ── */}
       {viewMode === 'card' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {isLoading && Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)}
+          {isLoading && Array.from({ length: 6 }).map((_, i) => <CandidateCardSkeleton key={i} />)}
           {!isLoading && data?.results.length === 0 && (
             <p className="col-span-3 py-12 text-center text-slate-500">No candidates found</p>
           )}
@@ -581,11 +661,7 @@ export default function Candidates() {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/[0.04]">
-              {isLoading && (
-                <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-slate-500">Loading…</td>
-                </tr>
-              )}
+              {isLoading && Array.from({ length: 6 }).map((_, i) => <TableRowSkeleton key={i} />)}
               {!isLoading && data?.results.length === 0 && (
                 <tr>
                   <td colSpan={7} className="px-4 py-8 text-center text-slate-500">No candidates found</td>
@@ -638,17 +714,40 @@ export default function Candidates() {
 
       {/* ── Pagination ── */}
       {data && data.count > 10 && (
-        <div className="flex items-center justify-between text-sm text-slate-400">
-          <span>{data.count} candidates · page {page} of {totalPages}</span>
-          <div className="flex gap-1">
-            <Button variant="outline" size="sm" disabled={!data.previous}
-              onClick={() => setPage(p => p - 1)}>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="sm" disabled={!data.next}
-              onClick={() => setPage(p => p + 1)}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-slate-500">{data.count} candidates · page {page} of {totalPages}</span>
+          <div className="flex items-center gap-1">
+            <button
+              disabled={page === 1}
+              onClick={() => setPage(p => p - 1)}
+              className="flex items-center gap-1.5 h-8 px-3 rounded-md border border-white/[0.12] text-slate-400 hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-sm"
+            >
+              <ChevronLeft className="h-3.5 w-3.5" /> Prev
+            </button>
+            {pageRange(page, totalPages).map((p, i) =>
+              p === '…' ? (
+                <span key={`ellipsis-${i}`} className="text-slate-600 px-1 text-xs">…</span>
+              ) : (
+                <button
+                  key={p}
+                  onClick={() => setPage(p as number)}
+                  className={`h-8 min-w-[2rem] px-3 rounded-md text-sm transition-colors ${
+                    p === page
+                      ? 'bg-violet-600 text-white font-medium shadow-md shadow-violet-900/30'
+                      : 'text-slate-400 hover:bg-white/5 border border-white/[0.08]'
+                  }`}
+                >
+                  {p}
+                </button>
+              )
+            )}
+            <button
+              disabled={page === totalPages}
+              onClick={() => setPage(p => p + 1)}
+              className="flex items-center gap-1.5 h-8 px-3 rounded-md border border-white/[0.12] text-slate-400 hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-sm"
+            >
+              Next <ChevronRight className="h-3.5 w-3.5" />
+            </button>
           </div>
         </div>
       )}

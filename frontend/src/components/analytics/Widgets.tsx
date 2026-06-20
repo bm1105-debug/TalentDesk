@@ -104,7 +104,8 @@ export function StatCard({ label, value, loading }: { label: string; value?: num
 // ── Source effectiveness ───────────────────────────────────────────────────────
 
 export function SourceBar({ entry, max }: { entry: SourceEntry; max: number }) {
-  const pct = max > 0 ? Math.round((entry.candidates / max) * 100) : 0
+  const candidatePct = max > 0 ? Math.round((entry.candidates / max) * 100) : 0
+  const placedPct    = max > 0 ? Math.round((entry.placements  / max) * 100) : 0
   return (
     <div className="space-y-1">
       <div className="flex justify-between text-sm">
@@ -115,8 +116,21 @@ export function SourceBar({ entry, max }: { entry: SourceEntry; max: number }) {
           {entry.candidates} candidates · {entry.placements} placed
         </span>
       </div>
-      <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-        <div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+      <div className="relative h-2.5 w-full bg-white/[0.06] rounded-full overflow-hidden">
+        <div
+          className="absolute inset-y-0 left-0 rounded-full transition-all duration-500"
+          style={{
+            width: `${candidatePct}%`,
+            background: 'linear-gradient(90deg, #7c3aed, #3b82f6)',
+            boxShadow: '0 0 8px rgba(124,58,237,0.35)',
+          }}
+        />
+        {entry.placements > 0 && (
+          <div
+            className="absolute inset-y-0 left-0 rounded-full transition-all duration-700"
+            style={{ width: `${placedPct}%`, background: 'rgba(16,185,129,0.75)' }}
+          />
+        )}
       </div>
     </div>
   )

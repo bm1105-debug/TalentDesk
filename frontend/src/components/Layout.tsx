@@ -16,6 +16,7 @@ import api from '@/api/client'
 import NotificationBell from '@/components/NotificationBell'
 import CommandBar from '@/components/CommandBar'
 import InitialsAvatar from '@/components/InitialsAvatar'
+import { Toaster } from '@/components/Toaster'
 
 // ── Route → page title map ─────────────────────────────────────────────────
 
@@ -456,6 +457,7 @@ export default function Layout() {
       </div>
 
       <CommandBar />
+      <Toaster />
 
     </div>
   )
