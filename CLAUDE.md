@@ -75,4 +75,4 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 - Alawys display token usage after every chat
 
 ## 6. Coding Standards
-See design.md for SOLID principles, clean code guidelines, and refactoring strategy that should guide all code changes in this repo.
+At the start of every conversation, read `design.md` in the project root. It contains the SOLID principles, clean code guidelines, UI standards, and refactoring strategy that must guide all code changes in this repo.
