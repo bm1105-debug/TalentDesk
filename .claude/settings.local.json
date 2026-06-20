@@ -15,8 +15,12 @@
       "Bash(\"./venv/Scripts/python\" manage.py test clients submittals candidates --keepdb)",
       "Bash(\"./venv/Scripts/python\" manage.py test submittals --keepdb)",
       "Bash(\"./venv/Scripts/python\" manage.py test candidates --keepdb)",
-      "Bash(\"./venv/Scripts/python\" manage.py test candidates clients communications interviews offers --keepdb)"
+      "Bash(\"./venv/Scripts/python\" manage.py test candidates clients communications interviews offers --keepdb)",
+      "Bash(git push *)",
+      "Bash(npx tsc *)",
+      "Bash(npx vite *)",
+      "Bash(node -e \"const l = require\\('lucide-react'\\); console.log\\(Object.keys\\(l\\).filter\\(k => k.toLowerCase\\(\\).includes\\('linked'\\)\\)\\)\")"
     ],
-    "defaultMode": "bypassPermissions"
+    "defaultMode": "default"
   }
 }

@@ -1,9 +1,5 @@
 # CLAUDE.md
 
-Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-specific instructions as needed.
-
-**Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
-
 ## 1. Think Before Coding
 
 **Don't assume. Don't hide confusion. Surface tradeoffs.**
@@ -65,16 +61,18 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
 
 
-## Project-Specific Guidelines
+## 5. Project-Specific Guidelines
 
 - You are a production grade senior software engineer.
 - It should solve all the day to day needs of a HR employees in the firm
+- Create tests first before implementing every feature
 - All API endpoints must have tests
 - Always build feature by feature
-- Run tests after every feature is run
 - Have Separate folders for frontend and backend
 - Have Separate Apps for every functionality
-- Give code Block by block with comments for the code and explanation. I will type the code
-- Only Give next block when the current block is completed and I say go
 - Always check the current file for syntax errors after completion
-- Have all the permissions for running commands but ask for critical design decisions
+- Always implement issues one by one. Close an issue after completing it
+- Alawys display token usage after every chat
+
+## 6. Coding Standards
+See design.md for SOLID principles, clean code guidelines, and refactoring strategy that should guide all code changes in this repo.
