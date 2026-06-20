@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { useAuth } from '@/context/AuthContext'
 import InitialsAvatar from '@/components/InitialsAvatar'
+import { StatusBadge } from '@/components/StatusBadge'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -75,19 +76,6 @@ function sourceLabel(src: string) {
   return map[src] ?? src.replace('_', ' ')
 }
 
-const CANDIDATE_STATUS: Record<string, string> = {
-  active:      'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25',
-  passive:     'bg-amber-500/15 text-amber-400 border border-amber-500/25',
-  placed:      'bg-blue-500/15 text-blue-400 border border-blue-500/25',
-  blacklisted: 'bg-red-500/15 text-red-400 border border-red-500/25',
-}
-
-const SUBMITTAL_STATUS: Record<string, string> = {
-  active:    'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25',
-  placed:    'bg-blue-500/15 text-blue-400 border border-blue-500/25',
-  rejected:  'bg-red-500/15 text-red-400 border border-red-500/25',
-  withdrawn: 'bg-slate-500/15 text-slate-400 border border-slate-500/25',
-}
 
 // ── CopyButton ─────────────────────────────────────────────────────────────────
 
@@ -134,7 +122,7 @@ function QuickSubmitDialog({ candidateId, candidateName }: { candidateId: number
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <button className="flex items-center gap-1.5 bg-violet-600 hover:bg-violet-500 text-white rounded-lg px-4 py-2 text-sm font-medium transition-colors">
+        <button className="btn-primary gap-1.5">
           <Plus className="h-4 w-4" /> Add Submittal
         </button>
       </DialogTrigger>
@@ -326,8 +314,7 @@ export default function CandidateDetail() {
   if (isError || !candidate) {
     return (
       <div className="space-y-4">
-        <button onClick={() => navigate('/candidates')}
-          className="flex items-center gap-1.5 bg-white/[0.05] hover:bg-white/[0.10] border border-white/[0.10] rounded-lg px-3 py-1.5 text-sm text-slate-300 transition-colors">
+        <button onClick={() => navigate('/candidates')} className="btn-secondary gap-1.5">
           <ChevronLeft className="h-4 w-4" /> Back to Candidates
         </button>
         <p className="text-sm text-red-400 py-10 text-center">Candidate not found.</p>
@@ -336,7 +323,6 @@ export default function CandidateDetail() {
   }
 
   const candidateName = `${candidate.first_name} ${candidate.last_name}`
-  const statusCls = CANDIDATE_STATUS[candidate.status] ?? 'bg-slate-500/15 text-slate-400 border border-slate-500/25'
 
   // Build timeline events from candidate data + submittals
   const timelineEvents = [
@@ -352,7 +338,7 @@ export default function CandidateDetail() {
     <div className="space-y-5">
 
       {/* ── Hero card ─────────────────────────────────────────────────── */}
-      <div className="bg-[#1a1a2e] border border-white/[0.08] rounded-xl p-5">
+      <div className="card p-5">
         <div className="flex items-start gap-5">
 
           <InitialsAvatar
@@ -368,7 +354,7 @@ export default function CandidateDetail() {
               <h1 className="text-2xl font-bold text-slate-100 tracking-tight">
                 {candidateName}
               </h1>
-              <span className={`priority-badge ${statusCls}`}>{candidate.status}</span>
+              <StatusBadge status={candidate.status} />
             </div>
 
             <p className="text-sm text-slate-400 mt-1">
@@ -390,10 +376,7 @@ export default function CandidateDetail() {
           <div className="flex items-center gap-2 shrink-0">
             <QuickSubmitDialog candidateId={candidate.id} candidateName={candidateName} />
 
-            <button
-              onClick={() => navigate('/communications')}
-              className="flex items-center gap-1.5 bg-white/[0.05] hover:bg-white/[0.10] border border-white/[0.10] text-slate-300 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
-            >
+            <button onClick={() => navigate('/communications')} className="btn-secondary gap-1.5">
               <Send className="h-4 w-4" /> Send Email
             </button>
 
@@ -464,8 +447,8 @@ export default function CandidateDetail() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
             {/* Contact */}
-            <div className="bg-[#1a1a2e] border border-white/[0.08] rounded-xl p-5 space-y-3">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">Contact</p>
+            <div className="card p-5 space-y-3">
+              <p className="section-label">Contact</p>
               <dl className="space-y-2.5">
                 <div className="flex items-start gap-3">
                   <dt className="flex items-center gap-1.5 text-slate-400 text-sm w-24 shrink-0 pt-px">
@@ -510,8 +493,8 @@ export default function CandidateDetail() {
             </div>
 
             {/* Details */}
-            <div className="bg-[#1a1a2e] border border-white/[0.08] rounded-xl p-5 space-y-3">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">Details</p>
+            <div className="card p-5 space-y-3">
+              <p className="section-label">Details</p>
               <dl className="space-y-2.5">
                 <div className="flex items-start gap-3">
                   <dt className="flex items-center gap-1.5 text-slate-400 text-sm w-24 shrink-0 pt-px">
@@ -541,23 +524,20 @@ export default function CandidateDetail() {
 
           {/* Skills */}
           {candidate.skills.length > 0 && (
-            <div className="bg-[#1a1a2e] border border-white/[0.08] rounded-xl p-5 space-y-3">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">Skills</p>
+            <div className="card p-5 space-y-3">
+              <p className="section-label">Skills</p>
               <div className="flex flex-wrap gap-2">
                 {candidate.skills.map(s => (
-                  <span key={s.id}
-                    className="bg-slate-800 border border-white/[0.10] text-slate-200 text-xs font-medium px-2.5 py-1 rounded-md">
-                    {s.name}
-                  </span>
+                  <span key={s.id} className="skill-tag">{s.name}</span>
                 ))}
               </div>
             </div>
           )}
 
           {/* Notes */}
-          <div className="bg-[#1a1a2e] border border-white/[0.08] rounded-xl p-5 space-y-3">
+          <div className="card p-5 space-y-3">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">Notes</p>
+              <p className="section-label">Notes</p>
               {!editingNotes && (
                 <button
                   onClick={() => { setNoteText(candidate.notes ?? ''); setEditingNotes(true) }}
@@ -601,8 +581,8 @@ export default function CandidateDetail() {
           </div>
 
           {/* Submissions */}
-          <div className="bg-[#1a1a2e] border border-white/[0.08] rounded-xl p-5 space-y-3">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">Submissions</p>
+          <div className="card p-5 space-y-3">
+            <p className="section-label">Submissions</p>
 
             {submittals.length === 0 ? (
               <p className="text-sm text-slate-600 italic">No submissions yet.</p>
@@ -617,8 +597,8 @@ export default function CandidateDetail() {
                         <p className="text-xs text-violet-400 font-medium mt-0.5">{s.current_stage_name}</p>
                       )}
                     </div>
-                    <span className={`priority-badge ml-3 shrink-0 ${SUBMITTAL_STATUS[s.status] ?? 'bg-slate-500/15 text-slate-400 border border-slate-500/25'}`}>
-                      {s.status}
+                    <span className="ml-3 shrink-0">
+                      <StatusBadge status={s.status} />
                     </span>
                   </div>
                 ))}
@@ -627,8 +607,8 @@ export default function CandidateDetail() {
           </div>
 
           {/* Timeline */}
-          <div className="bg-[#1a1a2e] border border-white/[0.08] rounded-xl p-5 space-y-3">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest">Activity</p>
+          <div className="card p-5 space-y-3">
+            <p className="section-label">Activity</p>
 
             <div className="relative pl-5 space-y-4">
               <div className="absolute left-1.5 top-1 bottom-1 w-px bg-violet-500/25" />

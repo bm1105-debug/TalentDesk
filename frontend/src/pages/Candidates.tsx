@@ -368,12 +368,6 @@ function pageRange(current: number, total: number): (number | '…')[] {
   return [1, '…', current - 1, current, current + 1, '…', total]
 }
 
-const STATUS_STYLES: Record<string, string> = {
-  active:      'bg-emerald-500/15 text-emerald-300 border border-emerald-500/25',
-  passive:     'bg-amber-500/15 text-amber-300 border border-amber-500/25',
-  placed:      'bg-blue-500/15 text-blue-300 border border-blue-500/25',
-  blacklisted: 'bg-red-500/15 text-red-400 border border-red-500/25',
-}
 
 function SourceIcon({ source }: { source: string }) {
   const cls = 'h-3 w-3 shrink-0'
@@ -388,14 +382,13 @@ function SourceIcon({ source }: { source: string }) {
 
 function CandidateCard({ candidate }: { candidate: Candidate }) {
   const navigate = useNavigate()
-  const statusClass = STATUS_STYLES[candidate.status] ?? STATUS_STYLES.active
   const visibleSkills = candidate.skills.slice(0, 3)
   const overflowCount = candidate.skills.length - 3
 
   return (
     <div
       onClick={() => navigate(`/candidates/${candidate.id}`, { state: { name: `${candidate.first_name} ${candidate.last_name}` } })}
-      className="bg-[#1a1a2e] border border-white/[0.08] rounded-xl shadow-md p-4 cursor-pointer transition-all duration-200 hover:border-white/20 hover:scale-[1.01] hover:shadow-[0_8px_30px_rgba(139,92,246,0.12)] flex flex-col gap-3"
+      className="card card-hover p-4 cursor-pointer hover:scale-[1.01] hover:shadow-[0_8px_30px_rgba(139,92,246,0.12)] flex flex-col gap-3"
     >
       {/* Avatar + name + status badge */}
       <div className="flex items-start gap-3">
@@ -411,9 +404,7 @@ function CandidateCard({ candidate }: { candidate: Candidate }) {
             )}
           </p>
         </div>
-        <span className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold capitalize ${statusClass}`}>
-          {candidate.status}
-        </span>
+        <span className="shrink-0"><StatusBadge status={candidate.status} /></span>
       </div>
 
       {/* Source pill + skill tags */}
@@ -423,9 +414,7 @@ function CandidateCard({ candidate }: { candidate: Candidate }) {
           {candidate.source.replace('_', ' ')}
         </span>
         {visibleSkills.map(s => (
-          <span key={s.id} className="bg-slate-800 text-slate-300 border border-white/[0.08] rounded-md px-2 py-0.5 text-xs font-medium">
-            {s.name}
-          </span>
+          <span key={s.id} className="skill-tag">{s.name}</span>
         ))}
         {overflowCount > 0 && (
           <span className="text-xs text-slate-500 px-1">+{overflowCount}</span>
