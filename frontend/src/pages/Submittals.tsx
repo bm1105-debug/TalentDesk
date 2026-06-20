@@ -83,7 +83,7 @@ function AddSubmittalForm({ onSuccess }: { onSuccess: () => void }) {
       <div className="space-y-1">
         <Label>Candidate *</Label>
         <select {...register('candidate')}
-          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm">
+          className="h-9 w-full rounded-md border border-white/[0.12] bg-[#1a1a2e] text-slate-200 px-3 py-1 text-sm">
           <option value="">— select candidate —</option>
           {candidates.map(c => (
             <option key={c.id} value={c.id}>{c.first_name} {c.last_name}</option>
@@ -95,7 +95,7 @@ function AddSubmittalForm({ onSuccess }: { onSuccess: () => void }) {
       <div className="space-y-1">
         <Label>Job *</Label>
         <select {...register('job')}
-          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm">
+          className="h-9 w-full rounded-md border border-white/[0.12] bg-[#1a1a2e] text-slate-200 px-3 py-1 text-sm">
           <option value="">— select open job —</option>
           {jobs.map(j => (
             <option key={j.id} value={j.id}>{j.title} · {j.client_name}</option>
@@ -169,7 +169,7 @@ function AdvanceStageDialog({ submittal, onDone }: { submittal: Submittal; onDon
           <div className="space-y-1">
             <Label>Move to stage</Label>
             <select value={stageId} onChange={e => setStageId(Number(e.target.value))}
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm">
+              className="h-9 w-full rounded-md border border-white/[0.12] bg-[#1a1a2e] text-slate-200 px-3 py-1 text-sm">
               <option value="">— pick stage —</option>
               {stages.map(s => (
                 <option key={s.id} value={s.id}>{s.name}</option>
@@ -441,7 +441,7 @@ function ChangeStatusDialog({
           <div className="space-y-1">
             <Label>Reason</Label>
             <select value={value} onChange={e => setValue(e.target.value as 'rejected' | 'withdrawn')}
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm">
+              className="h-9 w-full rounded-md border border-white/[0.12] bg-[#1a1a2e] text-slate-200 px-3 py-1 text-sm">
               <option value="rejected">Rejected by client</option>
               <option value="withdrawn">Candidate withdrew</option>
             </select>

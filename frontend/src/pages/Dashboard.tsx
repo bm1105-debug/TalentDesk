@@ -675,15 +675,27 @@ function ConversionFunnel({ stages, loading, error }: {
   const last     = stages[stages.length - 1]
   const endToEnd = max > 0 && last ? Math.round((last.count / max) * 100) : 0
 
+  const LABEL_W = 102
+  const FUNNEL_W = 310
+  const BAND_H  = 38
+  const GAP_H   = 18
+  const SVG_W   = LABEL_W + FUNNEL_W + 16
+  const SVG_H   = stages.length > 0
+    ? stages.length * BAND_H + (stages.length - 1) * GAP_H
+    : 80
+  const cx = LABEL_W + FUNNEL_W / 2
+
+  const getW = (count: number) =>
+    max > 0 ? Math.max(28, (count / max) * FUNNEL_W) : FUNNEL_W
+
   return (
     <div className="panel-card p-5">
-      {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
           <div className="p-1.5 rounded-lg" style={{ background: 'rgba(139,92,246,0.12)' }}>
             <Filter className="h-4 w-4 text-violet-400" />
           </div>
-          <span style={{ color: '#e2e8f0', fontWeight: 700, fontSize: '13px' }}>Conversion Funnel</span>
+          <span style={{ color: '#e2e8f0', fontWeight: 700, fontSize: '13px' }}>Hiring Pipeline Funnel</span>
         </div>
         {!loading && !error && stages.length > 0 && (
           <span className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
@@ -692,98 +704,81 @@ function ConversionFunnel({ stages, loading, error }: {
         )}
       </div>
 
-      {/* Loading skeleton */}
       {loading && (
-        <div className="space-y-2.5">
+        <div className="space-y-2">
           {Array.from({ length: 9 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-3">
-              <div className="w-28 h-3 rounded animate-pulse shrink-0" style={{ background: 'rgba(255,255,255,0.08)' }} />
-              <div className="flex-1 h-5 rounded animate-pulse" style={{ background: 'rgba(255,255,255,0.06)', maxWidth: `${Math.max(15, 90 - i * 9)}%` }} />
-              <div className="w-8 h-3 rounded animate-pulse shrink-0" style={{ background: 'rgba(255,255,255,0.08)' }} />
-            </div>
+            <div key={i} className="h-9 rounded animate-pulse mx-auto"
+              style={{ background: 'rgba(255,255,255,0.06)', width: `${Math.max(20, 100 - i * 9)}%` }} />
           ))}
         </div>
       )}
 
-      {/* Error state */}
       {!loading && error && (
-        <p className="text-sm py-4 text-center" style={{ color: 'rgba(255,255,255,0.3)' }}>
-          Could not load funnel data
-        </p>
+        <p className="text-sm py-6 text-center" style={{ color: 'rgba(255,255,255,0.3)' }}>Could not load funnel data</p>
       )}
 
-      {/* Empty state */}
       {!loading && !error && stages.length === 0 && (
-        <p className="text-sm py-4 text-center" style={{ color: 'rgba(255,255,255,0.3)' }}>
-          No data yet
-        </p>
+        <p className="text-sm py-6 text-center" style={{ color: 'rgba(255,255,255,0.3)' }}>No data yet</p>
       )}
 
-      {/* Funnel rows */}
       {!loading && !error && stages.length > 0 && (
-        <div>
+        <svg viewBox={`0 0 ${SVG_W} ${SVG_H}`} width="100%" style={{ display: 'block', overflow: 'visible' }}>
+          <defs>
+            {stages.map((_, i) => (
+              <filter key={i} id={`fg${i}`} x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="0" stdDeviation="3"
+                  floodColor={FUNNEL_COLORS[i] ?? '#6366f1'} floodOpacity="0.45" />
+              </filter>
+            ))}
+          </defs>
+
           {stages.map((s, i) => {
-            const barPct  = max > 0 ? (s.count / max) * 100 : 0
-            const prev    = i > 0 ? stages[i - 1].count : null
-            const convPct = prev != null && prev > 0
-              ? Math.round((s.count / prev) * 100)
+            const y     = i * (BAND_H + GAP_H)
+            const color = FUNNEL_COLORS[i] ?? '#6366f1'
+            const topW  = getW(s.count)
+            const nextS = stages[i + 1]
+            const botW  = nextS ? getW(nextS.count) : topW * 0.82
+
+            const topL = cx - topW / 2
+            const topR = cx + topW / 2
+            const botL = cx - botW / 2
+            const botR = cx + botW / 2
+
+            const convPct = i > 0 && stages[i - 1].count > 0
+              ? Math.round((s.count / stages[i - 1].count) * 100)
               : null
-            const color   = FUNNEL_COLORS[i] ?? '#6366f1'
-            const isEmpty = s.count === 0
 
             return (
-              <div key={s.stage}>
-                <div className="flex items-center gap-3 py-1">
-                  {/* Stage label */}
-                  <span className="w-28 shrink-0 text-right text-xs font-medium leading-none"
-                    style={{ color: isEmpty ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.55)' }}>
-                    {s.stage}
-                  </span>
-
-                  {/* Bar track */}
-                  <div className="flex-1 h-6 rounded overflow-hidden" style={{ background: 'rgba(255,255,255,0.04)' }}>
-                    {isEmpty ? (
-                      /* Dashed empty state bar */
-                      <div className="h-full flex items-center px-2">
-                        <div className="h-px w-full" style={{ background: 'rgba(255,255,255,0.08)', borderTop: '1px dashed rgba(255,255,255,0.12)' }} />
-                      </div>
-                    ) : (
-                      <div
-                        className="h-full rounded"
-                        style={{
-                          width: `${Math.max(barPct, 2)}%`,
-                          background: color,
-                          opacity: 0.8,
-                          transition: 'width 0.7s ease',
-                          boxShadow: `0 0 8px ${color}40`,
-                        }}
-                      />
-                    )}
-                  </div>
-
-                  {/* Count */}
-                  <span className="w-10 shrink-0 text-right text-sm font-bold stat-num"
-                    style={{ color: isEmpty ? 'rgba(255,255,255,0.2)' : '#f1f5f9' }}>
-                    {s.count}
-                  </span>
-                </div>
-
-                {/* Conversion rate between stages */}
+              <g key={s.stage}>
+                {/* Conversion % in the gap above this stage */}
                 {convPct !== null && (
-                  <div className="flex items-center gap-3" style={{ height: '14px' }}>
-                    <div className="w-28 shrink-0" />
-                    <div className="flex items-center gap-1.5 pl-3">
-                      <div className="w-px h-3.5" style={{ background: 'rgba(255,255,255,0.08)' }} />
-                      <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.2)', lineHeight: 1 }}>
-                        {convPct}% passed
-                      </span>
-                    </div>
-                  </div>
+                  <text x={cx} y={y - GAP_H / 2 + 4} textAnchor="middle"
+                    style={{ fill: 'rgba(255,255,255,0.22)', fontSize: '9.5px', fontFamily: 'inherit' }}>
+                    ↓ {convPct}%
+                  </text>
                 )}
-              </div>
+
+                {/* Stage label (left, right-aligned) */}
+                <text x={LABEL_W - 10} y={y + BAND_H / 2 + 4} textAnchor="end"
+                  style={{ fill: 'rgba(255,255,255,0.5)', fontSize: '11px', fontFamily: 'inherit' }}>
+                  {s.stage}
+                </text>
+
+                {/* Trapezoid */}
+                <polygon
+                  points={`${topL},${y} ${topR},${y} ${botR},${y + BAND_H} ${botL},${y + BAND_H}`}
+                  style={{ fill: color, opacity: 0.78, filter: `url(#fg${i})` }}
+                />
+
+                {/* Count centered inside trapezoid */}
+                <text x={cx} y={y + BAND_H / 2 + 5} textAnchor="middle"
+                  style={{ fill: 'rgba(255,255,255,0.92)', fontSize: '12px', fontWeight: 700, fontFamily: 'inherit' }}>
+                  {s.count}
+                </text>
+              </g>
             )
           })}
-        </div>
+        </svg>
       )}
     </div>
   )
