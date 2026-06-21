@@ -1,11 +1,7 @@
-from datetime import timedelta
-
 from django.urls import reverse
-from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 from users.models import User, Role
-from communications.models import SentEmail
 from .models import Candidate, SkillTag
 
 
@@ -266,60 +262,6 @@ class BulkStatusUpdateTests(APITestCase):
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
-# ── Last Contacted Tests ──────────────────────────────────────────────────────
-
-class LastContactedTests(APITestCase):
-
-    def setUp(self):
-        self.user      = make_user("recruiter@test.com")
-        self.candidate = make_candidate(created_by=self.user)
-        auth(self.client, self.user)
-
-    def _send_email(self, candidate, days_ago=0):
-        sent_at = timezone.now() - timedelta(days=days_ago)
-        email = SentEmail.objects.create(
-            to_email=candidate.email,
-            subject="Test",
-            body="Test body",
-            related_candidate=candidate,
-            sent_by=self.user,
-        )
-        # Override auto_now_add by updating directly
-        SentEmail.objects.filter(pk=email.pk).update(sent_at=sent_at)
-        return email
-
-    def test_last_contacted_at_null_when_no_emails(self):
-        res = self.client.get(reverse("candidate-list"))
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertIsNone(res.data["results"][0]["last_contacted_at"])
-
-    def test_last_contacted_at_reflects_most_recent_email(self):
-        self._send_email(self.candidate, days_ago=5)
-        self._send_email(self.candidate, days_ago=2)  # most recent
-        res = self.client.get(reverse("candidate-list"))
-        self.assertIsNotNone(res.data["results"][0]["last_contacted_at"])
-
-    def test_not_contacted_filter_excludes_recently_contacted(self):
-        # Contacted 5 days ago — should NOT appear in a ?not_contacted_days=30 list
-        c_recent = make_candidate(email="recent@x.com", phone="7001", created_by=self.user)
-        self._send_email(c_recent, days_ago=5)
-        res = self.client.get(reverse("candidate-list"), {"not_contacted_days": 30})
-        ids = [r["id"] for r in res.data["results"]]
-        self.assertNotIn(c_recent.id, ids)
-
-    def test_not_contacted_filter_includes_never_contacted(self):
-        # self.candidate has no emails — must appear in ?not_contacted_days=30
-        res = self.client.get(reverse("candidate-list"), {"not_contacted_days": 30})
-        ids = [r["id"] for r in res.data["results"]]
-        self.assertIn(self.candidate.id, ids)
-
-    def test_not_contacted_filter_includes_old_contact(self):
-        # Contacted 45 days ago — should appear in ?not_contacted_days=30
-        c_old = make_candidate(email="old@x.com", phone="7002", created_by=self.user)
-        self._send_email(c_old, days_ago=45)
-        res = self.client.get(reverse("candidate-list"), {"not_contacted_days": 30})
-        ids = [r["id"] for r in res.data["results"]]
-        self.assertIn(c_old.id, ids)
 
 
 class YearsOfExperienceTests(APITestCase):

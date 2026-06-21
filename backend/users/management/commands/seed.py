@@ -22,7 +22,6 @@ from candidates.models import Candidate, SkillTag
 from jobs.models import Job, PipelineStage
 from submittals.models import Submittal, SubmittalEvent
 from interviews.models import Interview
-from communications.models import EmailTemplate
 
 
 # ── Raw data pools ─────────────────────────────────────────────────────────────
@@ -138,7 +137,6 @@ class Command(BaseCommand):
         jobs                     = self._create_jobs(clients, manager, recruiters)
         submittals               = self._create_submittals(candidates, jobs, recruiters)
         self._create_interviews(submittals, recruiters)
-        self._create_email_templates(manager)
 
         self.stdout.write(self.style.SUCCESS(
             f"\nDone! Created:\n"
@@ -399,39 +397,3 @@ class Command(BaseCommand):
 
         self.stdout.write(f"  +interviews ({count})")
 
-    # ── Email Templates ────────────────────────────────────────────────────────
-
-    def _create_email_templates(self, created_by):
-        templates = [
-            {
-                "name":               "Initial Outreach",
-                "template_type":      "intro",
-                "subject":            "Exciting opportunity: {{ job_title }} at {{ company_name }}",
-                "body":               "Hi {{ candidate_name }},\n\nI hope this message finds you well. I came across your profile and thought you'd be a great fit for a {{ job_title }} role with one of our clients, {{ company_name }}.\n\nWould you be open to a quick call to discuss?\n\nBest regards,\n{{ recruiter_name }}",
-                "available_variables":"candidate_name, job_title, company_name, recruiter_name",
-            },
-            {
-                "name":               "Interview Invitation",
-                "template_type":      "interview",
-                "subject":            "Interview Invitation — {{ job_title }}",
-                "body":               "Dear {{ candidate_name }},\n\nThank you for your interest in the {{ job_title }} position. We would like to invite you to an interview on {{ interview_date }} at {{ interview_time }}.\n\nPlease confirm your availability by replying to this email.\n\nKind regards,\n{{ recruiter_name }}",
-                "available_variables":"candidate_name, job_title, interview_date, interview_time, recruiter_name",
-            },
-            {
-                "name":               "Offer Letter Follow-up",
-                "template_type":      "offer",
-                "subject":            "Offer — {{ job_title }} at {{ company_name }}",
-                "body":               "Dear {{ candidate_name }},\n\nWe are delighted to confirm the offer for the {{ job_title }} position at {{ company_name }}. The proposed salary is {{ salary }}.\n\nPlease let us know if you have any questions.\n\nWarm regards,\n{{ recruiter_name }}",
-                "available_variables":"candidate_name, job_title, company_name, salary, recruiter_name",
-            },
-        ]
-
-        count = 0
-        for t in templates:
-            _, created = EmailTemplate.objects.get_or_create(
-                name=t["name"],
-                defaults={**t, "created_by": created_by},
-            )
-            if created: count += 1
-
-        self.stdout.write(f"  +email templates ({count} new)")

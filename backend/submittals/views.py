@@ -1,10 +1,7 @@
-from django.db.models import OuterRef, Subquery
-
 from rest_framework import viewsets, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from communications.models import EmailTemplate, SentEmail
 from .models import Submittal, SubmittalEvent, calculate_match_score
 from .serializers import (
     SubmittalSerializer,
@@ -27,17 +24,11 @@ class SubmittalViewSet(RoleQuerysetMixin, viewsets.ModelViewSet):
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
 
     def get_queryset(self):
-        last_email = (
-            SentEmail.objects
-            .filter(related_candidate=OuterRef("candidate"))
-            .order_by("-sent_at")
-            .values("sent_at")[:1]
-        )
         qs = Submittal.objects.select_related(
             "candidate", "job", "current_stage", "submitted_by"
         ).prefetch_related(
             "events__from_stage", "events__to_stage", "events__created_by"
-        ).annotate(candidate_last_contacted_at=Subquery(last_email))
+        )
 
         # Filter by job or candidate via query params — e.g. ?job=3 or ?candidate=7
         job_id       = self.request.query_params.get("job")
@@ -172,18 +163,4 @@ class SubmittalViewSet(RoleQuerysetMixin, viewsets.ModelViewSet):
         submittal.save(update_fields=["status", "updated_at"])
 
         response_data = SubmittalSerializer(submittal, context={"request": request}).data
-
-        # Hint the frontend to offer a rejection email when closing negatively
-        if new_status in ("rejected", "withdrawn"):
-            rejection_template = EmailTemplate.objects.filter(
-                template_type=EmailTemplate.TemplateType.REJECTION
-            ).first()
-            if rejection_template:
-                return Response({
-                    **response_data,
-                    "rejection_template_available": True,
-                    "rejection_template_id":        rejection_template.id,
-                    "candidate_email":              submittal.candidate.email,
-                })
-
         return Response(response_data)

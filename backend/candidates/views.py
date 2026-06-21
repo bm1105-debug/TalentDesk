@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from django.db.models import Count, OuterRef, Q, Subquery
+from django.db.models import Count, Q
 from django.utils import timezone
 
 from rest_framework import viewsets, filters, status
@@ -8,7 +8,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from communications.models import SentEmail
 from .models import Candidate, SkillTag
 from .serializers import CandidateSerializer, SkillTagSerializer
 from users.permissions import IsRecruiterOrAbove, IsVPOrAbove
@@ -55,20 +54,11 @@ class CandidateViewSet(RoleQuerysetMixin, viewsets.ModelViewSet):
     ordering = ["-created_at"]
 
     def get_queryset(self):
-        # Subquery: most recent sent_at for emails linked to each candidate
-        last_email = (
-            SentEmail.objects
-            .filter(related_candidate=OuterRef("pk"))
-            .order_by("-sent_at")
-            .values("sent_at")[:1]
-        )
-
         qs = (
             Candidate.objects
             .select_related("created_by")
             .prefetch_related("skills")
             .annotate(
-                last_contacted_at=Subquery(last_email),
                 active_submittals_count=Count(
                     "submittals",
                     filter=Q(submittals__status="active"),
@@ -77,11 +67,10 @@ class CandidateViewSet(RoleQuerysetMixin, viewsets.ModelViewSet):
             )
         )
 
-        status_param         = self.request.query_params.get("status")
-        source               = self.request.query_params.get("source")
-        skill                = self.request.query_params.get("skill")
-        not_contacted_days   = self.request.query_params.get("not_contacted_days")
-        min_experience       = self.request.query_params.get("min_experience")
+        status_param   = self.request.query_params.get("status")
+        source         = self.request.query_params.get("source")
+        skill          = self.request.query_params.get("skill")
+        min_experience = self.request.query_params.get("min_experience")
 
         if status_param:
             qs = qs.filter(status=status_param)
@@ -89,11 +78,6 @@ class CandidateViewSet(RoleQuerysetMixin, viewsets.ModelViewSet):
             qs = qs.filter(source=source)
         if skill:
             qs = qs.filter(skills__name=skill.strip().lower())
-        if not_contacted_days:
-            cutoff = timezone.now() - timedelta(days=int(not_contacted_days))
-            qs = qs.filter(
-                Q(last_contacted_at__isnull=True) | Q(last_contacted_at__lt=cutoff)
-            )
         if min_experience:
             qs = qs.filter(years_of_experience__gte=int(min_experience))
 

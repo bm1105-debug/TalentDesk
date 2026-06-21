@@ -4,7 +4,6 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from communications.models import EmailTemplate
 from users.models import User, Role
 from clients.models import Client
 from candidates.models import Candidate, SkillTag
@@ -322,39 +321,6 @@ class RejectionPromptTests(APITestCase):
         url = reverse("submittal-change-status", args=[self.submittal.id])
         return self.client.post(url, {"status": new_status, "notes": notes}, format="json")
 
-    def _make_rejection_template(self):
-        return EmailTemplate.objects.create(
-            name="Standard Rejection",
-            template_type=EmailTemplate.TemplateType.REJECTION,
-            subject="Thank you for your application",
-            body="Unfortunately we will not be moving forward.",
-        )
-
-    def test_rejected_status_includes_prompt_when_template_exists(self):
-        self._make_rejection_template()
-        res = self._change_status("rejected")
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertTrue(res.data.get("rejection_template_available"))
-        self.assertIn("candidate_email", res.data)
-        self.assertIn("rejection_template_id", res.data)
-
-    def test_withdrawn_status_includes_prompt_when_template_exists(self):
-        self._make_rejection_template()
-        res = self._change_status("withdrawn")
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertTrue(res.data.get("rejection_template_available"))
-
-    def test_placed_status_does_not_include_prompt(self):
-        self._make_rejection_template()
-        res = self._change_status("placed")
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertNotIn("rejection_template_available", res.data)
-
-    def test_rejected_without_template_does_not_include_prompt(self):
-        # No rejection template in DB — flag must be absent
-        res = self._change_status("rejected")
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertNotIn("rejection_template_available", res.data)
 
     def test_unauthenticated_returns_401(self):
         self.client.credentials()

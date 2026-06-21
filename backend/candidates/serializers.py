@@ -22,9 +22,7 @@ class CandidateSerializer(serializers.ModelSerializer):
     # Show who created the record without exposing the full user object
     created_by = serializers.StringRelatedField(read_only=True)
 
-    # Annotated at queryset level in CandidateViewSet.get_queryset() — never null-unsafe
-    last_contacted_at        = serializers.DateTimeField(read_only=True, allow_null=True, default=None)
-    active_submittals_count  = serializers.IntegerField(read_only=True, default=0)
+    active_submittals_count = serializers.IntegerField(read_only=True, default=0)
 
     class Meta:
         model  = Candidate
@@ -37,7 +35,7 @@ class CandidateSerializer(serializers.ModelSerializer):
             "current_ctc", "expected_ctc", "notice_period_days",
             "skills", "skill_names",
             "created_by", "created_at", "updated_at",
-            "last_contacted_at", "active_submittals_count",
+            "active_submittals_count",
         ]
         read_only_fields = ["created_by", "created_at", "updated_at"]
         # Suppress built-in UniqueValidators so our validate() can return
