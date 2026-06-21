@@ -186,21 +186,35 @@ function TrendBadge({ trend }: { trend: Trend }) {
   )
 }
 
-function StatCard({ label, value, cfg, to, trend }:
+function KpiTile({ label, value, cfg, to, trend }:
   { label: string; value: number; cfg: StatCardConfig; to?: string; trend?: Trend }) {
   const Icon = cfg.icon
   const inner = (
     <div
-      className={`bg-[#1a1a2e] border border-white/[0.08] rounded-xl shadow-sm p-4 h-full ${to ? 'transition-all duration-200 hover:border-white/20' : ''}`}
-      style={{ borderLeft: `4px solid ${cfg.borderColor}` }}
+      className="rounded-lg hover:bg-white/5 transition-colors duration-150"
+      style={{
+        padding: '12px 16px',
+        height: '90px',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        background: 'rgba(255,255,255,0.025)',
+        border: '1px solid rgba(255,255,255,0.06)',
+        borderLeft: `3px solid ${cfg.borderColor}`,
+      }}
     >
-      <div className={`w-10 h-10 rounded-full ${cfg.iconBg} flex items-center justify-center mb-3`}>
-        <Icon className={`h-4 w-4 ${cfg.iconText}`} />
-      </div>
-      <p className="text-3xl font-bold text-slate-100 stat-num leading-none">{value}</p>
-      <div className="flex items-center justify-between mt-1.5">
-        <p className="text-sm text-slate-400">{label}</p>
+      <div className="flex items-center justify-between">
+        <div className={`${cfg.iconBg} flex items-center justify-center`}
+          style={{ width: 32, height: 32, borderRadius: 7 }}>
+          <Icon className={`h-4 w-4 ${cfg.iconText}`} />
+        </div>
         {trend && <TrendBadge trend={trend} />}
+      </div>
+      <div>
+        <p className="stat-num" style={{ fontSize: '28px', fontWeight: 700, color: '#f1f5f9', lineHeight: 1, letterSpacing: '-0.5px' }}>
+          {value}
+        </p>
+        <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', marginTop: '3px' }}>{label}</p>
       </div>
     </div>
   )
@@ -675,110 +689,110 @@ function ConversionFunnel({ stages, loading, error }: {
   const last     = stages[stages.length - 1]
   const endToEnd = max > 0 && last ? Math.round((last.count / max) * 100) : 0
 
-  const LABEL_W = 102
-  const FUNNEL_W = 310
-  const BAND_H  = 38
-  const GAP_H   = 18
-  const SVG_W   = LABEL_W + FUNNEL_W + 16
-  const SVG_H   = stages.length > 0
-    ? stages.length * BAND_H + (stages.length - 1) * GAP_H
-    : 80
-  const cx = LABEL_W + FUNNEL_W / 2
-
-  const getW = (count: number) =>
-    max > 0 ? Math.max(28, (count / max) * FUNNEL_W) : FUNNEL_W
-
   return (
-    <div className="panel-card p-5">
-      <div className="flex items-center justify-between mb-5">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg" style={{ background: 'rgba(139,92,246,0.12)' }}>
-            <Filter className="h-4 w-4 text-violet-400" />
+    <div className="panel-card" style={{ padding: '14px 16px' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+          <div style={{ background: 'rgba(139,92,246,0.12)', padding: '5px', borderRadius: '7px', display: 'flex' }}>
+            <Filter style={{ width: 14, height: 14, color: '#a78bfa' }} />
           </div>
           <span style={{ color: '#e2e8f0', fontWeight: 700, fontSize: '13px' }}>Hiring Pipeline Funnel</span>
         </div>
         {!loading && !error && stages.length > 0 && (
-          <span className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
-            <span style={{ color: '#a78bfa', fontWeight: 600 }}>{endToEnd}%</span> end-to-end conversion
+          <span style={{
+            background: 'rgba(167,139,250,0.1)', border: '1px solid rgba(167,139,250,0.2)',
+            borderRadius: '5px', padding: '2px 8px', fontSize: '11px', color: '#a78bfa', fontWeight: 600,
+          }}>
+            {endToEnd}% end-to-end
           </span>
         )}
       </div>
 
+      {/* Loading skeleton */}
       {loading && (
-        <div className="space-y-2">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
           {Array.from({ length: 9 }).map((_, i) => (
-            <div key={i} className="h-9 rounded animate-pulse mx-auto"
-              style={{ background: 'rgba(255,255,255,0.06)', width: `${Math.max(20, 100 - i * 9)}%` }} />
+            <div key={i} style={{
+              height: '20px', borderRadius: '3px', background: 'rgba(255,255,255,0.06)',
+              width: `${Math.max(20, 100 - i * 9)}%`, margin: '0 auto', animation: 'pulse 2s infinite',
+            }} />
           ))}
         </div>
       )}
 
       {!loading && error && (
-        <p className="text-sm py-6 text-center" style={{ color: 'rgba(255,255,255,0.3)' }}>Could not load funnel data</p>
+        <p style={{ fontSize: '13px', textAlign: 'center', color: 'rgba(255,255,255,0.3)', padding: '16px 0' }}>
+          Could not load funnel data
+        </p>
       )}
 
       {!loading && !error && stages.length === 0 && (
-        <p className="text-sm py-6 text-center" style={{ color: 'rgba(255,255,255,0.3)' }}>No data yet</p>
+        <p style={{ fontSize: '13px', textAlign: 'center', color: 'rgba(255,255,255,0.3)', padding: '16px 0' }}>
+          No data yet
+        </p>
       )}
 
+      {/* Stage rows */}
       {!loading && !error && stages.length > 0 && (
-        <svg viewBox={`0 0 ${SVG_W} ${SVG_H}`} width="100%" style={{ display: 'block', overflow: 'visible' }}>
-          <defs>
-            {stages.map((_, i) => (
-              <filter key={i} id={`fg${i}`} x="-20%" y="-20%" width="140%" height="140%">
-                <feDropShadow dx="0" dy="0" stdDeviation="3"
-                  floodColor={FUNNEL_COLORS[i] ?? '#6366f1'} floodOpacity="0.45" />
-              </filter>
-            ))}
-          </defs>
-
+        <div>
           {stages.map((s, i) => {
-            const y     = i * (BAND_H + GAP_H)
-            const color = FUNNEL_COLORS[i] ?? '#6366f1'
-            const topW  = getW(s.count)
-            const nextS = stages[i + 1]
-            const botW  = nextS ? getW(nextS.count) : topW * 0.82
-
-            const topL = cx - topW / 2
-            const topR = cx + topW / 2
-            const botL = cx - botW / 2
-            const botR = cx + botW / 2
-
-            const convPct = i > 0 && stages[i - 1].count > 0
-              ? Math.round((s.count / stages[i - 1].count) * 100)
+            const pct     = max > 0 ? Math.max(6, (s.count / max) * 100) : 100
+            const color   = FUNNEL_COLORS[i] ?? '#6366f1'
+            const prev    = stages[i - 1]
+            const convPct = prev && prev.count > 0
+              ? Math.round((s.count / prev.count) * 100)
               : null
 
             return (
-              <g key={s.stage}>
-                {/* Conversion % in the gap above this stage */}
+              <div key={s.stage}>
+                {/* Conversion divider between stages */}
                 {convPct !== null && (
-                  <text x={cx} y={y - GAP_H / 2 + 4} textAnchor="middle"
-                    style={{ fill: 'rgba(255,255,255,0.22)', fontSize: '9.5px', fontFamily: 'inherit' }}>
-                    ↓ {convPct}%
-                  </text>
+                  <div style={{ height: '6px', display: 'flex', alignItems: 'center', gap: '5px', paddingLeft: '94px' }}>
+                    <div style={{ width: '1px', height: '6px', background: 'rgba(255,255,255,0.07)' }} />
+                    <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.22)', lineHeight: 1 }}>
+                      ↓ {convPct}%
+                    </span>
+                  </div>
                 )}
 
-                {/* Stage label (left, right-aligned) */}
-                <text x={LABEL_W - 10} y={y + BAND_H / 2 + 4} textAnchor="end"
-                  style={{ fill: 'rgba(255,255,255,0.5)', fontSize: '11px', fontFamily: 'inherit' }}>
-                  {s.stage}
-                </text>
+                {/* Stage row */}
+                <div style={{ height: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {/* Label */}
+                  <span style={{
+                    width: '86px', flexShrink: 0, textAlign: 'right',
+                    fontSize: '12px', color: 'rgba(255,255,255,0.45)', lineHeight: 1,
+                  }}>
+                    {s.stage}
+                  </span>
 
-                {/* Trapezoid */}
-                <polygon
-                  points={`${topL},${y} ${topR},${y} ${botR},${y + BAND_H} ${botL},${y + BAND_H}`}
-                  style={{ fill: color, opacity: 0.78, filter: `url(#fg${i})` }}
-                />
+                  {/* Centered bar — narrowing creates funnel shape */}
+                  <div style={{ flex: 1, position: 'relative', height: '14px', background: 'rgba(255,255,255,0.04)', borderRadius: '3px', overflow: 'hidden' }}>
+                    <div style={{
+                      position: 'absolute',
+                      left:     `${(100 - pct) / 2}%`,
+                      width:    `${pct}%`,
+                      height:   '100%',
+                      background: color,
+                      opacity:  0.8,
+                      borderRadius: '2px',
+                      boxShadow: `0 0 5px ${color}55`,
+                      transition: 'width 0.5s ease, left 0.5s ease',
+                    }} />
+                  </div>
 
-                {/* Count centered inside trapezoid */}
-                <text x={cx} y={y + BAND_H / 2 + 5} textAnchor="middle"
-                  style={{ fill: 'rgba(255,255,255,0.92)', fontSize: '12px', fontWeight: 700, fontFamily: 'inherit' }}>
-                  {s.count}
-                </text>
-              </g>
+                  {/* Count */}
+                  <span style={{
+                    width: '30px', flexShrink: 0, textAlign: 'right',
+                    fontSize: '13px', fontWeight: 700, color: '#f1f5f9', lineHeight: 1,
+                  }}>
+                    {s.count}
+                  </span>
+                </div>
+              </div>
             )
           })}
-        </svg>
+        </div>
       )}
     </div>
   )
@@ -831,7 +845,7 @@ export default function Dashboard() {
   ]
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
 
       {/* ── Greeting hero card ── */}
       <div
@@ -884,22 +898,12 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ── Stat cards ── */}
-      <div className="grid grid-cols-12 gap-4">
+      {/* ── Stat tiles ── */}
+      <div className="grid grid-cols-5 gap-3">
         {STAT_CARDS.map(s => (
-          <div key={s.label} className="col-span-4">
-            <StatCard label={s.label} value={s.value} cfg={s.cfg} to={s.to} trend={s.trend} />
-          </div>
+          <KpiTile key={s.label} label={s.label} value={s.value} cfg={s.cfg} to={s.to} trend={s.trend} />
         ))}
       </div>
-
-      {/* ── Section divider ── */}
-      <div style={{
-        width:      '100%',
-        height:     '1px',
-        margin:     '4px 0',
-        background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent)',
-      }} />
 
       {/* ── Conversion Funnel ── */}
       <ConversionFunnel stages={funnelData?.stages ?? []} loading={funnelLoading} error={funnelError} />

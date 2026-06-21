@@ -135,39 +135,41 @@ export default function CommandBar() {
       onClick={() => setOpen(false)}
     >
       <div
-        className="w-full max-w-xl bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden"
+        className="w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden"
+        style={{ background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.1)' }}
         onClick={e => e.stopPropagation()}
       >
         {/* Input */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100">
-          <Search className="h-4 w-4 text-gray-400 shrink-0" />
+        <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+          <Search className="h-4 w-4 shrink-0" style={{ color: 'rgba(255,255,255,0.3)' }} />
           <input
             ref={inputRef}
             value={query}
             onChange={e => { setQuery(e.target.value); setFocused(0) }}
             onKeyDown={onKeyDown}
             placeholder="Search candidates, jobs, clients…"
-            className="flex-1 text-sm outline-none bg-transparent text-gray-900 placeholder-gray-400"
+            className="flex-1 text-sm outline-none bg-transparent"
+            style={{ color: '#f1f5f9' }}
           />
-          <kbd className="text-[10px] text-gray-400 bg-gray-100 rounded px-1.5 py-0.5">ESC</kbd>
+          <kbd className="text-[10px] rounded px-1.5 py-0.5" style={{ color: 'rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}>ESC</kbd>
         </div>
 
         {/* Results */}
         <div className="max-h-80 overflow-y-auto py-1">
           {showRecents && recents.length === 0 && (
-            <p className="text-xs text-gray-400 text-center py-6">
+            <p className="text-xs text-center py-6" style={{ color: 'rgba(255,255,255,0.25)' }}>
               Type to search candidates, jobs, and clients
             </p>
           )}
 
           {showRecents && recents.length > 0 && (
             <div className="px-2 pt-1 pb-0.5">
-              <p className="text-[10px] text-gray-400 uppercase tracking-wider px-2 mb-1">Recent</p>
+              <p className="text-[10px] uppercase tracking-wider px-2 mb-1" style={{ color: 'rgba(255,255,255,0.25)' }}>Recent</p>
             </div>
           )}
 
           {!showRecents && results.length === 0 && debounced.length >= 2 && (
-            <p className="text-xs text-gray-400 text-center py-6">No results for "{debounced}"</p>
+            <p className="text-xs text-center py-6" style={{ color: 'rgba(255,255,255,0.25)' }}>No results for "{debounced}"</p>
           )}
 
           {displayList.map((item, i) => {
@@ -176,17 +178,16 @@ export default function CommandBar() {
               <button
                 key={`${item.path}-${i}`}
                 onClick={() => goTo(item.path, item.label)}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
-                  focused === i ? 'bg-blue-50' : 'hover:bg-gray-50'
-                }`}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors"
+                style={{ background: focused === i ? 'rgba(99,102,241,0.15)' : 'transparent' }}
                 onMouseEnter={() => setFocused(i)}
               >
-                <div className="p-1.5 rounded-lg bg-gray-100 shrink-0">
-                  <Icon className="h-3.5 w-3.5 text-gray-500" />
+                <div className="p-1.5 rounded-lg shrink-0" style={{ background: 'rgba(255,255,255,0.07)' }}>
+                  <Icon className="h-3.5 w-3.5" style={{ color: 'rgba(255,255,255,0.45)' }} />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{item.label}</p>
-                  <p className="text-xs text-gray-400 truncate">{item.sub}</p>
+                  <p className="text-sm font-medium truncate" style={{ color: '#f1f5f9' }}>{item.label}</p>
+                  <p className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.35)' }}>{item.sub}</p>
                 </div>
               </button>
             )
@@ -194,10 +195,10 @@ export default function CommandBar() {
         </div>
 
         {/* Footer hint */}
-        <div className="px-4 py-2 border-t border-gray-100 flex items-center gap-4 text-[10px] text-gray-400">
-          <span><kbd className="bg-gray-100 rounded px-1">↑↓</kbd> navigate</span>
-          <span><kbd className="bg-gray-100 rounded px-1">↵</kbd> open</span>
-          <span><kbd className="bg-gray-100 rounded px-1">Ctrl+K</kbd> toggle</span>
+        <div className="px-4 py-2 flex items-center gap-4 text-[10px]" style={{ borderTop: '1px solid rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.25)' }}>
+          <span><kbd className="rounded px-1" style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}>↑↓</kbd> navigate</span>
+          <span><kbd className="rounded px-1" style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}>↵</kbd> open</span>
+          <span><kbd className="rounded px-1" style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' }}>Ctrl+K</kbd> toggle</span>
         </div>
       </div>
     </div>
