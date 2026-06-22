@@ -1,7 +1,11 @@
 import axios from 'axios'
 
+// In dev: VITE_API_URL is unset → baseURL = '/api' (Vite proxy handles it)
+// In prod: VITE_API_URL = 'https://your-backend.up.railway.app' → absolute URL
+const BASE = import.meta.env.VITE_API_URL ?? ''
+
 const api = axios.create({
-  baseURL: '/api',           // Vite dev proxy forwards to http://localhost:8000/api
+  baseURL: `${BASE}/api`,
   headers: { 'Content-Type': 'application/json' },
 })
 
@@ -53,7 +57,7 @@ api.interceptors.response.use(
     isRefreshing     = true
 
     try {
-      const { data } = await axios.post('/api/users/token/refresh/', { refresh })
+      const { data } = await axios.post(`${BASE}/api/users/token/refresh/`, { refresh })
       localStorage.setItem('access', data.access)
       processQueue(null, data.access)
       original.headers.Authorization = `Bearer ${data.access}`
