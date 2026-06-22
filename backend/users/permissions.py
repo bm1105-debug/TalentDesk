@@ -12,7 +12,7 @@ class IsVPOrAbove(BasePermission):
     def has_permission(self, request, view):
         return (
             request.user.is_authenticated
-            and (request.user.is_superuser or request.user.role in (Role.VP, Role.CEO))
+            and request.user.role in (Role.VP, Role.CEO)
         )
 
 class IsTeamLeadOrAbove(BasePermission):
