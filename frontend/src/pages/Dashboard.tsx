@@ -9,7 +9,7 @@ import {
   HandCoins, TrendingUp, TrendingDown,
   CalendarDays, Trophy, ArrowRight,
   ListTodo, Plus, ChevronDown, ChevronUp,
-  CheckSquare, CalendarCheck, Filter,
+  CheckSquare, CalendarCheck, Filter, RotateCcw,
 } from 'lucide-react'
 import { EmptyState } from '@/components/EmptyState'
 import api from '@/api/client'
@@ -142,13 +142,14 @@ function DashboardSkeleton() {
 
 // ── Status pills ───────────────────────────────────────────────────────────────
 
-const PILL_STYLES: Record<'red' | 'purple' | 'cyan', string> = {
+const PILL_STYLES: Record<'red' | 'purple' | 'cyan' | 'orange', string> = {
   red:    'bg-red-500/15    border-red-500/25    text-red-200',
   purple: 'bg-violet-500/15 border-violet-500/25 text-violet-200',
   cyan:   'bg-cyan-500/15   border-cyan-500/25   text-cyan-200',
+  orange: 'bg-orange-500/15 border-orange-500/25 text-orange-200',
 }
 
-function StatusPill({ label, color, to }: { label: string; color: 'red' | 'purple' | 'cyan'; to?: string }) {
+function StatusPill({ label, color, to }: { label: string; color: 'red' | 'purple' | 'cyan' | 'orange'; to?: string }) {
   const colorCls = PILL_STYLES[color]
   const base = `inline-flex items-center gap-1 text-xs px-3 py-1 rounded-full border transition-colors whitespace-nowrap ${colorCls}`
   if (to) return (
@@ -175,6 +176,7 @@ const STAT_CARD_STYLES: StatCardConfig[] = [
   { icon: AlertTriangle, borderColor: '#f59e0b', iconBg: 'bg-amber-500/20',   iconText: 'text-amber-400'   },
   { icon: Clock,         borderColor: '#ef4444', iconBg: 'bg-red-500/20',     iconText: 'text-red-400'     },
   { icon: HandCoins,     borderColor: '#10b981', iconBg: 'bg-emerald-500/20', iconText: 'text-emerald-400' },
+  { icon: RotateCcw,     borderColor: '#f97316', iconBg: 'bg-orange-500/20',  iconText: 'text-orange-400'  },
 ]
 
 function TrendBadge({ trend }: { trend: Trend }) {
@@ -200,8 +202,8 @@ function KpiTile({ label, value, cfg, to, trend }:
     <div
       className="rounded-lg transition-all duration-150 hover:brightness-110"
       style={{
-        padding: '12px 16px',
-        height: '90px',
+        padding: '14px 16px',
+        height: '96px',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
@@ -697,6 +699,19 @@ function ConversionFunnel({ stages, loading, error }: {
   const last     = stages[stages.length - 1]
   const endToEnd = max > 0 && last ? Math.round((last.count / max) * 100) : 0
 
+  // Find stage with worst inter-stage conversion to highlight as bottleneck
+  const bottleneckIdx = (() => {
+    if (stages.length < 2) return -1
+    let minPct = Infinity, minIdx = -1
+    for (let i = 1; i < stages.length; i++) {
+      if (stages[i - 1].count > 0) {
+        const pct = Math.round((stages[i].count / stages[i - 1].count) * 100)
+        if (pct < minPct) { minPct = pct; minIdx = i }
+      }
+    }
+    return minIdx
+  })()
+
   return (
     <div className="panel-card" style={{ padding: '14px 16px' }}>
       {/* Header */}
@@ -765,13 +780,24 @@ function ConversionFunnel({ stages, loading, error }: {
                 )}
 
                 {/* Stage row */}
-                <div style={{ height: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{
+                  height: '24px', display: 'flex', alignItems: 'center', gap: '8px',
+                  ...(i === bottleneckIdx ? { borderLeft: '3px solid #f97316', paddingLeft: '8px', marginLeft: '-11px' } : {}),
+                }}>
                   {/* Label */}
                   <span style={{
                     width: '86px', flexShrink: 0, textAlign: 'right',
-                    fontSize: '12px', color: 'rgba(255,255,255,0.45)', lineHeight: 1,
+                    fontSize: '12px', color: i === bottleneckIdx ? '#fb923c' : 'rgba(255,255,255,0.45)', lineHeight: 1,
                   }}>
                     {s.stage}
+                    {i === bottleneckIdx && (
+                      <span style={{
+                        marginLeft: '4px', fontSize: '8px', fontWeight: 700, letterSpacing: '0.08em',
+                        textTransform: 'uppercase', color: '#f97316',
+                        background: 'rgba(249,115,22,0.12)', border: '1px solid rgba(249,115,22,0.25)',
+                        borderRadius: '3px', padding: '1px 4px',
+                      }}>▼</span>
+                    )}
                   </span>
 
                   {/* Centered bar — narrowing creates funnel shape */}
@@ -845,11 +871,12 @@ export default function Dashboard() {
 
   const t = summary.trends
   const STAT_CARDS = [
-    { label: 'Open Jobs',         value: summary.open_jobs_count,         cfg: STAT_CARD_STYLES[0], to: '/jobs',                trend: t?.open_jobs        },
-    { label: 'Active Submittals', value: summary.active_submittals_count, cfg: STAT_CARD_STYLES[1], to: '/submittals',          trend: t?.active_submittals },
-    { label: 'Urgent Jobs',       value: summary.urgent_jobs_count,       cfg: STAT_CARD_STYLES[2], to: '/jobs?priority=urgent', trend: t?.urgent_jobs     },
-    { label: 'Overdue Jobs',      value: summary.overdue_jobs_count,      cfg: STAT_CARD_STYLES[3], to: '/jobs?filter=overdue', trend: t?.overdue_jobs      },
-    { label: 'Pending Offers',    value: summary.pending_offers_count,    cfg: STAT_CARD_STYLES[4], to: '/offers',              trend: t?.pending_offers    },
+    { label: 'Open Jobs',         value: summary.open_jobs_count,         cfg: STAT_CARD_STYLES[0], to: '/jobs',                 trend: t?.open_jobs        },
+    { label: 'Active Submittals', value: summary.active_submittals_count, cfg: STAT_CARD_STYLES[1], to: '/submittals',           trend: t?.active_submittals },
+    { label: 'Urgent Jobs',       value: summary.urgent_jobs_count,       cfg: STAT_CARD_STYLES[2], to: '/jobs?priority=urgent', trend: t?.urgent_jobs      },
+    { label: 'Overdue Jobs',      value: summary.overdue_jobs_count,      cfg: STAT_CARD_STYLES[3], to: '/jobs?filter=overdue',  trend: t?.overdue_jobs     },
+    { label: 'Pending Offers',    value: summary.pending_offers_count,    cfg: STAT_CARD_STYLES[4], to: '/offers',               trend: t?.pending_offers   },
+    { label: 'Stale Submittals',  value: summary.stale_submittals_count,  cfg: STAT_CARD_STYLES[5], to: '/submittals?filter=stale' },
   ]
 
   return (
@@ -902,12 +929,15 @@ export default function Dashboard() {
             {summary.interviews_today_count > 0
               ? <StatusPill label={`${summary.interviews_today_count} interview${summary.interviews_today_count > 1 ? 's' : ''} today`} color="cyan" to="/interviews" />
               : <StatusPill label="No interviews today" color="cyan" />}
+            {summary.stale_submittals_count > 0 && (
+              <StatusPill label={`${summary.stale_submittals_count} stale`} color="orange" to="/submittals?filter=stale" />
+            )}
           </div>
         </div>
       </div>
 
       {/* ── Stat tiles ── */}
-      <div className="grid grid-cols-5 gap-3">
+      <div className="grid grid-cols-6 gap-3">
         {STAT_CARDS.map(s => (
           <KpiTile key={s.label} label={s.label} value={s.value} cfg={s.cfg} to={s.to} trend={s.trend} />
         ))}
