@@ -55,7 +55,7 @@ export const SOURCE_LABELS: Record<string, string> = {
 // ── Primitives ─────────────────────────────────────────────────────────────────
 
 export function Skeleton({ className }: { className?: string }) {
-  return <div className={`animate-pulse bg-gray-200 rounded ${className}`} />
+  return <div className={`animate-pulse bg-white/10 rounded ${className}`} />
 }
 
 export function Empty() {
@@ -189,7 +189,7 @@ export function PipelineFunnelWidget({ stages }: { stages: FunnelStage[] }) {
               <span className="font-medium text-slate-300">{s.stage}</span>
               <span className="text-slate-500">{s.count}</span>
             </div>
-            <div className="h-2.5 w-full bg-gray-100 rounded-full overflow-hidden">
+            <div className="h-2.5 w-full bg-white/10 rounded-full overflow-hidden">
               <div className="h-full bg-indigo-500 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
             </div>
           </div>
@@ -208,9 +208,9 @@ export function InterviewOutcomesWidget({ data }: { data: InterviewOutcomes }) {
     <div className="space-y-3">
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Completed', value: data.completed, color: 'text-green-700 bg-green-50 border-green-200' },
-          { label: 'Cancelled', value: data.cancelled, color: 'text-amber-700 bg-amber-50 border-amber-200' },
-          { label: 'No Show',   value: data.no_show,   color: 'text-red-700 bg-red-50 border-red-200' },
+          { label: 'Completed', value: data.completed, color: 'text-green-400 bg-green-500/15 border-green-500/20' },
+          { label: 'Cancelled', value: data.cancelled, color: 'text-amber-400 bg-amber-500/15 border-amber-500/20' },
+          { label: 'No Show',   value: data.no_show,   color: 'text-red-400 bg-red-500/15 border-red-500/20' },
         ].map(({ label, value, color }) => (
           <div key={label} className={`rounded-lg border p-3 ${color}`}>
             <p className="text-xl font-bold">{value}</p>
@@ -250,7 +250,7 @@ export function TimeToFillWidget({ data }: { data: TimeToFill }) {
                 <span className="font-medium text-slate-300 truncate max-w-[60%]">{row.title}</span>
                 <span className="text-slate-500 text-xs">{row.client} · {row.days}d</span>
               </div>
-              <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
                 <div className="h-full bg-violet-500 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
               </div>
             </div>

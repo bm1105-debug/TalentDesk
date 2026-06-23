@@ -164,7 +164,7 @@ function ScheduleForm({ onSuccess }: { onSuccess: () => void }) {
       <div className="space-y-1">
         <Label>Submittal *</Label>
         <select {...register('submittal')}
-          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm">
+          className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#1a1a2e] text-slate-200 px-3 py-1 text-sm shadow-sm">
           <option value="">— select active submittal —</option>
           {submittals.map(s => (
             <option key={s.id} value={s.id}>{s.candidate_name} → {s.job_title}</option>
@@ -177,7 +177,7 @@ function ScheduleForm({ onSuccess }: { onSuccess: () => void }) {
         <div className="space-y-1">
           <Label>Type</Label>
           <select {...register('interview_type')}
-            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm">
+            className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#1a1a2e] text-slate-200 px-3 py-1 text-sm shadow-sm">
             <option value="phone">Phone</option>
             <option value="video">Video</option>
             <option value="in_person">In Person</option>

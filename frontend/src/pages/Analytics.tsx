@@ -58,7 +58,7 @@ function LeaderboardWidget({ rows, currentUserId }: { rows: LeaderboardEntry[]; 
               <td className="py-2.5 text-right text-slate-400">{row.active}</td>
               <td className="py-2.5 text-right text-slate-400">{row.placements}</td>
               <td className="py-2.5 pl-4">
-                <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
                   <div className="h-full bg-green-500 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
                 </div>
               </td>

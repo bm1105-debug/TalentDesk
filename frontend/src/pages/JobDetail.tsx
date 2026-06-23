@@ -125,7 +125,7 @@ function AdvanceStageDialog({ submittal, stages }: { submittal: Submittal; stage
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs text-blue-600 hover:text-blue-700">
+        <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs text-blue-400 hover:text-blue-300">
           <ArrowRight className="h-3.5 w-3.5" /> Advance
         </Button>
       </DialogTrigger>
@@ -137,7 +137,7 @@ function AdvanceStageDialog({ submittal, stages }: { submittal: Submittal; stage
           <div className="space-y-1">
             <Label>Move to stage</Label>
             <select value={stageId} onChange={e => setStageId(Number(e.target.value))}
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm">
+              className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#1a1a2e] text-slate-200 px-3 py-1 text-sm shadow-sm">
               <option value="">— pick stage —</option>
               {stages.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
@@ -245,31 +245,31 @@ function MakeOfferDialog({ submittal }: { submittal: Submittal }) {
             <div className="flex-1 space-y-1">
               <Label>Salary *</Label>
               <input {...register('salary')} type="number" placeholder="75000"
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm" />
+                className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#12121f] text-slate-200 px-3 py-1 text-sm shadow-sm" />
               {errors.salary && <p className="text-xs text-red-500">{errors.salary.message}</p>}
             </div>
             <div className="w-20 space-y-1">
               <Label>Currency</Label>
               <input {...register('currency')} maxLength={3}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm uppercase" />
+                className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#12121f] text-slate-200 px-3 py-1 text-sm shadow-sm uppercase" />
             </div>
           </div>
           <div className="space-y-1">
             <Label>Offer date *</Label>
             <input {...register('offer_date')} type="date"
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm" />
+              className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#12121f] text-slate-200 px-3 py-1 text-sm shadow-sm" />
             {errors.offer_date && <p className="text-xs text-red-500">{errors.offer_date.message}</p>}
           </div>
           <div className="flex gap-2">
             <div className="flex-1 space-y-1">
               <Label>Expiry <span className="text-slate-500 font-normal">(opt)</span></Label>
               <input {...register('expiry_date')} type="date"
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm" />
+                className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#12121f] text-slate-200 px-3 py-1 text-sm shadow-sm" />
             </div>
             <div className="flex-1 space-y-1">
               <Label>Start <span className="text-slate-500 font-normal">(opt)</span></Label>
               <input {...register('start_date')} type="date"
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm" />
+                className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#12121f] text-slate-200 px-3 py-1 text-sm shadow-sm" />
             </div>
           </div>
           {create.isError && (
@@ -589,7 +589,7 @@ export default function JobDetail() {
               {stageFilter && (
                 <button
                   onClick={() => setStageFilter(null)}
-                  className="mt-3 text-xs text-blue-600 hover:underline"
+                  className="mt-3 text-xs text-blue-400 hover:underline"
                 >
                   Clear stage filter
                 </button>
