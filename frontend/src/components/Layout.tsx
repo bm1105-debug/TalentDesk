@@ -183,8 +183,8 @@ function NavItem({ to, label, icon: Icon, collapsed }: {
         )
       }
     >
-      <Icon className="h-4 w-4 flex-shrink-0" style={{ color: 'inherit' }} />
-      {!collapsed && label}
+      <Icon className={`flex-shrink-0 ${collapsed ? 'h-5 w-5' : 'h-4 w-4'}`} style={{ color: 'inherit' }} />
+      {!collapsed && <span className="truncate">{label}</span>}
     </NavLink>
   )
 }
@@ -207,6 +207,8 @@ export default function Layout() {
   const [collapsed, setCollapsed] = useState(() => {
     return localStorage.getItem('td_sidebar_collapsed') === 'true'
   })
+  const [hovered, setHovered] = useState(false)
+  const isExpanded = !collapsed || hovered
   const scrollRef = useRef<HTMLDivElement>(null)
   const [showTopFade, setShowTopFade] = useState(false)
   const [showBottomFade, setShowBottomFade] = useState(true)
@@ -251,24 +253,27 @@ export default function Layout() {
 
       {/* ── Sidebar: direct style injection on the sidebar container ──── */}
       <aside
-        className={cn('flex-shrink-0 flex flex-col transition-all duration-200', collapsed ? 'w-14' : 'w-[220px]')}
+        className={cn('flex-shrink-0 flex flex-col', isExpanded ? 'w-[220px]' : 'w-14')}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
         style={{
-          background:  '#12121f',
+          background:  '#0e0e1b',
           borderRight: '1px solid rgba(255,255,255,0.05)',
-          boxShadow:   '4px 0 24px rgba(0,0,0,0.3)',
-          transition:  'width 0.2s ease',
+          boxShadow:   '4px 0 30px rgba(0,0,0,0.5)',
+          transition:  'width 0.22s cubic-bezier(0.4,0,0.2,1)',
+          zIndex:      20,
         }}
       >
 
         {/* Logo */}
         <div
-          className={cn('h-14 flex items-center flex-shrink-0 gap-2.5', collapsed ? 'justify-center px-2' : 'px-4')}
+          className={cn('h-14 flex items-center flex-shrink-0 gap-2.5 overflow-hidden', isExpanded ? 'px-4' : 'justify-center px-2')}
           style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
         >
           <div className="flex-shrink-0 rounded-lg p-1.5" style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
             <Layers className="h-4 w-4 text-white" aria-hidden="true" />
           </div>
-          {!collapsed && (
+          {isExpanded && (
             <span style={{
               background:           'linear-gradient(135deg, #6366f1, #8b5cf6, #06b6d4)',
               WebkitBackgroundClip: 'text',
@@ -291,29 +296,29 @@ export default function Layout() {
             <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-16 z-10 bg-gradient-to-t from-[#12121f] to-transparent" />
           )}
           <nav className="py-2 px-2 space-y-0.5">
-            <SectionLabel label="Pipeline" collapsed={collapsed} />
+            <SectionLabel label="Pipeline" collapsed={!isExpanded} />
             {PIPELINE_ITEMS.map(item => (
-              <NavItem key={item.to} {...item} collapsed={collapsed} />
+              <NavItem key={item.to} {...item} collapsed={!isExpanded} />
             ))}
 
-            <SectionLabel label="Workflow" collapsed={collapsed} divider />
+            <SectionLabel label="Workflow" collapsed={!isExpanded} divider />
             {WORKFLOW_ITEMS.map(item => (
-              <NavItem key={item.to} {...item} collapsed={collapsed} />
+              <NavItem key={item.to} {...item} collapsed={!isExpanded} />
             ))}
 
-            <SectionLabel label="Insights" collapsed={collapsed} divider />
+            <SectionLabel label="Insights" collapsed={!isExpanded} divider />
             {INSIGHTS_ITEMS.filter(item =>
               !(item.to === '/scorecard' && user?.role === 'ceo')
             ).map(item => (
-              <NavItem key={item.to} {...item} collapsed={collapsed} />
+              <NavItem key={item.to} {...item} collapsed={!isExpanded} />
             ))}
 
-            <SectionLabel label="Admin" collapsed={collapsed} divider />
+            <SectionLabel label="Admin" collapsed={!isExpanded} divider />
             {ADMIN_ITEMS.filter(item => {
               if ((item.to === '/people' || item.to === '/activity') && !isManager) return false
               return true
             }).map(item => (
-              <NavItem key={item.to} {...item} collapsed={collapsed} />
+              <NavItem key={item.to} {...item} collapsed={!isExpanded} />
             ))}
           </nav>
         </div>
@@ -329,7 +334,7 @@ export default function Layout() {
               className={`h-4 w-4 transition-transform duration-200 ${collapsed ? 'rotate-180' : ''}`}
               aria-hidden="true"
             />
-            {!collapsed && <span>Collapse</span>}
+            {isExpanded && <span>Collapse</span>}
           </button>
         </div>
 
