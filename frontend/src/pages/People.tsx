@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Search, ChevronDown, Users, UserPlus, FileText, CheckCircle, TrendingUp } from 'lucide-react'
+import { Search, ChevronDown, Users, UserPlus, FileText, CheckCircle, TrendingUp, BarChart2 } from 'lucide-react'
 import api from '@/api/client'
 import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/button'
@@ -425,10 +425,16 @@ export default function People() {
           {/* Row 2: Source effectiveness | Open jobs */}
           <div className="grid grid-cols-2 gap-4">
             <WidgetCard title="Source Effectiveness" loading={isLoading}>
-              {sources.length === 0
-                ? <Empty />
-                : <div className="space-y-3">{sources.map(s => <SourceBar key={s.source} entry={s} max={maxCandidates} />)}</div>
-              }
+              {sources.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-6 gap-2 text-center">
+                  <div className="h-8 w-8 rounded-full bg-white/[0.04] flex items-center justify-center">
+                    <BarChart2 className="h-4 w-4 text-slate-600" />
+                  </div>
+                  <p className="text-xs text-slate-500">Tag candidates with a source<br />to see breakdown here</p>
+                </div>
+              ) : (
+                <div className="space-y-3">{sources.map(s => <SourceBar key={s.source} entry={s} max={maxCandidates} />)}</div>
+              )}
             </WidgetCard>
             <WidgetCard title="Open Jobs Breakdown" loading={isLoading}>
               {data?.open_jobs ? <OpenJobsWidget data={data.open_jobs} /> : <Empty />}

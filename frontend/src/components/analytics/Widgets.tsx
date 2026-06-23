@@ -138,10 +138,13 @@ export function SourceBar({ entry, max }: { entry: SourceEntry; max: number }) {
 
 // ── Open jobs ──────────────────────────────────────────────────────────────────
 
-function CountRow({ label, value, highlight }: { label: string; value: number; highlight?: boolean }) {
+function CountRow({ label, value, highlight, dot }: { label: string; value: number; highlight?: boolean; dot?: string }) {
   return (
     <div className="flex items-center justify-between py-1">
-      <span className="text-sm text-slate-400 capitalize">{label.replace('_', ' ')}</span>
+      <div className="flex items-center gap-2">
+        {dot && <span className="inline-block h-2 w-2 rounded-full flex-shrink-0" style={{ background: dot }} />}
+        <span className="text-sm text-slate-400 capitalize">{label.replace('_', ' ')}</span>
+      </div>
       <span className={`text-sm font-semibold shrink-0 ${highlight ? 'text-red-400' : 'text-slate-100'}`}>{value}</span>
     </div>
   )
@@ -155,19 +158,19 @@ export function OpenJobsWidget({ data }: { data: OpenJobs }) {
       <div>
         <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">By Status</p>
         <div className="divide-y divide-white/[0.04]">
-          <CountRow label="Open"    value={data.by_status.open} />
-          <CountRow label="On Hold" value={data.by_status.on_hold} />
-          <CountRow label="Draft"   value={data.by_status.draft} />
-          <CountRow label="Filled"  value={data.by_status.filled} />
+          <CountRow label="Open"    value={data.by_status.open}   dot="#6366f1" />
+          <CountRow label="On Hold" value={data.by_status.on_hold} dot="#f59e0b" />
+          <CountRow label="Draft"   value={data.by_status.draft}   dot="#64748b" />
+          <CountRow label="Filled"  value={data.by_status.filled}  dot="#10b981" />
         </div>
       </div>
       <div className="border-t border-white/[0.06] pt-3">
         <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">By Priority</p>
         <div className="divide-y divide-white/[0.04]">
-          <CountRow label="Urgent" value={data.by_priority.urgent} highlight={data.by_priority.urgent > 0} />
-          <CountRow label="High"   value={data.by_priority.high} />
-          <CountRow label="Medium" value={data.by_priority.medium} />
-          <CountRow label="Low"    value={data.by_priority.low} />
+          <CountRow label="Urgent" value={data.by_priority.urgent} highlight={data.by_priority.urgent > 0} dot="#ef4444" />
+          <CountRow label="High"   value={data.by_priority.high}   dot="#f97316" />
+          <CountRow label="Medium" value={data.by_priority.medium} dot="#f59e0b" />
+          <CountRow label="Low"    value={data.by_priority.low}    dot="#64748b" />
         </div>
       </div>
     </div>
@@ -211,13 +214,17 @@ export function InterviewOutcomesWidget({ data }: { data: InterviewOutcomes }) {
     <div className="space-y-3">
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Completed', value: data.completed, color: 'text-green-400 bg-green-500/15 border-green-500/20' },
-          { label: 'Cancelled', value: data.cancelled, color: 'text-amber-400 bg-amber-500/15 border-amber-500/20' },
-          { label: 'No Show',   value: data.no_show,   color: 'text-red-400 bg-red-500/15 border-red-500/20' },
+          { label: 'Completed', value: data.completed, color: '#10b981' },
+          { label: 'Cancelled', value: data.cancelled, color: '#f59e0b' },
+          { label: 'No Show',   value: data.no_show,   color: '#ef4444' },
         ].map(({ label, value, color }) => (
-          <div key={label} className={`rounded-lg border p-3 ${color}`}>
-            <p className="text-xl font-bold">{value}</p>
-            <p className="text-xs mt-0.5">{label}</p>
+          <div key={label} className="rounded-lg p-3" style={{
+            background: `linear-gradient(135deg, ${color}14 0%, rgba(255,255,255,0.012) 100%)`,
+            border:     '1px solid rgba(255,255,255,0.07)',
+            borderLeft: `3px solid ${color}`,
+          }}>
+            <p className="text-xl font-bold" style={{ color }}>{value}</p>
+            <p className="text-xs text-slate-400 mt-0.5">{label}</p>
           </div>
         ))}
       </div>
