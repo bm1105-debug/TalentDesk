@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Search, ChevronDown, Users, UserPlus } from 'lucide-react'
+import { Search, ChevronDown, Users, UserPlus, FileText, CheckCircle, TrendingUp } from 'lucide-react'
 import api from '@/api/client'
 import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/button'
@@ -16,7 +16,7 @@ import type {
   OpenJobs, TimeToFill,
 } from '@/components/analytics/Widgets'
 import {
-  WidgetCard, StatCard, SourceBar, OpenJobsWidget,
+  WidgetCard, SourceBar, OpenJobsWidget,
   PipelineFunnelWidget, InterviewOutcomesWidget, TimeToFillWidget,
   Empty,
 } from '@/components/analytics/Widgets'
@@ -50,17 +50,44 @@ interface UserAnalyticsData {
 
 // ── Recruiter stats widget (replaces leaderboard for per-user view) ────────────
 
+const KPI_CFG = [
+  { label: 'Total Submittals', key: 'total',           color: '#6366f1', icon: FileText,    fmt: (v: number) => String(v) },
+  { label: 'Active',           key: 'active',          color: '#06b6d4', icon: Users,       fmt: (v: number) => String(v) },
+  { label: 'Placed',           key: 'placed',          color: '#10b981', icon: CheckCircle, fmt: (v: number) => String(v) },
+  { label: 'Conversion Rate',  key: 'conversion_rate', color: '#8b5cf6', icon: TrendingUp,  fmt: (v: number) => `${v}%`  },
+] as const
+
 function RecruiterStatsWidget({ data, loading }: { data: RecruiterStats | undefined; loading: boolean }) {
-  const items = [
-    { label: 'Total Submittals', value: data?.total },
-    { label: 'Active',           value: data?.active },
-    { label: 'Placed',           value: data?.placed },
-    { label: 'Conversion Rate',  value: data ? `${data.conversion_rate}%` : undefined },
-  ]
   return (
     <div className="grid grid-cols-4 gap-4">
-      {items.map(({ label, value }) => (
-        <StatCard key={label} label={label} value={value as number | null} loading={loading} />
+      {KPI_CFG.map(({ label, key, color, icon: Icon, fmt }) => (
+        <div
+          key={label}
+          className="rounded-xl p-5 transition-all hover:brightness-110"
+          style={{
+            background: `linear-gradient(135deg, ${color}12 0%, rgba(255,255,255,0.018) 100%)`,
+            border:     '1px solid rgba(255,255,255,0.07)',
+            borderLeft: `3px solid ${color}`,
+            boxShadow:  `0 2px 12px ${color}18`,
+          }}
+        >
+          {loading ? (
+            <>
+              <div className="h-8 w-16 mb-2 animate-pulse bg-white/10 rounded" />
+              <div className="h-3 w-20 animate-pulse bg-white/10 rounded" />
+            </>
+          ) : (
+            <>
+              <div className="flex items-start justify-between mb-2">
+                <p className="text-2xl font-bold text-slate-100 stat-num">
+                  {data ? fmt(data[key]) : '—'}
+                </p>
+                <Icon className="h-4 w-4 mt-1" style={{ color }} />
+              </div>
+              <p className="text-xs text-slate-500">{label}</p>
+            </>
+          )}
+        </div>
       ))}
     </div>
   )
@@ -377,11 +404,19 @@ export default function People() {
       {/* ── Analytics ── */}
       {selectedId && (
         <>
-          {/* Selected employee label */}
+          {/* Selected employee profile strip */}
           {selected && (
-            <p className="text-xs text-slate-500">
-              Showing data for <span className="text-indigo-400 font-medium">{selected.first_name} {selected.last_name}</span>
-            </p>
+            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-[#1a1a2e] border border-white/[0.06]">
+              <div className="h-9 w-9 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center flex-shrink-0">
+                <span className="text-sm font-semibold text-indigo-300">
+                  {selected.first_name[0]}{selected.last_name[0]}
+                </span>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-slate-100">{selected.first_name} {selected.last_name}</p>
+                <p className="text-xs text-slate-500">{selected.role_display}</p>
+              </div>
+            </div>
           )}
 
           {/* Row 1: Recruiter stats */}

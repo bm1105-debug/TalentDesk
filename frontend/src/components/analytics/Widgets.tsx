@@ -190,7 +190,10 @@ export function PipelineFunnelWidget({ stages }: { stages: FunnelStage[] }) {
               <span className="text-slate-500">{s.count}</span>
             </div>
             <div className="h-2.5 w-full bg-white/10 rounded-full overflow-hidden">
-              <div className="h-full bg-indigo-500 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+              <div
+              className="h-full rounded-full transition-all duration-500"
+              style={{ width: `${pct}%`, background: 'linear-gradient(90deg, #7c3aed, #6366f1)' }}
+            />
             </div>
           </div>
         )
