@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.core.validators import MinValueValidator, MaxValueValidator
 from .models import Submittal, SubmittalEvent
 from jobs.models import PipelineStage
 
@@ -30,6 +31,11 @@ class SubmittalSerializer(serializers.ModelSerializer):
     # Annotated in get_queryset — most recent email date for this submittal's candidate
     candidate_last_contacted_at = serializers.DateTimeField(read_only=True, allow_null=True, default=None)
 
+    match_score = serializers.IntegerField(
+        required=False, allow_null=True,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+    )
+
     # Read: human-readable names so the frontend doesn't need extra lookups
     candidate_name    = serializers.SerializerMethodField()
     job_title         = serializers.CharField(source="job.title",          read_only=True)
@@ -42,7 +48,8 @@ class SubmittalSerializer(serializers.ModelSerializer):
             "id", "candidate", "candidate_name",
             "job", "job_title",
             "current_stage", "current_stage_name",
-            "status", "cover_note", "is_shortlisted", "match_score",
+            "status", "cover_note", "is_shortlisted",
+            "match_score",
             "submitted_by", "created_at", "updated_at",
             "candidate_last_contacted_at",
             "events",

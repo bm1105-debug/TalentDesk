@@ -61,6 +61,15 @@ class JobSerializer(serializers.ModelSerializer):
             for i, name in enumerate(stage_names)
         ])
 
+    def validate(self, data):
+        min_s = data.get("salary_min")
+        max_s = data.get("salary_max")
+        if min_s is not None and max_s is not None and min_s > max_s:
+            raise serializers.ValidationError(
+                {"salary_max": "salary_max must be greater than or equal to salary_min."}
+            )
+        return data
+
     def create(self, validated_data):
         # Pop write-only fields before passing to model
         stage_names = validated_data.pop("pipeline_stages", DEFAULT_PIPELINE)

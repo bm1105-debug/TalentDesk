@@ -7,6 +7,7 @@ const BASE = import.meta.env.VITE_API_URL ?? ''
 const api = axios.create({
   baseURL: `${BASE}/api`,
   headers: { 'Content-Type': 'application/json' },
+  timeout: 10000,
 })
 
 // ── Request interceptor: attach access token to every request ──────────────

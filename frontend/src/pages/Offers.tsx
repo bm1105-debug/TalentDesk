@@ -256,10 +256,10 @@ export default function Offers() {
         <div className="flex items-center justify-between text-sm text-slate-400">
           <span>{data.count} offers · page {page} of {totalPages}</span>
           <div className="flex gap-1">
-            <Button variant="outline" size="sm" disabled={!data.previous} onClick={() => setPage(p => p - 1)}>
+            <Button variant="outline" size="sm" aria-label="Previous page" disabled={!data.previous} onClick={() => setPage(p => p - 1)}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <Button variant="outline" size="sm" disabled={!data.next} onClick={() => setPage(p => p + 1)}>
+            <Button variant="outline" size="sm" aria-label="Next page" disabled={!data.next} onClick={() => setPage(p => p + 1)}>
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
