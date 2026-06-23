@@ -141,7 +141,7 @@ function AddJobForm({ onSuccess }: { onSuccess: () => void }) {
 
       <div className="space-y-1">
         <Label>Client *</Label>
-        <select {...register('client')} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm">
+        <select {...register('client')} className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#1a1a2e] text-slate-200 px-3 py-1 text-sm shadow-sm">
           <option value="">— select client —</option>
           {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
@@ -151,7 +151,7 @@ function AddJobForm({ onSuccess }: { onSuccess: () => void }) {
       <div className="grid grid-cols-3 gap-3">
         <div className="space-y-1">
           <Label>Type</Label>
-          <select {...register('job_type')} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm">
+          <select {...register('job_type')} className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#1a1a2e] text-slate-200 px-3 py-1 text-sm shadow-sm">
             <option value="full_time">Full Time</option>
             <option value="part_time">Part Time</option>
             <option value="contract">Contract</option>
@@ -160,7 +160,7 @@ function AddJobForm({ onSuccess }: { onSuccess: () => void }) {
         </div>
         <div className="space-y-1">
           <Label>Status</Label>
-          <select {...register('status')} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm">
+          <select {...register('status')} className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#1a1a2e] text-slate-200 px-3 py-1 text-sm shadow-sm">
             <option value="draft">Draft</option>
             <option value="open">Open</option>
             <option value="on_hold">On Hold</option>
@@ -168,7 +168,7 @@ function AddJobForm({ onSuccess }: { onSuccess: () => void }) {
         </div>
         <div className="space-y-1">
           <Label>Priority</Label>
-          <select {...register('priority')} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm">
+          <select {...register('priority')} className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#1a1a2e] text-slate-200 px-3 py-1 text-sm shadow-sm">
             <option value="low">Low</option>
             <option value="medium">Medium</option>
             <option value="high">High</option>
@@ -208,7 +208,7 @@ function AddJobForm({ onSuccess }: { onSuccess: () => void }) {
       </div>
 
       {create.isError && (
-        <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
+        <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-3 py-2">
           Failed to create job. You may not have permission.
         </p>
       )}
@@ -285,7 +285,7 @@ export default function Jobs() {
       {/* ── Filters ── */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
           <Input className="pl-8" placeholder="Search title, client, location…"
             value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} />
         </div>

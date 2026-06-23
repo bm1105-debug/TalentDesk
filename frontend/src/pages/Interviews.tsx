@@ -207,7 +207,7 @@ function ScheduleForm({ onSuccess }: { onSuccess: () => void }) {
       </div>
 
       {create.isError && (
-        <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
+        <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-3 py-2">
           Failed. Check the date is in the future and the submittal is active.
         </p>
       )}
@@ -304,7 +304,7 @@ function ScoreDialog({ interview }: { interview: Interview }) {
               />
             </div>
             <div className="space-y-1">
-              <Label>Feedback notes <span className="text-gray-400 font-normal">(appended to existing)</span></Label>
+              <Label>Feedback notes <span className="text-slate-500 font-normal">(appended to existing)</span></Label>
               <textarea
                 value={notes}
                 onChange={e => setNotes(e.target.value)}
@@ -313,7 +313,7 @@ function ScoreDialog({ interview }: { interview: Interview }) {
                 className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               />
             </div>
-            {error && <p className="text-sm text-red-600">{error}</p>}
+            {error && <p className="text-sm text-red-400">{error}</p>}
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
               <Button onClick={() => save.mutate()} disabled={save.isPending}>

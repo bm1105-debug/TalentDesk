@@ -166,9 +166,9 @@ function AddCandidateForm({ onSuccess }: { onSuccess: () => void }) {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 max-h-[70vh] overflow-y-auto pr-1">
 
       {/* Parse resume */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5 flex items-center gap-3">
-        <FileUp className="h-4 w-4 text-blue-500 shrink-0" />
-        <span className="text-sm text-blue-700 flex-1">Auto-fill from CV</span>
+      <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-lg px-3 py-2.5 flex items-center gap-3">
+        <FileUp className="h-4 w-4 text-indigo-400 shrink-0" />
+        <span className="text-sm text-indigo-300 flex-1">Auto-fill from CV</span>
         <Button
           type="button"
           size="sm"
@@ -236,7 +236,7 @@ function AddCandidateForm({ onSuccess }: { onSuccess: () => void }) {
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
           <Label>Status</Label>
-          <select {...register('status')} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm">
+          <select {...register('status')} className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#1a1a2e] text-slate-200 px-3 py-1 text-sm shadow-sm">
             <option value="active">Active</option>
             <option value="passive">Passive</option>
             <option value="placed">Placed</option>
@@ -245,7 +245,7 @@ function AddCandidateForm({ onSuccess }: { onSuccess: () => void }) {
         </div>
         <div className="space-y-1">
           <Label>Source</Label>
-          <select {...register('source')} className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm">
+          <select {...register('source')} className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#1a1a2e] text-slate-200 px-3 py-1 text-sm shadow-sm">
             <option value="referral">Referral</option>
             <option value="job_board">Job Board</option>
             <option value="linkedin">LinkedIn</option>
@@ -283,7 +283,7 @@ function AddCandidateForm({ onSuccess }: { onSuccess: () => void }) {
       </div>
 
       <div className="space-y-1">
-        <Label>Skills <span className="text-gray-400 font-normal">(comma-separated)</span></Label>
+        <Label>Skills <span className="text-slate-500 font-normal">(comma-separated)</span></Label>
         <Input {...register('skill_names')} placeholder="python, django, react" />
       </div>
 
@@ -298,16 +298,16 @@ function AddCandidateForm({ onSuccess }: { onSuccess: () => void }) {
       </div>
 
       {duplicate && (
-        <div className="bg-amber-50 border border-amber-300 rounded-md px-3 py-2.5 text-sm">
-          <p className="font-medium text-amber-800">
+        <div className="bg-amber-500/10 border border-amber-500/20 rounded-md px-3 py-2.5 text-sm">
+          <p className="font-medium text-amber-400">
             Duplicate {duplicate.field} — this candidate already exists:
           </p>
-          <p className="text-amber-700 mt-1">
+          <p className="text-amber-300 mt-1">
             <strong>{duplicate.name}</strong> · {duplicate.status}
           </p>
           <button
             type="button"
-            className="text-blue-600 hover:underline text-xs mt-1"
+            className="text-violet-400 hover:underline text-xs mt-1"
             onClick={() => navigate(`/candidates/${duplicate.id}`)}
           >
             View existing profile &rarr;
@@ -316,7 +316,7 @@ function AddCandidateForm({ onSuccess }: { onSuccess: () => void }) {
       )}
 
       {create.isError && !duplicate && (
-        <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
+        <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-3 py-2">
           Failed to create candidate. Please check all fields.
         </p>
       )}
@@ -775,7 +775,7 @@ export default function Candidates() {
       {selected.size > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-gray-900 text-white px-4 py-3 rounded-xl shadow-xl">
           <span className="text-sm font-medium">{selected.size} selected</span>
-          <span className="text-gray-500">·</span>
+          <span className="text-slate-500">·</span>
           <select
             value={bulkStatus}
             onChange={e => setBulkStatus(e.target.value)}
@@ -794,7 +794,7 @@ export default function Candidates() {
             {applyBulk.isPending ? 'Applying…' : 'Apply'}
           </Button>
           <button
-            className="text-gray-400 hover:text-white text-sm"
+            className="text-slate-400 hover:text-white text-sm"
             onClick={() => setSelected(new Set())}
           >
             Deselect all

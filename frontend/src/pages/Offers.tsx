@@ -91,16 +91,16 @@ function OfferActionDialog({
       <DialogContent className="max-w-sm">
         <DialogHeader><DialogTitle>{cfg.title}</DialogTitle></DialogHeader>
         <form onSubmit={handleSubmit(v => mutate.mutateAsync(v))} className="space-y-3">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-slate-300">
             <span className="font-medium">{offer.candidate_name}</span> — {offer.job_title}
-            <span className="text-gray-400"> · {offer.client_name}</span>
+            <span className="text-slate-500"> · {offer.client_name}</span>
           </p>
-          <p className="text-sm text-gray-500">
-            Salary: <span className="font-medium">{fmtSalary(offer.salary, offer.currency)}</span>
+          <p className="text-sm text-slate-400">
+            Salary: <span className="font-medium text-slate-200">{fmtSalary(offer.salary, offer.currency)}</span>
           </p>
 
           <div className="space-y-1">
-            <Label>Notes <span className="text-gray-400 font-normal">(optional)</span></Label>
+            <Label>Notes <span className="text-slate-500 font-normal">(optional)</span></Label>
             <textarea
               {...register('notes')}
               rows={3}
@@ -223,13 +223,13 @@ export default function Offers() {
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => setActionState({ offer: o, action: 'accept' })}
-                        className="flex items-center gap-1 text-xs text-green-600 hover:text-green-800 font-medium px-1.5 py-1 rounded hover:bg-green-50"
+                        className="flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300 font-medium px-1.5 py-1 rounded hover:bg-emerald-500/10"
                       >
                         <CheckCircle className="h-3.5 w-3.5" /> Accept
                       </button>
                       <button
                         onClick={() => setActionState({ offer: o, action: 'decline' })}
-                        className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 font-medium px-1.5 py-1 rounded hover:bg-red-50"
+                        className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 font-medium px-1.5 py-1 rounded hover:bg-red-500/10"
                       >
                         <XCircle className="h-3.5 w-3.5" /> Decline
                       </button>

@@ -112,7 +112,7 @@ function AddSubmittalForm({ onSuccess }: { onSuccess: () => void }) {
       </div>
 
       {create.isError && (
-        <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
+        <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-3 py-2">
           Failed. This candidate may already be submitted to that job.
         </p>
       )}
@@ -159,10 +159,10 @@ function AdvanceStageDialog({ submittal, onDone }: { submittal: Submittal; onDon
       <DialogContent className="max-w-sm">
         <DialogHeader><DialogTitle>Advance Stage</DialogTitle></DialogHeader>
         <div className="space-y-3">
-          <p className="text-sm text-gray-500">
-            {submittal.candidate_name} → <span className="font-medium">{submittal.job_title}</span>
+          <p className="text-sm text-slate-400">
+            {submittal.candidate_name} → <span className="font-medium text-slate-200">{submittal.job_title}</span>
           </p>
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-slate-500">
             Current: {submittal.current_stage_name ?? 'Not started'}
           </p>
 
@@ -178,7 +178,7 @@ function AdvanceStageDialog({ submittal, onDone }: { submittal: Submittal; onDon
           </div>
 
           <div className="space-y-1">
-            <Label>Notes <span className="text-gray-400 font-normal">(optional)</span></Label>
+            <Label>Notes <span className="text-slate-500 font-normal">(optional)</span></Label>
             <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2}
               placeholder="Passed phone screen, strong communication…"
               className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" />
@@ -242,53 +242,53 @@ function MakeOfferDialog({ submittal, onDone }: { submittal: Submittal; onDone: 
       <DialogContent className="max-w-sm">
         <DialogHeader><DialogTitle>Make Offer</DialogTitle></DialogHeader>
         <form onSubmit={handleSubmit(v => create.mutateAsync(v))} className="space-y-3">
-          <p className="text-sm text-gray-500">
-            {submittal.candidate_name} → <span className="font-medium">{submittal.job_title}</span>
+          <p className="text-sm text-slate-400">
+            {submittal.candidate_name} → <span className="font-medium text-slate-200">{submittal.job_title}</span>
           </p>
 
           <div className="flex gap-2">
             <div className="flex-1 space-y-1">
               <Label>Salary *</Label>
               <input {...register('salary')} type="number" placeholder="75000"
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm" />
+                className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#12121f] text-slate-200 px-3 py-1 text-sm shadow-sm" />
               {errors.salary && <p className="text-xs text-red-500">{errors.salary.message}</p>}
             </div>
             <div className="w-20 space-y-1">
               <Label>Currency</Label>
               <input {...register('currency')} placeholder="USD" maxLength={3}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm uppercase" />
+                className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#12121f] text-slate-200 px-3 py-1 text-sm shadow-sm uppercase" />
             </div>
           </div>
 
           <div className="space-y-1">
             <Label>Offer date *</Label>
             <input {...register('offer_date')} type="date"
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm" />
+              className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#12121f] text-slate-200 px-3 py-1 text-sm shadow-sm" />
             {errors.offer_date && <p className="text-xs text-red-500">{errors.offer_date.message}</p>}
           </div>
 
           <div className="flex gap-2">
             <div className="flex-1 space-y-1">
-              <Label>Expiry date <span className="text-gray-400 font-normal">(optional)</span></Label>
+              <Label>Expiry date <span className="text-slate-500 font-normal">(optional)</span></Label>
               <input {...register('expiry_date')} type="date"
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm" />
+                className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#12121f] text-slate-200 px-3 py-1 text-sm shadow-sm" />
             </div>
             <div className="flex-1 space-y-1">
-              <Label>Start date <span className="text-gray-400 font-normal">(optional)</span></Label>
+              <Label>Start date <span className="text-slate-500 font-normal">(optional)</span></Label>
               <input {...register('start_date')} type="date"
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm" />
+                className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#12121f] text-slate-200 px-3 py-1 text-sm shadow-sm" />
             </div>
           </div>
 
           <div className="space-y-1">
-            <Label>Notes <span className="text-gray-400 font-normal">(optional)</span></Label>
+            <Label>Notes <span className="text-slate-500 font-normal">(optional)</span></Label>
             <textarea {...register('notes')} rows={2}
               placeholder="Equity, benefits, remote policy…"
               className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" />
           </div>
 
           {create.isError && (
-            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
+            <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-3 py-2">
               Failed. There may already be a pending offer for this submittal.
             </p>
           )}
@@ -330,7 +330,7 @@ function AddNoteDialog({ submittal, onDone }: { submittal: Submittal; onDone: ()
       <DialogContent className="max-w-sm">
         <DialogHeader><DialogTitle>Add Note</DialogTitle></DialogHeader>
         <div className="space-y-3">
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-slate-400">
             {submittal.candidate_name} · {submittal.job_title}
           </p>
           <textarea value={note} onChange={e => setNote(e.target.value)} rows={4}
@@ -434,8 +434,8 @@ function ChangeStatusDialog({
       <DialogContent className="max-w-sm">
         <DialogHeader><DialogTitle>Close Submittal</DialogTitle></DialogHeader>
         <div className="space-y-3">
-          <p className="text-sm text-gray-500">
-            {submittal.candidate_name} · <span className="font-medium">{submittal.job_title}</span>
+          <p className="text-sm text-slate-400">
+            {submittal.candidate_name} · <span className="font-medium text-slate-200">{submittal.job_title}</span>
           </p>
 
           <div className="space-y-1">
@@ -448,7 +448,7 @@ function ChangeStatusDialog({
           </div>
 
           <div className="space-y-1">
-            <Label>Notes <span className="text-gray-400 font-normal">(optional)</span></Label>
+            <Label>Notes <span className="text-slate-500 font-normal">(optional)</span></Label>
             <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2}
               placeholder="Reason for closing…"
               className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" />
@@ -536,7 +536,7 @@ function StarButton({ submittal }: { submittal: Submittal }) {
         className={`h-4 w-4 transition-colors ${
           submittal.is_shortlisted
             ? 'fill-amber-400 stroke-amber-400'
-            : 'stroke-gray-300 hover:stroke-amber-400'
+            : 'stroke-slate-500 hover:stroke-amber-400'
         }`}
       />
     </button>

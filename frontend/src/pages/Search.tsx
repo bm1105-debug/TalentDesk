@@ -33,7 +33,7 @@ interface SearchResults {
 function CandidateCard({ c, onClick }: { c: CandidateResult; onClick: () => void }) {
   return (
     <button onClick={onClick}
-      className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-blue-50 transition-colors border border-transparent hover:border-blue-100">
+      className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-indigo-500/10 transition-colors border border-transparent hover:border-indigo-500/20">
       <p className="text-sm font-medium text-slate-100">{c.full_name}</p>
       <p className="text-xs text-slate-500">{c.current_title || c.email}</p>
       <div className="mt-1"><StatusBadge status={c.status} /></div>
@@ -44,7 +44,7 @@ function CandidateCard({ c, onClick }: { c: CandidateResult; onClick: () => void
 function JobCard({ j, onClick }: { j: JobResult; onClick: () => void }) {
   return (
     <button onClick={onClick}
-      className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-blue-50 transition-colors border border-transparent hover:border-blue-100">
+      className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-indigo-500/10 transition-colors border border-transparent hover:border-indigo-500/20">
       <p className="text-sm font-medium text-slate-100">{j.title}</p>
       <p className="text-xs text-slate-500">{j.client_name}</p>
       <div className="flex gap-1 mt-1">
@@ -58,7 +58,7 @@ function JobCard({ j, onClick }: { j: JobResult; onClick: () => void }) {
 function ClientCard({ c, onClick }: { c: ClientResult; onClick: () => void }) {
   return (
     <button onClick={onClick}
-      className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-blue-50 transition-colors border border-transparent hover:border-blue-100">
+      className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-indigo-500/10 transition-colors border border-transparent hover:border-indigo-500/20">
       <p className="text-sm font-medium text-slate-100">{c.name}</p>
       <p className="text-xs text-slate-500">{c.industry}</p>
       <div className="mt-1"><StatusBadge status={c.status} /></div>

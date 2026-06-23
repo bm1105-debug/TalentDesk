@@ -44,7 +44,7 @@ export default function Login() {
       <Card className="w-full max-w-sm">
         <CardHeader className="space-y-1">
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-xl font-bold text-blue-700">TalentDesk</span>
+            <span className="text-xl font-bold text-indigo-400">TalentDesk</span>
           </div>
           <CardTitle className="text-xl">Sign in</CardTitle>
           <CardDescription>Enter your credentials to continue</CardDescription>
@@ -82,7 +82,7 @@ export default function Login() {
 
             {/* Server-side error (wrong credentials, network down, etc.) */}
             {serverError && (
-              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
+              <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-3 py-2">
                 {serverError}
               </p>
             )}

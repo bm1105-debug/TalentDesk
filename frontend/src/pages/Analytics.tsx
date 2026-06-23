@@ -50,10 +50,10 @@ function LeaderboardWidget({ rows, currentUserId }: { rows: LeaderboardEntry[]; 
           const isMe = row.id === currentUserId
           const pct  = Math.round((row.placements / maxPlacements) * 100)
           return (
-            <tr key={row.id} className={isMe ? 'bg-blue-50' : ''}>
+            <tr key={row.id} className={isMe ? 'bg-indigo-500/10' : ''}>
               <td className="py-2.5 pr-4 font-medium text-slate-100">
                 {row.name}
-                {isMe && <span className="ml-2 text-xs text-blue-500 font-normal">you</span>}
+                {isMe && <span className="ml-2 text-xs text-indigo-400 font-normal">you</span>}
               </td>
               <td className="py-2.5 text-right text-slate-400">{row.active}</td>
               <td className="py-2.5 text-right text-slate-400">{row.placements}</td>

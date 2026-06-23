@@ -77,9 +77,9 @@ function fmtLastContacted(dt: string | null): string {
 function MatchBadge({ score }: { score: number | null }) {
   if (score === null) return <span className="text-slate-600 text-xs">—</span>
   const cls =
-    score >= 70 ? 'bg-emerald-100 text-emerald-700' :
-    score >= 40 ? 'bg-amber-100 text-amber-700' :
-                  'bg-red-100 text-red-700'
+    score >= 70 ? 'bg-emerald-500/15 text-emerald-400' :
+    score >= 40 ? 'bg-amber-500/15 text-amber-400' :
+                  'bg-red-500/15 text-red-400'
   return (
     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${cls}`}>
       {score}
@@ -98,9 +98,9 @@ function StarButton({ submittal }: { submittal: Submittal }) {
   return (
     <button onClick={() => toggle.mutate()} disabled={toggle.isPending}
       title={submittal.is_shortlisted ? 'Remove from shortlist' : 'Add to shortlist'}
-      className="p-1 rounded hover:bg-amber-50 transition-colors disabled:opacity-40">
+      className="p-1 rounded hover:bg-amber-500/10 transition-colors disabled:opacity-40">
       <Star className={`h-4 w-4 transition-colors ${
-        submittal.is_shortlisted ? 'fill-amber-400 stroke-amber-400' : 'stroke-gray-300 hover:stroke-amber-400'
+        submittal.is_shortlisted ? 'fill-amber-400 stroke-amber-400' : 'stroke-slate-500 hover:stroke-amber-400'
       }`} />
     </button>
   )
@@ -273,7 +273,7 @@ function MakeOfferDialog({ submittal }: { submittal: Submittal }) {
             </div>
           </div>
           {create.isError && (
-            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">
+            <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-3 py-2">
               Failed. There may already be a pending offer.
             </p>
           )}
