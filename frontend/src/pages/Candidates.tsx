@@ -659,8 +659,8 @@ export default function Candidates() {
 
       {/* ── Table view ── */}
       {viewMode === 'table' && (
-        <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.06] overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.06] overflow-x-auto">
+          <table className="w-full min-w-[750px] text-sm">
             <thead className="bg-white/[0.04] border-b border-white/[0.06]">
               <tr>
                 <th className="px-4 py-3 w-10">

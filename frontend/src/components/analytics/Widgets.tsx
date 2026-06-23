@@ -108,8 +108,8 @@ export function SourceBar({ entry, max }: { entry: SourceEntry; max: number }) {
   const placedPct    = max > 0 ? Math.round((entry.placements  / max) * 100) : 0
   return (
     <div className="space-y-1">
-      <div className="flex justify-between text-sm">
-        <span className="font-medium text-slate-300">
+      <div className="flex flex-col gap-0.5">
+        <span className="font-medium text-slate-300 text-sm">
           {SOURCE_LABELS[entry.source] ?? entry.source}
         </span>
         <span className="text-slate-500 text-xs">
@@ -142,7 +142,7 @@ function CountRow({ label, value, highlight }: { label: string; value: number; h
   return (
     <div className="flex items-center justify-between py-1">
       <span className="text-sm text-slate-400 capitalize">{label.replace('_', ' ')}</span>
-      <span className={`text-sm font-semibold ${highlight ? 'text-red-600' : 'text-slate-100'}`}>{value}</span>
+      <span className={`text-sm font-semibold shrink-0 ${highlight ? 'text-red-400' : 'text-slate-100'}`}>{value}</span>
     </div>
   )
 }
@@ -151,7 +151,7 @@ export function OpenJobsWidget({ data }: { data: OpenJobs }) {
   const totalJobs = Object.values(data.by_status).reduce((a, b) => a + b, 0)
   if (totalJobs === 0) return <Empty />
   return (
-    <div className="grid grid-cols-2 gap-x-6">
+    <div className="space-y-3">
       <div>
         <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">By Status</p>
         <div className="divide-y divide-white/[0.04]">
@@ -161,7 +161,7 @@ export function OpenJobsWidget({ data }: { data: OpenJobs }) {
           <CountRow label="Filled"  value={data.by_status.filled} />
         </div>
       </div>
-      <div>
+      <div className="border-t border-white/[0.06] pt-3">
         <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">By Priority</p>
         <div className="divide-y divide-white/[0.04]">
           <CountRow label="Urgent" value={data.by_priority.urgent} highlight={data.by_priority.urgent > 0} />
