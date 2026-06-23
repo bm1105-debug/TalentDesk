@@ -142,11 +142,17 @@ function DashboardSkeleton() {
 
 // ── Status pills ───────────────────────────────────────────────────────────────
 
+const PILL_STYLES: Record<'red' | 'purple' | 'cyan', string> = {
+  red:    'bg-red-500/15    border-red-500/25    text-red-200',
+  purple: 'bg-violet-500/15 border-violet-500/25 text-violet-200',
+  cyan:   'bg-cyan-500/15   border-cyan-500/25   text-cyan-200',
+}
+
 function StatusPill({ label, color, to }: { label: string; color: 'red' | 'purple' | 'cyan'; to?: string }) {
-  void color
-  const base = 'inline-flex items-center gap-1 text-white text-xs px-3 py-1 rounded-full border border-white/15 bg-white/10 transition-colors whitespace-nowrap'
+  const colorCls = PILL_STYLES[color]
+  const base = `inline-flex items-center gap-1 text-xs px-3 py-1 rounded-full border transition-colors whitespace-nowrap ${colorCls}`
   if (to) return (
-    <Link to={to} className={`${base} hover:bg-white/15 cursor-pointer`}>
+    <Link to={to} className={`${base} hover:brightness-125 cursor-pointer`}>
       {label}
       <ArrowRight className="h-3 w-3" aria-hidden="true" />
     </Link>
@@ -173,6 +179,7 @@ const STAT_CARD_STYLES: StatCardConfig[] = [
 
 function TrendBadge({ trend }: { trend: Trend }) {
   if (trend.direction === 'flat') return null
+  if (trend.direction === 'down' && trend.pct >= 95) return null
   const isUp = trend.direction === 'up'
   const Icon = isUp ? TrendingUp : TrendingDown
   return (
@@ -191,16 +198,17 @@ function KpiTile({ label, value, cfg, to, trend }:
   const Icon = cfg.icon
   const inner = (
     <div
-      className="rounded-lg hover:bg-white/5 transition-colors duration-150"
+      className="rounded-lg transition-all duration-150 hover:brightness-110"
       style={{
         padding: '12px 16px',
         height: '90px',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        background: 'rgba(255,255,255,0.025)',
-        border: '1px solid rgba(255,255,255,0.06)',
+        background: `linear-gradient(135deg, ${cfg.borderColor}12 0%, rgba(255,255,255,0.018) 100%)`,
+        border: '1px solid rgba(255,255,255,0.07)',
         borderLeft: `3px solid ${cfg.borderColor}`,
+        boxShadow: `0 2px 12px ${cfg.borderColor}18`,
       }}
     >
       <div className="flex items-center justify-between">
