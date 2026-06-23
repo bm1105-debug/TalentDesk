@@ -288,12 +288,12 @@ export default function Layout() {
         </div>
 
         {/* Nav links — scroll-aware fade overlays */}
-        <div ref={scrollRef} onScroll={handleNavScroll} className="sidebar-scroll flex-1 overflow-y-scroll relative">
+        <div ref={scrollRef} onScroll={handleNavScroll} className="sidebar-scroll flex-1 overflow-y-auto relative">
           {showTopFade && (
-            <div className="pointer-events-none absolute top-0 left-0 right-0 h-10 z-10 bg-gradient-to-b from-[#12121f] to-transparent" />
+            <div className="pointer-events-none absolute top-0 left-0 right-0 h-10 z-10 bg-gradient-to-b from-[#0e0e1b] to-transparent" />
           )}
           {showBottomFade && (
-            <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-16 z-10 bg-gradient-to-t from-[#12121f] to-transparent" />
+            <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-16 z-10 bg-gradient-to-t from-[#0e0e1b] to-transparent" />
           )}
           <nav className="py-2 px-2 space-y-0.5">
             <SectionLabel label="Pipeline" collapsed={!isExpanded} />
@@ -334,7 +334,7 @@ export default function Layout() {
               className={`h-4 w-4 transition-transform duration-200 ${collapsed ? 'rotate-180' : ''}`}
               aria-hidden="true"
             />
-            {isExpanded && <span>Collapse</span>}
+            {!collapsed && <span>Collapse</span>}
           </button>
         </div>
 
