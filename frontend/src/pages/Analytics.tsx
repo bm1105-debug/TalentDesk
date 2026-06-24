@@ -84,7 +84,7 @@ export default function Analytics() {
   const [selectedClient, setSelectedClient] = useState<number | null>(null)
 
   // ── Clients list for filter dropdown ──────────────────────────────────────────
-  const { data: clients = [] } = useQuery<Client[]>({
+  const { data: clients = [], isLoading: clientsLoading } = useQuery<Client[]>({
     queryKey: ['clients-simple'],
     queryFn: () =>
       api.get('/clients/', { params: { page_size: 200 } }).then(r =>
@@ -96,6 +96,7 @@ export default function Analytics() {
   const { data, isLoading } = useQuery<AnalyticsData>({
     queryKey: ['analytics'],
     queryFn: () => api.get('/dashboard/analytics/').then(r => r.data),
+    staleTime: 5 * 60 * 1000,
   })
 
   // ── Client-filtered queries ───────────────────────────────────────────────────
@@ -104,16 +105,19 @@ export default function Analytics() {
   const { data: trendData, isLoading: trendLoading } = useQuery<TimeToFillTrend>({
     queryKey: ['time-to-fill-trend', selectedClient],
     queryFn: () => api.get('/dashboard/time-to-fill-trend/', { params: clientParam }).then(r => r.data),
+    staleTime: 5 * 60 * 1000,
   })
 
   const { data: declineData, isLoading: declineLoading } = useQuery<DeclineReasons>({
     queryKey: ['decline-reasons', selectedClient],
     queryFn: () => api.get('/dashboard/decline-reasons/', { params: clientParam }).then(r => r.data),
+    staleTime: 5 * 60 * 1000,
   })
 
   const { data: diversityData, isLoading: diversityLoading } = useQuery<Diversity>({
     queryKey: ['diversity', selectedClient],
     queryFn: () => api.get('/dashboard/diversity/', { params: clientParam }).then(r => r.data),
+    staleTime: 5 * 60 * 1000,
   })
 
   const pool    = data?.candidate_pool
@@ -132,12 +136,16 @@ export default function Analytics() {
         <select
           value={selectedClient ?? ''}
           onChange={e => setSelectedClient(e.target.value ? Number(e.target.value) : null)}
-          className="h-8 rounded-md border border-white/[0.12] bg-[#12121f] text-slate-200 px-2.5 text-sm flex-1 max-w-xs"
+          disabled={clientsLoading}
+          className="h-8 rounded-md border border-white/[0.12] bg-[#12121f] text-slate-200 px-2.5 text-sm flex-1 max-w-xs disabled:opacity-50"
         >
-          <option value="">All clients</option>
-          {clients.map(c => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
+          {clientsLoading
+            ? <option value="">Loading clients…</option>
+            : <>
+                <option value="">All clients</option>
+                {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </>
+          }
         </select>
         {selectedClient && (
           <>

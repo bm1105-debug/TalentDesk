@@ -1,4 +1,4 @@
-// Dashboard — "My Day" with gradient stat cards, performance sidebar, and rich action panels.
+// Dashboard — "My Day" with Syncfusion-style hiring overview charts.
 
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -6,10 +6,10 @@ import { useForm } from 'react-hook-form'
 import { Link } from 'react-router-dom'
 import {
   Briefcase, FileText, AlertTriangle, Clock,
-  HandCoins, TrendingUp, TrendingDown,
-  CalendarDays, Trophy, ArrowRight,
+  HandCoins, CalendarDays, Trophy, ArrowRight,
   ListTodo, Plus, ChevronDown, ChevronUp,
-  CheckSquare, CalendarCheck, Filter, RotateCcw,
+  CheckSquare, CalendarCheck, Filter,
+  Building2, X,
 } from 'lucide-react'
 import { EmptyState } from '@/components/EmptyState'
 import api from '@/api/client'
@@ -19,10 +19,12 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { StatusBadge } from '@/components/StatusBadge'
+import type { TimeToFillTrend, DeclineReasons, Diversity, SourceEntry } from '@/components/analytics/Widgets'
+import {
+  WidgetCard, SourceBar, TimeToFillTrendWidget, DeclineReasonsWidget, DiversityWidget, Empty,
+} from '@/components/analytics/Widgets'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
-
-interface Trend { direction: 'up' | 'down' | 'flat'; pct: number }
 
 interface InterviewToday {
   id: number
@@ -61,13 +63,6 @@ interface DashboardData {
     stale_submittals_count: number
     pending_offers_count: number
     interviews_today_count: number
-    trends?: {
-      open_jobs: Trend
-      active_submittals: Trend
-      urgent_jobs: Trend
-      overdue_jobs: Trend
-      pending_offers: Trend
-    }
   }
   interviews_today: InterviewToday[]
   upcoming_deadlines: {
@@ -80,6 +75,24 @@ interface ScorecardData {
   stats: { total: number; active: number; placed: number; conversion_rate: number }
   pipeline: { stage: string; count: number }[]
   recent_placements: { candidate: string; job: string; placed_at: string }[]
+}
+
+interface HiringKpis {
+  avg_time_to_fill_days: number | null
+  offers_provided: number
+  offers_accepted: number
+  acceptance_rate: number | null
+  shortlisted_count: number
+  rejected_count: number
+}
+
+interface ClientItem {
+  id: number
+  name: string
+}
+
+interface DashboardAnalytics {
+  source_effectiveness: SourceEntry[] | null
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -97,44 +110,37 @@ function todayLabel() {
 
 // ── Skeleton ───────────────────────────────────────────────────────────────────
 
-function Sk({ className = '' }: { className?: string }) {
-  return <div className={`animate-pulse bg-white/30 rounded-xl ${className}`} />
-}
-
 function DashboardSkeleton() {
   return (
-    <div className="space-y-6">
-      <div className="space-y-1">
-        <div className="h-7 w-52 bg-white/15 rounded animate-pulse" />
-        <div className="h-4 w-40 bg-white/10 rounded animate-pulse" />
-      </div>
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-        {['bg-blue-400','bg-violet-400','bg-red-400','bg-orange-400','bg-emerald-400'].map(c => (
-          <div key={c} className={`${c} rounded-2xl p-5 space-y-4`}>
-            <Sk className="h-8 w-8" /><Sk className="h-8 w-12" /><Sk className="h-3 w-20" />
-          </div>
+    <div className="space-y-4">
+      {/* Greeting hero */}
+      <div className="h-20 rounded-xl bg-white/5 animate-pulse" />
+      {/* Client filter bar */}
+      <div className="h-12 rounded-xl bg-white/5 animate-pulse" />
+      {/* 6 KPI tiles */}
+      <div className="grid grid-cols-6 gap-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="h-24 rounded-lg bg-white/5 animate-pulse" />
         ))}
       </div>
+      {/* Funnel | Trend */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="panel-card h-64 animate-pulse" />
+        <div className="panel-card h-64 animate-pulse" />
+      </div>
+      {/* Source | Decline */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="panel-card h-48 animate-pulse" />
+        <div className="panel-card h-48 animate-pulse" />
+      </div>
+      {/* Diversity */}
+      <div className="panel-card h-48 animate-pulse" />
+      {/* Bottom grid */}
       <div className="grid grid-cols-12 gap-4">
-        <div className="panel-card col-span-4 p-5 space-y-4">
-          <div className="h-4 w-28 bg-white/15 rounded animate-pulse" />
-          <div className="flex justify-center"><div className="w-24 h-24 rounded-full bg-white/10 animate-pulse" /></div>
-          {[1,2,3].map(i => <div key={i} className="h-3 bg-white/10 rounded animate-pulse" />)}
-        </div>
-        <div className="col-span-8 flex flex-col gap-4">
-          <div className="grid grid-cols-2 gap-4">
-            {[1, 2].map(i => (
-              <div key={i} className="panel-card overflow-hidden">
-                <div className="h-10 bg-white/5 animate-pulse" />
-                {[1,2,3].map(j => <div key={j} className="h-12 border-b border-white/[0.04] animate-pulse" />)}
-              </div>
-            ))}
-          </div>
-          <div className="panel-card overflow-hidden">
-            <div className="h-10 bg-white/5 animate-pulse" />
-            {[1,2,3].map(j => <div key={j} className="h-14 border-b border-white/[0.04] animate-pulse" />)}
-          </div>
-        </div>
+        <div className="panel-card col-span-4 h-56 animate-pulse" />
+        <div className="panel-card col-span-4 h-56 animate-pulse" />
+        <div className="panel-card col-span-4 h-56 animate-pulse" />
+        <div className="panel-card col-span-12 h-32 animate-pulse" />
       </div>
     </div>
   )
@@ -161,75 +167,62 @@ function StatusPill({ label, color, to }: { label: string; color: 'red' | 'purpl
   return <span className={base}>{label}</span>
 }
 
-// ── Stat cards ─────────────────────────────────────────────────────────────────
+// ── Hiring KPI tiles ───────────────────────────────────────────────────────────
 
-interface StatCardConfig {
+interface HiringKpiConfig {
   icon: React.ElementType
   borderColor: string
   iconBg: string
   iconText: string
+  suffix?: string
 }
 
-const STAT_CARD_STYLES: StatCardConfig[] = [
-  { icon: Briefcase,     borderColor: '#3b82f6', iconBg: 'bg-blue-500/20',    iconText: 'text-blue-400'    },
-  { icon: FileText,      borderColor: '#8b5cf6', iconBg: 'bg-violet-500/20',  iconText: 'text-violet-400'  },
-  { icon: AlertTriangle, borderColor: '#f59e0b', iconBg: 'bg-amber-500/20',   iconText: 'text-amber-400'   },
-  { icon: Clock,         borderColor: '#ef4444', iconBg: 'bg-red-500/20',     iconText: 'text-red-400'     },
-  { icon: HandCoins,     borderColor: '#10b981', iconBg: 'bg-emerald-500/20', iconText: 'text-emerald-400' },
-  { icon: RotateCcw,     borderColor: '#f97316', iconBg: 'bg-orange-500/20',  iconText: 'text-orange-400'  },
+const HIRING_KPI_CONFIGS: HiringKpiConfig[] = [
+  { icon: Clock,         borderColor: '#3b82f6', iconBg: 'bg-blue-500/20',    iconText: 'text-blue-400',    suffix: 'd'  },
+  { icon: Trophy,        borderColor: '#10b981', iconBg: 'bg-emerald-500/20', iconText: 'text-emerald-400', suffix: '%'  },
+  { icon: HandCoins,     borderColor: '#8b5cf6', iconBg: 'bg-violet-500/20',  iconText: 'text-violet-400'               },
+  { icon: CheckSquare,   borderColor: '#06b6d4', iconBg: 'bg-cyan-500/20',    iconText: 'text-cyan-400'                 },
+  { icon: FileText,      borderColor: '#f59e0b', iconBg: 'bg-amber-500/20',   iconText: 'text-amber-400'                },
+  { icon: AlertTriangle, borderColor: '#ef4444', iconBg: 'bg-red-500/20',     iconText: 'text-red-400'                  },
 ]
 
-function TrendBadge({ trend }: { trend: Trend }) {
-  if (trend.direction === 'flat') return null
-  if (trend.direction === 'down' && trend.pct >= 95) return null
-  const isUp = trend.direction === 'up'
-  const Icon = isUp ? TrendingUp : TrendingDown
-  return (
-    <span
-      className={`flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${isUp ? 'bg-emerald-500/15 text-emerald-400' : 'bg-red-500/15 text-red-400'}`}
-      title={`${isUp ? '+' : '-'}${trend.pct}% vs last week`}
-    >
-      <Icon className="h-3 w-3" />
-      {trend.pct}%
-    </span>
-  )
-}
-
-function KpiTile({ label, value, cfg, to, trend }:
-  { label: string; value: number; cfg: StatCardConfig; to?: string; trend?: Trend }) {
+function HiringKpiTile({ label, value, cfg, loading }: {
+  label: string
+  value: number | null | undefined
+  cfg: HiringKpiConfig
+  loading?: boolean
+}) {
   const Icon = cfg.icon
-  const inner = (
-    <div
-      className="rounded-lg transition-all duration-150 hover:brightness-110"
-      style={{
-        padding: '14px 16px',
-        height: '96px',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        background: `linear-gradient(135deg, ${cfg.borderColor}12 0%, rgba(255,255,255,0.018) 100%)`,
-        border: '1px solid rgba(255,255,255,0.07)',
-        borderLeft: `3px solid ${cfg.borderColor}`,
-        boxShadow: `0 2px 12px ${cfg.borderColor}18`,
-      }}
-    >
-      <div className="flex items-center justify-between">
-        <div className={`${cfg.iconBg} flex items-center justify-center`}
-          style={{ width: 32, height: 32, borderRadius: 7 }}>
-          <Icon className={`h-4 w-4 ${cfg.iconText}`} />
+  return (
+    <div style={{
+      padding: '14px 16px', height: '96px', display: 'flex', flexDirection: 'column',
+      justifyContent: 'space-between', borderRadius: '8px',
+      background: `linear-gradient(135deg, ${cfg.borderColor}12 0%, rgba(255,255,255,0.018) 100%)`,
+      border: '1px solid rgba(255,255,255,0.07)', borderLeft: `3px solid ${cfg.borderColor}`,
+      boxShadow: `0 2px 12px ${cfg.borderColor}18`,
+    }}>
+      <div className={`${cfg.iconBg} flex items-center justify-center`}
+        style={{ width: 32, height: 32, borderRadius: 7 }}>
+        <Icon className={`h-4 w-4 ${cfg.iconText}`} />
+      </div>
+      {loading ? (
+        <div className="space-y-1">
+          <div className="h-6 w-12 bg-white/10 rounded animate-pulse" />
+          <div className="h-2.5 w-20 bg-white/10 rounded animate-pulse" />
         </div>
-        {trend && <TrendBadge trend={trend} />}
-      </div>
-      <div>
-        <p className="stat-num" style={{ fontSize: '28px', fontWeight: 700, color: '#f1f5f9', lineHeight: 1, letterSpacing: '-0.5px' }}>
-          {value}
-        </p>
-        <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', marginTop: '3px' }}>{label}</p>
-      </div>
+      ) : (
+        <div>
+          <p className="stat-num" style={{
+            fontSize: '24px', fontWeight: 700, lineHeight: 1, letterSpacing: '-0.5px',
+            color: value == null ? 'rgba(255,255,255,0.25)' : '#f1f5f9',
+          }}>
+            {value == null ? '—' : `${value}${cfg.suffix ?? ''}`}
+          </p>
+          <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', marginTop: '3px' }}>{label}</p>
+        </div>
+      )}
     </div>
   )
-  if (to) return <Link to={to} className="block">{inner}</Link>
-  return inner
 }
 
 // ── SVG Conversion ring ────────────────────────────────────────────────────────
@@ -290,7 +283,7 @@ function PerformanceSidebar({ data, loading }: { data: ScorecardData | undefined
       {loading ? (
         <div className="space-y-4">
           <div className="w-24 h-24 rounded-full bg-white/10 animate-pulse mx-auto" />
-          {[1,2,3].map(i => <div key={i} className="h-3 bg-white/10 rounded animate-pulse" />)}
+          {[1, 2, 3].map(i => <div key={i} className="h-3 bg-white/10 rounded animate-pulse" />)}
         </div>
       ) : (
         <>
@@ -604,7 +597,6 @@ function TaskPanel() {
 
   return (
     <div className="panel-card overflow-hidden">
-      {/* Header */}
       <div
         className="flex items-center justify-between px-4 py-3"
         style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
@@ -699,7 +691,6 @@ function ConversionFunnel({ stages, loading, error }: {
   const last     = stages[stages.length - 1]
   const endToEnd = max > 0 && last ? Math.round((last.count / max) * 100) : 0
 
-  // Find stage with worst inter-stage conversion to highlight as bottleneck
   const bottleneckIdx = (() => {
     if (stages.length < 2) return -1
     let minPct = Infinity, minIdx = -1
@@ -714,7 +705,6 @@ function ConversionFunnel({ stages, loading, error }: {
 
   return (
     <div className="panel-card" style={{ padding: '14px 16px' }}>
-      {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
           <div style={{ background: 'rgba(139,92,246,0.12)', padding: '5px', borderRadius: '7px', display: 'flex' }}>
@@ -732,7 +722,6 @@ function ConversionFunnel({ stages, loading, error }: {
         )}
       </div>
 
-      {/* Loading skeleton */}
       {loading && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
           {Array.from({ length: 9 }).map((_, i) => (
@@ -756,7 +745,6 @@ function ConversionFunnel({ stages, loading, error }: {
         </p>
       )}
 
-      {/* Stage rows */}
       {!loading && !error && stages.length > 0 && (
         <div>
           {stages.map((s, i) => {
@@ -769,7 +757,6 @@ function ConversionFunnel({ stages, loading, error }: {
 
             return (
               <div key={s.stage}>
-                {/* Conversion divider between stages */}
                 {convPct !== null && (
                   <div style={{ height: '6px', display: 'flex', alignItems: 'center', gap: '5px', paddingLeft: '94px' }}>
                     <div style={{ width: '1px', height: '6px', background: 'rgba(255,255,255,0.07)' }} />
@@ -779,12 +766,10 @@ function ConversionFunnel({ stages, loading, error }: {
                   </div>
                 )}
 
-                {/* Stage row */}
                 <div style={{
                   height: '24px', display: 'flex', alignItems: 'center', gap: '8px',
                   ...(i === bottleneckIdx ? { borderLeft: '3px solid #f97316', paddingLeft: '8px', marginLeft: '-11px' } : {}),
                 }}>
-                  {/* Label */}
                   <span style={{
                     width: '86px', flexShrink: 0, textAlign: 'right',
                     fontSize: '12px', color: i === bottleneckIdx ? '#fb923c' : 'rgba(255,255,255,0.45)', lineHeight: 1,
@@ -800,7 +785,6 @@ function ConversionFunnel({ stages, loading, error }: {
                     )}
                   </span>
 
-                  {/* Centered bar — narrowing creates funnel shape */}
                   <div style={{ flex: 1, position: 'relative', height: '14px', background: 'rgba(255,255,255,0.04)', borderRadius: '3px', overflow: 'hidden' }}>
                     <div style={{
                       position: 'absolute',
@@ -815,7 +799,6 @@ function ConversionFunnel({ stages, loading, error }: {
                     }} />
                   </div>
 
-                  {/* Count */}
                   <span style={{
                     width: '30px', flexShrink: 0, textAlign: 'right',
                     fontSize: '13px', fontWeight: 700, color: '#f1f5f9', lineHeight: 1,
@@ -836,6 +819,15 @@ function ConversionFunnel({ stages, loading, error }: {
 
 export default function Dashboard() {
   const { user } = useAuth()
+  const [selectedClient, setSelectedClient] = useState<number | null>(null)
+
+  const { data: clients = [], isLoading: clientsLoading } = useQuery<ClientItem[]>({
+    queryKey: ['clients-simple'],
+    queryFn: () =>
+      api.get('/clients/', { params: { page_size: 200 } }).then(r =>
+        Array.isArray(r.data) ? r.data : r.data.results
+      ),
+  })
 
   const { data, isLoading, isError } = useQuery<DashboardData>({
     queryKey: ['dashboard'],
@@ -852,10 +844,47 @@ export default function Dashboard() {
   })
 
   const { data: funnelData, isLoading: funnelLoading, isError: funnelError } = useQuery<{ stages: FunnelStage[] }>({
-    queryKey: ['conversion-funnel'],
-    queryFn:  () => api.get('/dashboard/conversion-funnel/').then(r => r.data),
+    queryKey: ['conversion-funnel', selectedClient],
+    queryFn:  () => api.get('/dashboard/conversion-funnel/', { params: clientParam }).then(r => r.data),
+    staleTime: 5 * 60 * 1000,
     retry: 1,
   })
+
+  const clientParam = selectedClient ? { client: selectedClient } : {}
+
+  const { data: kpis, isLoading: kpisLoading } = useQuery<HiringKpis>({
+    queryKey: ['hiring-kpis', selectedClient],
+    queryFn:  () => api.get('/dashboard/hiring-kpis/', { params: clientParam }).then(r => r.data),
+  })
+
+  const { data: trendData, isLoading: trendLoading } = useQuery<TimeToFillTrend>({
+    queryKey: ['time-to-fill-trend', selectedClient],
+    queryFn:  () => api.get('/dashboard/time-to-fill-trend/', { params: clientParam }).then(r => r.data),
+    staleTime: 5 * 60 * 1000,
+  })
+
+  const { data: analyticsData, isLoading: analyticsLoading } = useQuery({
+    queryKey: ['analytics'],
+    queryFn:  () => api.get('/dashboard/analytics/').then(r => r.data),
+    select:   (data): DashboardAnalytics => ({ source_effectiveness: data.source_effectiveness }),
+    staleTime: 5 * 60 * 1000,
+  })
+
+  const { data: declineData, isLoading: declineLoading } = useQuery<DeclineReasons>({
+    queryKey: ['decline-reasons', selectedClient],
+    queryFn:  () => api.get('/dashboard/decline-reasons/', { params: clientParam }).then(r => r.data),
+    staleTime: 5 * 60 * 1000,
+  })
+
+  const { data: diversityData, isLoading: diversityLoading } = useQuery<Diversity>({
+    queryKey: ['diversity', selectedClient],
+    queryFn:  () => api.get('/dashboard/diversity/', { params: clientParam }).then(r => r.data),
+    staleTime: 5 * 60 * 1000,
+  })
+
+  const sources = analyticsData?.source_effectiveness ?? []
+  const maxCandidates = sources.length > 0 ? Math.max(...sources.map(s => s.candidates)) : 1
+  const selectedClientName = clients.find(c => c.id === selectedClient)?.name
 
   if (isLoading) return <DashboardSkeleton />
 
@@ -869,20 +898,19 @@ export default function Dashboard() {
 
   const { summary } = data
 
-  const t = summary.trends
-  const STAT_CARDS = [
-    { label: 'Open Jobs',         value: summary.open_jobs_count,         cfg: STAT_CARD_STYLES[0], to: '/jobs',                 trend: t?.open_jobs        },
-    { label: 'Active Submittals', value: summary.active_submittals_count, cfg: STAT_CARD_STYLES[1], to: '/submittals',           trend: t?.active_submittals },
-    { label: 'Urgent Jobs',       value: summary.urgent_jobs_count,       cfg: STAT_CARD_STYLES[2], to: '/jobs?priority=urgent', trend: t?.urgent_jobs      },
-    { label: 'Overdue Jobs',      value: summary.overdue_jobs_count,      cfg: STAT_CARD_STYLES[3], to: '/jobs?filter=overdue',  trend: t?.overdue_jobs     },
-    { label: 'Pending Offers',    value: summary.pending_offers_count,    cfg: STAT_CARD_STYLES[4], to: '/offers',               trend: t?.pending_offers   },
-    { label: 'Stale Submittals',  value: summary.stale_submittals_count,  cfg: STAT_CARD_STYLES[5], to: '/submittals?filter=stale' },
+  const HIRING_KPIS = [
+    { label: 'Avg Time to Fill', value: kpis?.avg_time_to_fill_days, cfg: HIRING_KPI_CONFIGS[0] },
+    { label: 'Acceptance Rate',  value: kpis?.acceptance_rate,       cfg: HIRING_KPI_CONFIGS[1] },
+    { label: 'Offers Provided',  value: kpis?.offers_provided,       cfg: HIRING_KPI_CONFIGS[2] },
+    { label: 'Offers Accepted',  value: kpis?.offers_accepted,       cfg: HIRING_KPI_CONFIGS[3] },
+    { label: 'Shortlisted',      value: kpis?.shortlisted_count,     cfg: HIRING_KPI_CONFIGS[4] },
+    { label: 'Rejected',         value: kpis?.rejected_count,        cfg: HIRING_KPI_CONFIGS[5] },
   ]
 
   return (
     <div className="space-y-4">
 
-      {/* ── Greeting hero card ── */}
+      {/* ── Greeting hero ── */}
       <div
         className="relative overflow-hidden"
         style={{
@@ -893,27 +921,17 @@ export default function Dashboard() {
           boxShadow:    '0 0 40px rgba(99,102,241,0.08)',
         }}
       >
-        {/* Decorative gradient blob — sits behind content */}
         <div
           className="absolute pointer-events-none z-0"
           style={{
-            top:          '-40px',
-            right:        0,
-            width:        '200px',
-            height:       '200px',
-            borderRadius: '50%',
-            background:   'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)',
+            top: '-40px', right: 0, width: '200px', height: '200px', borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)',
           }}
         />
-
-        {/* Content layer */}
         <div className="relative z-10 space-y-1">
           <h1 style={{
-            fontSize:      '1.1rem',
-            fontWeight:    700,
-            color:         '#f1f5f9',
-            letterSpacing: '-0.5px',
-            textShadow:    '0 0 30px rgba(99,102,241,0.3)',
+            fontSize: '1.1rem', fontWeight: 700, color: '#f1f5f9',
+            letterSpacing: '-0.5px', textShadow: '0 0 30px rgba(99,102,241,0.3)',
           }}>
             {greeting(user?.first_name ?? 'there')}
           </h1>
@@ -936,33 +954,90 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ── Stat tiles ── */}
+      {/* ── Client filter bar ── */}
+      <div className="flex items-center gap-3 bg-[#1a1a2e] border border-white/[0.06] rounded-xl px-4 py-3">
+        <Building2 className="h-4 w-4 text-slate-500 shrink-0" />
+        <span className="text-sm text-slate-400 shrink-0">Filter by client</span>
+        <select
+          value={selectedClient ?? ''}
+          onChange={e => setSelectedClient(e.target.value ? Number(e.target.value) : null)}
+          disabled={clientsLoading}
+          className="h-8 rounded-md border border-white/[0.12] bg-[#12121f] text-slate-200 px-2.5 text-sm flex-1 max-w-xs disabled:opacity-50"
+        >
+          {clientsLoading
+            ? <option value="">Loading clients…</option>
+            : <>
+                <option value="">All clients</option>
+                {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </>
+          }
+        </select>
+        {selectedClient && (
+          <>
+            <span className="text-xs text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 rounded-full px-2.5 py-0.5 shrink-0">
+              {selectedClientName}
+            </span>
+            <button
+              onClick={() => setSelectedClient(null)}
+              className="ml-auto flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300 transition-colors"
+            >
+              <X className="h-3.5 w-3.5" /> Clear
+            </button>
+          </>
+        )}
+        {!selectedClient && (
+          <p className="ml-auto text-xs text-slate-600">
+            Filters: KPIs · Time to Fill · Decline Reasons · Diversity
+          </p>
+        )}
+      </div>
+
+      {/* ── Hiring KPI tiles ── */}
       <div className="grid grid-cols-6 gap-3">
-        {STAT_CARDS.map(s => (
-          <KpiTile key={s.label} label={s.label} value={s.value} cfg={s.cfg} to={s.to} trend={s.trend} />
+        {HIRING_KPIS.map(k => (
+          <HiringKpiTile key={k.label} label={k.label} value={k.value} cfg={k.cfg} loading={kpisLoading} />
         ))}
       </div>
 
-      {/* ── Conversion Funnel ── */}
-      <ConversionFunnel stages={funnelData?.stages ?? []} loading={funnelLoading} error={funnelError} />
+      {/* ── Pipeline Funnel | Time to Fill Trend ── */}
+      <div className="grid grid-cols-2 gap-4">
+        <ConversionFunnel stages={funnelData?.stages ?? []} loading={funnelLoading} error={funnelError} />
+        <WidgetCard title={`Time to Fill Trend${selectedClientName ? ` · ${selectedClientName}` : ''}`} loading={trendLoading}>
+          {trendData ? <TimeToFillTrendWidget data={trendData} /> : <Empty />}
+        </WidgetCard>
+      </div>
 
-      {/* ── Main content: performance + schedule + deadlines + tasks ── */}
+      {/* ── Source Effectiveness | Decline Reasons ── */}
+      <div className="grid grid-cols-2 gap-4">
+        <WidgetCard title="Source Effectiveness" loading={analyticsLoading}>
+          {sources.length === 0
+            ? <Empty />
+            : <div className="space-y-3">{sources.map(s => <SourceBar key={s.source} entry={s} max={maxCandidates} />)}</div>
+          }
+        </WidgetCard>
+        <WidgetCard title={`Decline Reasons${selectedClientName ? ` · ${selectedClientName}` : ''}`} loading={declineLoading}>
+          {declineData ? <DeclineReasonsWidget data={declineData} /> : <Empty />}
+        </WidgetCard>
+      </div>
+
+      {/* ── Diversity Breakdown ── */}
+      <WidgetCard title={`Hires by Gender & Client${selectedClientName ? ` · ${selectedClientName}` : ''}`} loading={diversityLoading}>
+        {diversityData ? <DiversityWidget data={diversityData} /> : <Empty />}
+      </WidgetCard>
+
+      {/* ── My Day: Performance + Schedule + Deadlines + Tasks ── */}
       <div className="grid grid-cols-12 gap-4">
 
-        {/* Performance sidebar — hidden for CEO */}
         {!isCEO && <PerformanceSidebar data={scorecard} loading={scLoading} />}
 
-        {/* Schedule — 6 cols when CEO (full width split), 4 when performance is visible */}
         <div className={isCEO ? 'col-span-6' : 'col-span-4'}>
           <TodaySchedulePanel interviews={data.interviews_today} />
         </div>
 
-        {/* Deadlines */}
         <div className={isCEO ? 'col-span-6' : 'col-span-4'}>
           <UpcomingDeadlinesPanel deadlines={data.upcoming_deadlines} />
         </div>
 
-        {/* Tasks — always full width */}
         <div className="col-span-12">
           <TaskPanel />
         </div>

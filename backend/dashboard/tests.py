@@ -1205,3 +1205,236 @@ class DiversityTests(APITestCase):
         auth(self.client, self.recruiter)
         res = self.client.get(DIVERSITY_URL)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+
+# ── Hiring KPIs Tests ─────────────────────────────────────────────────────────
+
+from offers.models import Offer as OfferModel
+from datetime import date as date_cls
+
+HIRING_KPIS_URL = reverse("dashboard-hiring-kpis")
+
+
+class HiringKpisTests(APITestCase):
+
+    def setUp(self):
+        self.vp        = make_user("vp_kpi@test.com", role=Role.VP)
+        self.recruiter = make_user("rec_kpi@test.com")
+        self.client_obj = Client.objects.create(name="KpiCo", industry="Tech", status="active")
+        self.job        = make_job(self.client_obj, self.vp)
+        self.shortlisted_stage = PipelineStage.objects.create(
+            job=self.job, name="Shortlisted", order=2,
+        )
+
+    def _make_offer(self, submittal, offer_status="pending"):
+        return OfferModel.objects.create(
+            submittal=submittal,
+            salary=50000,
+            offer_date=date_cls.today(),
+            status=offer_status,
+            created_by=self.recruiter,
+        )
+
+    def test_unauthenticated_rejected(self):
+        res = self.client.get(HIRING_KPIS_URL)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_returns_expected_keys(self):
+        auth(self.client, self.vp)
+        res = self.client.get(HIRING_KPIS_URL)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        for key in ("avg_time_to_fill_days", "offers_provided", "offers_accepted",
+                    "acceptance_rate", "shortlisted_count", "rejected_count"):
+            self.assertIn(key, res.data)
+
+    def test_no_data_returns_nulls_and_zeros(self):
+        auth(self.client, self.vp)
+        res = self.client.get(HIRING_KPIS_URL)
+        self.assertIsNone(res.data["avg_time_to_fill_days"])
+        self.assertEqual(res.data["offers_provided"], 0)
+        self.assertEqual(res.data["offers_accepted"], 0)
+        self.assertIsNone(res.data["acceptance_rate"])
+        self.assertEqual(res.data["shortlisted_count"], 0)
+        self.assertEqual(res.data["rejected_count"], 0)
+
+    def test_avg_time_to_fill_nonnegative(self):
+        c = make_candidate(200)
+        make_submittal(c, self.job, self.recruiter, status="placed")
+        auth(self.client, self.vp)
+        res = self.client.get(HIRING_KPIS_URL)
+        self.assertIsNotNone(res.data["avg_time_to_fill_days"])
+        self.assertGreaterEqual(res.data["avg_time_to_fill_days"], 0)
+
+    def test_offers_provided_and_accepted(self):
+        c1, c2 = make_candidate(201), make_candidate(202)
+        s1 = make_submittal(c1, self.job, self.recruiter)
+        s2 = make_submittal(c2, self.job, self.recruiter)
+        self._make_offer(s1, "accepted")
+        self._make_offer(s2, "pending")
+        auth(self.client, self.vp)
+        res = self.client.get(HIRING_KPIS_URL)
+        self.assertEqual(res.data["offers_provided"], 2)
+        self.assertEqual(res.data["offers_accepted"], 1)
+
+    def test_acceptance_rate_100_percent(self):
+        c1, c2 = make_candidate(203), make_candidate(204)
+        s1 = make_submittal(c1, self.job, self.recruiter)
+        s2 = make_submittal(c2, self.job, self.recruiter)
+        self._make_offer(s1, "accepted")
+        self._make_offer(s2, "accepted")
+        auth(self.client, self.vp)
+        res = self.client.get(HIRING_KPIS_URL)
+        self.assertEqual(res.data["acceptance_rate"], 100)
+
+    def test_shortlisted_count(self):
+        c1, c2 = make_candidate(205), make_candidate(206)
+        s1 = make_submittal(c1, self.job, self.recruiter)
+        make_submittal(c2, self.job, self.recruiter)
+        s1.current_stage = self.shortlisted_stage
+        s1.save(update_fields=["current_stage"])
+        auth(self.client, self.vp)
+        res = self.client.get(HIRING_KPIS_URL)
+        self.assertEqual(res.data["shortlisted_count"], 1)
+
+    def test_rejected_count(self):
+        c = make_candidate(207)
+        make_submittal(c, self.job, self.recruiter, status="rejected")
+        auth(self.client, self.vp)
+        res = self.client.get(HIRING_KPIS_URL)
+        self.assertEqual(res.data["rejected_count"], 1)
+
+    def test_client_filter_scopes_offers(self):
+        client2 = Client.objects.create(name="Other", industry="Fin", status="active")
+        job2    = make_job(client2, self.vp)
+        c1, c2  = make_candidate(208), make_candidate(209)
+        s1 = make_submittal(c1, self.job, self.recruiter)
+        s2 = make_submittal(c2, job2,     self.recruiter)
+        self._make_offer(s1, "accepted")
+        self._make_offer(s2, "accepted")
+        auth(self.client, self.vp)
+        res = self.client.get(HIRING_KPIS_URL, {"client": self.client_obj.id})
+        self.assertEqual(res.data["offers_provided"], 1)
+        self.assertEqual(res.data["offers_accepted"], 1)
+
+    def test_recruiter_can_access(self):
+        auth(self.client, self.recruiter)
+        res = self.client.get(HIRING_KPIS_URL)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+    def test_acceptance_rate_null_when_no_offers(self):
+        auth(self.client, self.vp)
+        res = self.client.get(HIRING_KPIS_URL)
+        self.assertIsNone(res.data["acceptance_rate"])
+
+    def test_acceptance_rate_integer_when_offers_exist(self):
+        c = make_candidate(210)
+        s = make_submittal(c, self.job, self.recruiter)
+        self._make_offer(s, "accepted")
+        auth(self.client, self.vp)
+        res = self.client.get(HIRING_KPIS_URL)
+        self.assertIsInstance(res.data["acceptance_rate"], int)
+
+    def test_acceptance_rate_partial(self):
+        c1, c2 = make_candidate(211), make_candidate(212)
+        s1 = make_submittal(c1, self.job, self.recruiter)
+        s2 = make_submittal(c2, self.job, self.recruiter)
+        self._make_offer(s1, "accepted")
+        self._make_offer(s2, "pending")
+        auth(self.client, self.vp)
+        res = self.client.get(HIRING_KPIS_URL)
+        self.assertEqual(res.data["acceptance_rate"], 50)
+
+
+# ── ConversionFunnel client filter tests ──────────────────────────────────────
+
+FUNNEL_URL = reverse("dashboard-conversion-funnel")
+
+
+class ConversionFunnelClientFilterTests(APITestCase):
+
+    def setUp(self):
+        self.vp        = make_user("vp_cf@test.com", role=Role.VP)
+        self.recruiter = make_user("rec_cf@test.com")
+        self.client_a  = Client.objects.create(name="Alpha", industry="Tech", status="active")
+        self.client_b  = Client.objects.create(name="Beta",  industry="Fin",  status="active")
+        self.job_a     = make_job(self.client_a, self.vp)
+        self.job_b     = make_job(self.client_b, self.vp)
+
+    def test_unauthenticated_rejected(self):
+        res = self.client.get(FUNNEL_URL)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_no_filter_returns_sourced_stage(self):
+        auth(self.client, self.vp)
+        res = self.client.get(FUNNEL_URL)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        stage_names = [s["stage"] for s in res.data["stages"]]
+        self.assertIn("Sourced", stage_names)
+
+    def test_client_filter_omits_sourced_stage(self):
+        auth(self.client, self.vp)
+        res = self.client.get(FUNNEL_URL, {"client": self.client_a.id})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        stage_names = [s["stage"] for s in res.data["stages"]]
+        self.assertNotIn("Sourced", stage_names)
+
+    def test_client_filter_excludes_other_client_submittals(self):
+        # submittal for client_a only
+        stage_a = PipelineStage.objects.filter(job=self.job_a).first()
+        stage_b = PipelineStage.objects.filter(job=self.job_b).first()
+        c1, c2 = make_candidate(300), make_candidate(301)
+        s1 = make_submittal(c1, self.job_a, self.recruiter)
+        s2 = make_submittal(c2, self.job_b, self.recruiter)
+        s1.current_stage = stage_a; s1.save(update_fields=["current_stage"])
+        s2.current_stage = stage_b; s2.save(update_fields=["current_stage"])
+        auth(self.client, self.vp)
+        res_a = self.client.get(FUNNEL_URL, {"client": self.client_a.id})
+        screened_a = next(s["count"] for s in res_a.data["stages"] if s["stage"] == "Screened")
+        res_b = self.client.get(FUNNEL_URL, {"client": self.client_b.id})
+        screened_b = next(s["count"] for s in res_b.data["stages"] if s["stage"] == "Screened")
+        # Each client should see only their own submittal
+        self.assertEqual(screened_a, 1)
+        self.assertEqual(screened_b, 1)
+        # Unfiltered should see both
+        res_all = self.client.get(FUNNEL_URL)
+        screened_all = next(s["count"] for s in res_all.data["stages"] if s["stage"] == "Screened")
+        self.assertEqual(screened_all, 2)
+
+
+# ── Stale submittal configurability tests ─────────────────────────────────────
+
+from django.test import override_settings
+
+STALE_MY_DAY_URL = reverse("dashboard-my-day")
+
+
+class StaleSubmittalConfigTests(APITestCase):
+
+    def setUp(self):
+        self.recruiter  = make_user("rec_stale@test.com")
+        self.client_obj = make_client_obj()
+        self.job        = make_job(self.client_obj, self.recruiter)
+        self.candidate  = make_candidate(400)
+
+    def _make_stale_submittal(self, days_old):
+        s = make_submittal(self.candidate, self.job, self.recruiter, status="active")
+        Submittal.objects.filter(pk=s.pk).update(
+            updated_at=timezone.now() - timedelta(days=days_old)
+        )
+        return s
+
+    @override_settings(STALE_SUBMITTAL_DAYS=1)
+    def test_stale_days_from_settings(self):
+        """Submittal updated 2 days ago is stale when threshold is 1 day."""
+        self._make_stale_submittal(days_old=2)
+        auth(self.client, self.recruiter)
+        res = self.client.get(STALE_MY_DAY_URL)
+        self.assertGreaterEqual(res.data["summary"]["stale_submittals_count"], 1)
+
+    @override_settings(STALE_SUBMITTAL_DAYS=14)
+    def test_non_stale_excluded_with_custom_days(self):
+        """Submittal updated 7 days ago is NOT stale when threshold is 14 days."""
+        self._make_stale_submittal(days_old=7)
+        auth(self.client, self.recruiter)
+        res = self.client.get(STALE_MY_DAY_URL)
+        self.assertEqual(res.data["summary"]["stale_submittals_count"], 0)

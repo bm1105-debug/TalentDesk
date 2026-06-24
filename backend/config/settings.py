@@ -12,6 +12,9 @@ SECRET_KEY = os.environ["SECRET_KEY"]
 DEBUG = os.getenv("DEBUG", "False") == "True"
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 
+# Days of inactivity before a submittal is flagged as stale on the dashboard.
+STALE_SUBMITTAL_DAYS = int(os.environ.get("STALE_DAYS", 7))
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",

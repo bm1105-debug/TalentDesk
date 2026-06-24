@@ -75,6 +75,11 @@ class Submittal(models.Model):
         ordering = ["-created_at"]
         # A candidate can only be submitted to a job once
         unique_together = [("candidate", "job")]
+        indexes = [
+            # Composite index covers stale-submittal filter (status + updated_at)
+            # and placed-submittal analytics (status + updated_at range).
+            models.Index(fields=["status", "updated_at"], name="submittal_status_updated_idx"),
+        ]
 
     def __str__(self):
         return f"{self.candidate} → {self.job.title}"

@@ -2,6 +2,7 @@ from django.urls import path
 from .views import (
     MyDayView, AnalyticsView, ScorecardView, UserAnalyticsView,
     ConversionFunnelView, TimeToFillTrendView, DeclineReasonsView, DiversityView,
+    HiringKpisView,
 )
 
 
@@ -14,4 +15,5 @@ urlpatterns = [
     path("dashboard/time-to-fill-trend/",           TimeToFillTrendView.as_view(), name="dashboard-time-to-fill-trend"),
     path("dashboard/decline-reasons/",              DeclineReasonsView.as_view(),  name="dashboard-decline-reasons"),
     path("dashboard/diversity/",                    DiversityView.as_view(),       name="dashboard-diversity"),
+    path("dashboard/hiring-kpis/",                 HiringKpisView.as_view(),      name="dashboard-hiring-kpis"),
 ]

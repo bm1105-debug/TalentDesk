@@ -3,6 +3,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.db.models import Q, Count, Avg, Min, OuterRef, Subquery, ExpressionWrapper, F, DurationField
 from django.db.models.functions import TruncMonth
+from django.conf import settings as django_settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -19,8 +20,6 @@ from offers.models import Offer
 
 
 
-# Submittals with no movement for this many days are flagged as stale
-STALE_DAYS = 7
 
 
 class MyDayView(APIView):
@@ -36,7 +35,7 @@ class MyDayView(APIView):
         user = request.user
         is_manager = user.role in (Role.VP, Role.CEO, Role.TEAM_LEAD)
         now = timezone.now()
-        stale_cutoff = now - timedelta(days=STALE_DAYS)
+        stale_cutoff = now - timedelta(days=django_settings.STALE_SUBMITTAL_DAYS)
 
         # ── Jobs scope ────────────────────────────────────────────────────────
         # Managers see all open jobs; recruiters see only jobs assigned to them
@@ -72,7 +71,7 @@ class MyDayView(APIView):
             ).select_related("candidate", "job", "current_stage", "submitted_by") \
              .prefetch_related("events__from_stage", "events__to_stage", "events__created_by")
 
-        # Stale = active submittal with no movement for STALE_DAYS days
+        # Stale = active submittal with no movement for STALE_SUBMITTAL_DAYS days
         stale_submittals = active_submittals_qs.filter(updated_at__lt=stale_cutoff)
 
         # ── Pending offers (firm-wide — any recruiter needs to chase these) ───
@@ -568,30 +567,41 @@ class ConversionFunnelView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        def at_or_beyond(order):
-            """Unique candidates whose active/placed submittal is at stage order >= threshold."""
-            return (
-                Submittal.objects
-                .filter(
-                    current_stage__order__gte=order,
-                    status__in=['active', 'placed'],
-                )
-                .values('candidate')
-                .distinct()
-                .count()
-            )
+        client_id = request.query_params.get("client")
 
-        stages = [
-            {"stage": "Sourced",       "count": Candidate.objects.count()},
-            {"stage": "Screened",      "count": at_or_beyond(0)},
-            {"stage": "Submitted",     "count": at_or_beyond(1)},
-            {"stage": "Shortlisted",   "count": at_or_beyond(2)},
-            {"stage": "L1 Interview",  "count": at_or_beyond(3)},
-            {"stage": "L2 Interview",  "count": at_or_beyond(4)},
-            {"stage": "Offer Released","count": at_or_beyond(5)},
-            {"stage": "Offer Accepted","count": at_or_beyond(6)},
-            {"stage": "Joined",        "count": Submittal.objects.filter(status='placed').values('candidate').distinct().count()},
+        def at_or_beyond(order):
+            qs = Submittal.objects.filter(
+                current_stage__order__gte=order,
+                status__in=['active', 'placed'],
+            )
+            if client_id:
+                qs = qs.filter(job__client_id=client_id)
+            return qs.values('candidate').distinct().count()
+
+        pipeline_stages = [
+            {"stage": "Screened",       "count": at_or_beyond(0)},
+            {"stage": "Submitted",      "count": at_or_beyond(1)},
+            {"stage": "Shortlisted",    "count": at_or_beyond(2)},
+            {"stage": "L1 Interview",   "count": at_or_beyond(3)},
+            {"stage": "L2 Interview",   "count": at_or_beyond(4)},
+            {"stage": "Offer Released", "count": at_or_beyond(5)},
+            {"stage": "Offer Accepted", "count": at_or_beyond(6)},
         ]
+
+        placed_qs = Submittal.objects.filter(status='placed')
+        if client_id:
+            placed_qs = placed_qs.filter(job__client_id=client_id)
+        joined_count = placed_qs.values('candidate').distinct().count()
+
+        if client_id:
+            # "Sourced" is not client-scoped (candidates are not owned by a single client).
+            stages = pipeline_stages + [{"stage": "Joined", "count": joined_count}]
+        else:
+            stages = (
+                [{"stage": "Sourced", "count": Candidate.objects.count()}]
+                + pipeline_stages
+                + [{"stage": "Joined", "count": joined_count}]
+            )
 
         return Response({"stages": stages})
 
@@ -741,3 +751,49 @@ class DiversityView(APIView):
         totals = {g: sum(c[g] for c in by_client) for g in self.GENDERS}
 
         return Response({"by_client": by_client, "totals": totals})
+
+
+class HiringKpisView(APIView):
+    """
+    GET /api/dashboard/hiring-kpis/
+    KPI tiles for the Syncfusion-style dashboard: time to fill, offer stats, pipeline counts.
+    Optional ?client=<id> filter.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        client_id = request.query_params.get("client")
+
+        # Average time to fill (placed submittals)
+        placed_qs = Submittal.objects.filter(status=Submittal.SubmittalStatus.PLACED)
+        if client_id:
+            placed_qs = placed_qs.filter(job__client_id=client_id)
+        placed_qs = placed_qs.annotate(
+            duration=ExpressionWrapper(F("updated_at") - F("created_at"), output_field=DurationField())
+        )
+        agg = placed_qs.aggregate(avg_dur=Avg("duration"))
+        avg_days = round(agg["avg_dur"].days) if agg["avg_dur"] is not None else None
+
+        # Offers
+        offers_qs = Offer.objects.all()
+        if client_id:
+            offers_qs = offers_qs.filter(submittal__job__client_id=client_id)
+        offers_provided = offers_qs.count()
+        offers_accepted = offers_qs.filter(status=Offer.Status.ACCEPTED).count()
+        acceptance_rate = round(offers_accepted / offers_provided * 100) if offers_provided else None
+
+        # Submittal pipeline counts
+        sub_qs = Submittal.objects.all()
+        if client_id:
+            sub_qs = sub_qs.filter(job__client_id=client_id)
+        shortlisted_count = sub_qs.filter(current_stage__name__iexact="shortlisted").count()
+        rejected_count = sub_qs.filter(status=Submittal.SubmittalStatus.REJECTED).count()
+
+        return Response({
+            "avg_time_to_fill_days": avg_days,
+            "offers_provided":       offers_provided,
+            "offers_accepted":       offers_accepted,
+            "acceptance_rate":       acceptance_rate,
+            "shortlisted_count":     shortlisted_count,
+            "rejected_count":        rejected_count,
+        })

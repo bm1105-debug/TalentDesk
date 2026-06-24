@@ -81,6 +81,13 @@ function sourceLabel(src: string) {
   return map[src] ?? src.replace('_', ' ')
 }
 
+const GENDER_LABELS: Record<string, string> = {
+  female:            'Female',
+  male:              'Male',
+  non_binary:        'Non-binary',
+  prefer_not_to_say: 'Prefer not to say',
+}
+
 
 // ── CopyButton ─────────────────────────────────────────────────────────────────
 
@@ -550,7 +557,7 @@ export default function CandidateDetail() {
                     <dt className="flex items-center gap-1.5 text-slate-400 text-sm w-32 shrink-0 pt-px">
                       <UserCircle className="h-3.5 w-3.5 shrink-0" /> Gender
                     </dt>
-                    <dd className="text-slate-100 text-sm capitalize">{candidate.gender.replace(/_/g, ' ')}</dd>
+                    <dd className="text-slate-100 text-sm">{GENDER_LABELS[candidate.gender] ?? candidate.gender}</dd>
                   </div>
                 )}
                 <div className="flex items-start gap-3">
