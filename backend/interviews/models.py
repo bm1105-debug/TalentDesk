@@ -74,6 +74,9 @@ class Interview(models.Model):
 
     class Meta:
         ordering = ["scheduled_at"]   # chronological — next interview first
+        indexes = [
+            models.Index(fields=["status", "scheduled_at"]),
+        ]
 
     def __str__(self):
         return f"{self.interview_type} | {self.submittal} | {self.scheduled_at:%Y-%m-%d %H:%M}"

@@ -36,6 +36,11 @@ class ActivityLog(models.Model):
 
     class Meta:
         ordering = ["-created_at"]   # most recent first
+        indexes = [
+            models.Index(fields=["model_name", "action"]),
+            models.Index(fields=["user", "created_at"]),
+            models.Index(fields=["created_at"]),
+        ]
 
     def __str__(self):
         user = str(self.user) if self.user else "anonymous"

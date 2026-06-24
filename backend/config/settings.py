@@ -15,6 +15,14 @@ ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 # Days of inactivity before a submittal is flagged as stale on the dashboard.
 STALE_SUBMITTAL_DAYS = int(os.environ.get("STALE_DAYS", 7))
 
+# Only trust the X-Forwarded-For header when deployed behind a known proxy.
+# Set to "True" in production via environment variable.
+TRUST_X_FORWARDED_FOR = os.getenv("TRUST_X_FORWARDED_FOR", "False") == "True"
+
+# Run ActivityLog INSERTs on a background thread to avoid adding write latency
+# to the response path. Set to False in tests that assert log counts synchronously.
+ACTIVITY_LOG_ASYNC = os.getenv("ACTIVITY_LOG_ASYNC", "True") == "True"
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -25,6 +33,7 @@ INSTALLED_APPS = [
     # third-party
     "rest_framework",
     "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
     # local apps
     "users",
@@ -121,7 +130,7 @@ REST_FRAMEWORK = {
 
 # JWT token lifetimes
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(hours=8),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,

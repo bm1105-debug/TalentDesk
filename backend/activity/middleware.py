@@ -1,3 +1,5 @@
+import threading
+from django.conf import settings as django_settings
 from .models import ActivityLog
 
 # Methods that mutate state — GET, HEAD, OPTIONS are read-only and never logged
@@ -16,11 +18,16 @@ METHOD_ACTION_MAP = {
 
 
 def _get_client_ip(request):
-    """Extract real IP — checks X-Forwarded-For first for requests behind a proxy."""
-    forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
-    if forwarded_for:
-        # Header can contain a comma-separated chain; first is the original client
-        return forwarded_for.split(",")[0].strip()
+    """Extract real IP.
+
+    Only reads X-Forwarded-For when TRUST_X_FORWARDED_FOR is True (i.e. the
+    app is deployed behind a known reverse proxy). Without that setting any
+    client can spoof the header and fake their IP in the audit log.
+    """
+    if django_settings.TRUST_X_FORWARDED_FOR:
+        forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+        if forwarded_for:
+            return forwarded_for.split(",")[0].strip()
     return request.META.get("REMOTE_ADDR")
 
 
@@ -72,12 +79,9 @@ class ActivityLogMiddleware:
             return response
 
         model_name, object_id = _parse_url(path)
-
-        # request.user is set by Django's auth middleware before we run
         user = request.user if request.user.is_authenticated else None
 
-        # Write the log entry — a single INSERT, no reads needed
-        ActivityLog.objects.create(
+        kwargs = dict(
             user        = user,
             action      = METHOD_ACTION_MAP[request.method],
             method      = request.method,
@@ -87,5 +91,10 @@ class ActivityLogMiddleware:
             status_code = response.status_code,
             ip_address  = _get_client_ip(request),
         )
+        if django_settings.ACTIVITY_LOG_ASYNC:
+            # Fire-and-forget so the write response is not held up by the INSERT.
+            threading.Thread(target=ActivityLog.objects.create, kwargs=kwargs, daemon=True).start()
+        else:
+            ActivityLog.objects.create(**kwargs)
 
         return response

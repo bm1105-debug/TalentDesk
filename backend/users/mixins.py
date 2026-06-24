@@ -16,14 +16,19 @@ class RoleQuerysetMixin:
     """
 
     def allowed_author_ids(self):
+        if hasattr(self.request, '_pod_ids'):
+            return self.request._pod_ids
         user = self.request.user
         if user.role == Role.RECRUITER:
-            return {user.pk}
-        if user.role == Role.TEAM_LEAD:
+            result = {user.pk}
+        elif user.role == Role.TEAM_LEAD:
             pod = set(user.direct_reports.values_list('pk', flat=True))
             pod.add(user.pk)
-            return pod
-        return None  # AM / CEO — unrestricted
+            result = pod
+        else:
+            result = None  # AM / CEO — unrestricted
+        self.request._pod_ids = result
+        return result
 
     def is_manager(self):
         return self.request.user.role in (Role.VP, Role.CEO)

@@ -1,5 +1,7 @@
 # activity/tests.py
 
+from unittest.mock import MagicMock, patch
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -7,7 +9,7 @@ from rest_framework.test import APITestCase
 from users.models import User, Role
 from clients.models import Client
 from .models import ActivityLog
-from .middleware import _parse_url
+from .middleware import _parse_url, _get_client_ip
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -61,6 +63,7 @@ class ParseUrlTests(APITestCase):
 
 # ── Middleware Integration Tests ──────────────────────────────────────────────
 
+@override_settings(ACTIVITY_LOG_ASYNC=False)
 class MiddlewareLoggingTests(APITestCase):
 
     def setUp(self):
@@ -121,6 +124,7 @@ class MiddlewareLoggingTests(APITestCase):
 
 # ── Activity Log API Tests ────────────────────────────────────────────────────
 
+@override_settings(ACTIVITY_LOG_ASYNC=False)
 class ActivityLogAPITests(APITestCase):
 
     def setUp(self):
@@ -176,6 +180,7 @@ class ActivityLogAPITests(APITestCase):
 
 # ── Audit Log Isolation Tests ─────────────────────────────────────────────────
 
+@override_settings(ACTIVITY_LOG_ASYNC=False)
 class ActivityLogIsolationTests(APITestCase):
     """Team Leads see only pod activity; AM/CEO see all; Recruiters are blocked."""
 
@@ -223,3 +228,60 @@ class ActivityLogIsolationTests(APITestCase):
         auth(self.client, self.rec_out)
         res = self.client.get(reverse("activity-list"))
         self.assertEqual(res.status_code, 403)
+
+
+# ── _get_client_ip unit tests ─────────────────────────────────────────────────
+
+class GetClientIpTests(TestCase):
+    """_get_client_ip respects TRUST_X_FORWARDED_FOR setting."""
+
+    def _request(self, remote_addr, xff=None):
+        req = MagicMock()
+        req.META = {"REMOTE_ADDR": remote_addr}
+        if xff:
+            req.META["HTTP_X_FORWARDED_FOR"] = xff
+        return req
+
+    @override_settings(TRUST_X_FORWARDED_FOR=False)
+    def test_returns_remote_addr_when_trust_disabled(self):
+        req = self._request("1.2.3.4", xff="9.9.9.9, 8.8.8.8")
+        self.assertEqual(_get_client_ip(req), "1.2.3.4")
+
+    @override_settings(TRUST_X_FORWARDED_FOR=True)
+    def test_returns_first_xff_when_trust_enabled(self):
+        req = self._request("1.2.3.4", xff="5.6.7.8, 9.9.9.9")
+        self.assertEqual(_get_client_ip(req), "5.6.7.8")
+
+    @override_settings(TRUST_X_FORWARDED_FOR=True)
+    def test_falls_back_to_remote_addr_when_no_xff(self):
+        req = self._request("1.2.3.4")
+        self.assertEqual(_get_client_ip(req), "1.2.3.4")
+
+
+# ── Background-thread logging test ───────────────────────────────────────────
+
+class BackgroundLoggingTests(APITestCase):
+    """ActivityLogMiddleware fires the INSERT on a daemon thread; the response
+    should not be delayed by the log INSERT."""
+
+    def setUp(self):
+        self.manager = make_user("mgr@bg.com", role=Role.VP)
+        auth(self.client, self.manager)
+
+    @patch("activity.middleware.threading.Thread")
+    def test_log_uses_daemon_thread(self, mock_thread_cls):
+        mock_thread_cls.return_value.start.return_value = None
+        payload = {"name": "BG Corp", "industry": "Tech", "status": "active"}
+        self.client.post(reverse("client-list"), payload, format="json")
+        mock_thread_cls.assert_called_once()
+        kwargs = mock_thread_cls.call_args.kwargs
+        self.assertEqual(kwargs["target"], ActivityLog.objects.create)
+        self.assertTrue(kwargs["daemon"])
+
+    @override_settings(ACTIVITY_LOG_ASYNC=False)
+    def test_synchronous_fallback_creates_log(self):
+        payload = {"name": "Sync Corp", "industry": "Tech", "status": "active"}
+        self.client.post(reverse("client-list"), payload, format="json")
+        self.assertTrue(
+            ActivityLog.objects.filter(model_name="clients", action="create").exists()
+        )

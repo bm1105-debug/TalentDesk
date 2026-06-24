@@ -1,5 +1,5 @@
+from types import SimpleNamespace
 from django.test import TestCase
-from unittest.mock import MagicMock, PropertyMock, patch
 from users.mixins import RoleQuerysetMixin
 from users.models import User, Role
 
@@ -9,8 +9,9 @@ class RoleQuerysetMixinTests(TestCase):
 
     def _mixin_for(self, user):
         mixin = RoleQuerysetMixin()
-        mixin.request = MagicMock()
-        mixin.request.user = user
+        # SimpleNamespace rather than MagicMock — hasattr() must behave
+        # correctly so the _pod_ids cache check works as expected.
+        mixin.request = SimpleNamespace(user=user)
         return mixin
 
     def setUp(self):
@@ -76,3 +77,21 @@ class RoleQuerysetMixinTests(TestCase):
 
     def test_is_manager_false_for_recruiter(self):
         self.assertFalse(self._mixin_for(self.rec1).is_manager())
+
+    def test_allowed_author_ids_cached_on_request(self):
+        """Second call must return the same object without a new DB query."""
+        mixin = self._mixin_for(self.team_lead)
+        self.assertFalse(hasattr(mixin.request, '_pod_ids'))
+        ids1 = mixin.allowed_author_ids()
+        self.assertTrue(hasattr(mixin.request, '_pod_ids'))
+        ids2 = mixin.allowed_author_ids()
+        self.assertIs(ids1, ids2)
+
+    def test_none_result_cached_for_manager(self):
+        """None (VP/CEO) is also cached — hasattr check must handle None correctly."""
+        mixin = self._mixin_for(self.am)
+        result1 = mixin.allowed_author_ids()
+        self.assertIsNone(result1)
+        self.assertTrue(hasattr(mixin.request, '_pod_ids'))
+        result2 = mixin.allowed_author_ids()
+        self.assertIsNone(result2)
