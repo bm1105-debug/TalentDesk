@@ -5,6 +5,7 @@ import { useState, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Sparkles, Download } from 'lucide-react'
 import api from '@/api/client'
+import { timeAgo } from '@/lib/time'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -45,14 +46,6 @@ const QUICK_TEMPLATES = {
 
 function wordCount(text: string) {
   return text.trim().split(/\s+/).filter(Boolean).length
-}
-
-function timeAgo(iso: string) {
-  const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
-  if (diff < 60)    return 'Just now'
-  if (diff < 3600)  return `${Math.floor(diff / 60)} mins ago`
-  if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`
-  return `${Math.floor(diff / 86400)} days ago`
 }
 
 function downloadAll(results: BulkResult[]) {

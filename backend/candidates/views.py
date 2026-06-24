@@ -4,6 +4,7 @@ from django.db.models import Count, Q
 from django.utils import timezone
 
 from rest_framework import viewsets, filters, status
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -79,7 +80,10 @@ class CandidateViewSet(RoleQuerysetMixin, viewsets.ModelViewSet):
         if skill:
             qs = qs.filter(skills__name=skill.strip().lower())
         if min_experience:
-            qs = qs.filter(years_of_experience__gte=int(min_experience))
+            try:
+                qs = qs.filter(years_of_experience__gte=int(min_experience))
+            except ValueError:
+                raise ValidationError({"min_experience": "Must be an integer."})
 
         allowed = self.allowed_author_ids()
         if allowed is not None:

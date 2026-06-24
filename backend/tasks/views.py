@@ -37,14 +37,19 @@ class TaskViewSet(RoleQuerysetMixin, viewsets.ModelViewSet):
         if job:
             qs = qs.filter(related_job_id=job)
         if assignee == "me":
-            qs = qs.filter(assignee=user)
+            qs = qs.filter(assignee=self.request.user)
 
         return qs
 
     def destroy(self, request, *args, **kwargs):
         task = self.get_object()
-        # Only the owner or a manager can delete
-        if task.assignee != request.user and request.user.role not in (Role.VP, Role.CEO):
+        # Assignee, creator, or manager can delete
+        can_delete = (
+            task.assignee == request.user
+            or task.created_by == request.user
+            or request.user.role in (Role.VP, Role.CEO)
+        )
+        if not can_delete:
             return Response(status=status.HTTP_403_FORBIDDEN)
         return super().destroy(request, *args, **kwargs)
 

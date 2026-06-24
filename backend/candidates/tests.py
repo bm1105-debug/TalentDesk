@@ -363,3 +363,8 @@ class CandidateIsolationTests(APITestCase):
         res = self.client.get(reverse("candidate-list"), {"min_experience": 1})
         emails = [r["email"] for r in res.data["results"]]
         self.assertNotIn("nullexp@exp.com", emails)
+
+    def test_min_experience_filter_invalid_returns_400(self):
+        auth(self.client, self.am)
+        res = self.client.get(reverse("candidate-list"), {"min_experience": "abc"})
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)

@@ -3,9 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Bell } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import api from '@/api/client'
-
-// tracks whether the bell has already bounced this session
-const didBounceRef = { current: false }
+import { timeAgo } from '@/lib/time'
 
 interface Notification {
   id: number
@@ -16,20 +14,11 @@ interface Notification {
   created_at: string
 }
 
-function timeAgo(iso: string) {
-  const diff = Date.now() - new Date(iso).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 1)  return 'just now'
-  if (mins < 60) return `${mins}m ago`
-  const hrs = Math.floor(mins / 60)
-  if (hrs < 24)  return `${hrs}h ago`
-  return `${Math.floor(hrs / 24)}d ago`
-}
-
 export default function NotificationBell() {
   const [open, setOpen] = useState(false)
   const [bouncing, setBouncing] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+  const didBounceRef = useRef(false)
   const navigate = useNavigate()
   const qc = useQueryClient()
 
@@ -45,6 +34,7 @@ export default function NotificationBell() {
     queryKey: ['notifications-count'],
     queryFn: () => api.get('/notifications/unread-count/').then(r => r.data),
     refetchInterval: 30000,
+    refetchIntervalInBackground: false,
   })
 
   useEffect(() => {

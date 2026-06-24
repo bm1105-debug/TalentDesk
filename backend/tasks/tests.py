@@ -122,6 +122,18 @@ class TaskPermissionTests(APITestCase):
         res = self.client.delete(reverse("task-detail", args=[self.task_a.id]))
         self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
 
+    def test_creator_can_delete_task_they_assigned_to_another(self):
+        # TL creates a task assigned to recruiter_a; TL should be able to delete it
+        team_lead = make_user("tl_del@tasks.com", role=Role.TEAM_LEAD)
+        self.recruiter_a.reports_to = team_lead
+        self.recruiter_a.save()
+        task = Task.objects.create(
+            title="TL task", assignee=self.recruiter_a, created_by=team_lead
+        )
+        auth(self.client, team_lead)
+        res = self.client.delete(reverse("task-detail", args=[task.id]))
+        self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
+
 
 class TaskFilterTests(APITestCase):
     def setUp(self):
@@ -158,6 +170,21 @@ class TaskFilterTests(APITestCase):
         ids = [t["id"] for t in res.data["results"]]
         self.assertIn(t1.id, ids)
         self.assertEqual(len(ids), 1)
+
+    def test_assignee_me_returns_own_tasks(self):
+        other = make_user("other2@tasks.com")
+        t_mine = make_task(self.recruiter, title="Mine")
+        make_task(other, title="Not mine")
+        res = self.client.get(reverse("task-list"), {"assignee": "me"})
+        self.assertEqual(res.status_code, 200)
+        ids = [t["id"] for t in res.data["results"]]
+        self.assertIn(t_mine.id, ids)
+        self.assertEqual(len(ids), 1)
+
+    def test_assignee_me_returns_empty_when_no_tasks(self):
+        res = self.client.get(reverse("task-list"), {"assignee": "me"})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.data["results"], [])
 
 
 class NotifyDueTasksTests(APITestCase):
