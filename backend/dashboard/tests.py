@@ -943,4 +943,265 @@ class UserAnalyticsTeamLeadTests(APITestCase):
         am = make_user("am2@ua.com", role=Role.VP)
         auth(self.client, am)
         res = self.client.get(ua_url(self.rec_other.id))
+
+
+# ── Time To Fill Trend Tests ───────────────────────────────────────────────────
+
+TREND_URL = reverse("dashboard-time-to-fill-trend")
+
+
+class TimeToFillTrendTests(APITestCase):
+
+    def setUp(self):
+        self.vp        = make_user("vp_ttf@test.com", role=Role.VP)
+        self.recruiter = make_user("rec_ttf@test.com")
+        self.client_obj = make_client_obj()
+        self.job        = make_job(self.client_obj, self.vp)
+
+    def test_unauthenticated_rejected(self):
+        res = self.client.get(TREND_URL)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_recruiter_can_access(self):
+        auth(self.client, self.recruiter)
+        res = self.client.get(TREND_URL)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+    def test_vp_can_access(self):
+        auth(self.client, self.vp)
+        res = self.client.get(TREND_URL)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+    def test_empty_when_no_placements(self):
+        auth(self.client, self.vp)
+        res = self.client.get(TREND_URL)
+        self.assertEqual(res.data["trend"], [])
+        self.assertIsNone(res.data["avg_days"])
+
+    def test_placed_submittal_appears_in_trend(self):
+        c = make_candidate(10)
+        make_submittal(c, self.job, self.recruiter, status="placed")
+        auth(self.client, self.vp)
+        res = self.client.get(TREND_URL)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res.data["trend"]), 1)
+        point = res.data["trend"][0]
+        self.assertIn("month", point)
+        self.assertIn("avg_days", point)
+        self.assertGreaterEqual(point["avg_days"], 0)
+
+    def test_response_has_avg_days(self):
+        c = make_candidate(11)
+        make_submittal(c, self.job, self.recruiter, status="placed")
+        auth(self.client, self.vp)
+        res = self.client.get(TREND_URL)
+        self.assertIsNotNone(res.data["avg_days"])
+        self.assertGreaterEqual(res.data["avg_days"], 0)
+
+    def test_client_filter_excludes_other_clients(self):
+        client2   = Client.objects.create(name="OtherCo", industry="Fin", status="active")
+        job2      = make_job(client2, self.vp)
+        c1, c2    = make_candidate(20), make_candidate(21)
+        make_submittal(c1, self.job,  self.recruiter, status="placed")
+        make_submittal(c2, job2,      self.recruiter, status="placed")
+        auth(self.client, self.vp)
+        res = self.client.get(TREND_URL, {"client": self.client_obj.id})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        # Only 1 placement matches the filter
+        total = sum(p["count"] for p in res.data["trend"])
+        self.assertEqual(total, 1)
+
+    def test_active_submittals_excluded(self):
+        c = make_candidate(30)
+        make_submittal(c, self.job, self.recruiter, status="active")
+        auth(self.client, self.vp)
+        res = self.client.get(TREND_URL)
+        self.assertEqual(res.data["trend"], [])
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+
+# ── Decline Reasons Tests ─────────────────────────────────────────────────────
+
+from submittals.models import Submittal as SubmittalModel
+
+DECLINE_URL = reverse("dashboard-decline-reasons")
+
+
+def make_rejected(candidate, job, submitted_by, reason=""):
+    s = Submittal.objects.create(
+        candidate=candidate, job=job, submitted_by=submitted_by, status="rejected",
+    )
+    if reason:
+        s.rejection_reason = reason
+        s.save(update_fields=["rejection_reason"])
+    return s
+
+
+class DeclineReasonsTests(APITestCase):
+
+    def setUp(self):
+        self.vp        = make_user("vp_dr@test.com", role=Role.VP)
+        self.recruiter = make_user("rec_dr@test.com")
+        self.client_obj = make_client_obj()
+        self.job        = make_job(self.client_obj, self.vp)
+
+    def test_unauthenticated_rejected(self):
+        res = self.client.get(DECLINE_URL)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_empty_when_no_rejections(self):
+        auth(self.client, self.vp)
+        res = self.client.get(DECLINE_URL)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data["reasons"], [])
+        self.assertEqual(res.data["total"], 0)
+
+    def test_counts_structured_reasons(self):
+        c1, c2, c3 = make_candidate(40), make_candidate(41), make_candidate(42)
+        make_rejected(c1, self.job, self.recruiter, "salary")
+        make_rejected(c2, self.job, self.recruiter, "salary")
+        make_rejected(c3, self.job, self.recruiter, "experience")
+        auth(self.client, self.vp)
+        res = self.client.get(DECLINE_URL)
+        self.assertEqual(res.data["total"], 3)
+        reasons_map = {r["reason"]: r["count"] for r in res.data["reasons"]}
+        self.assertEqual(reasons_map["salary"], 2)
+        self.assertEqual(reasons_map["experience"], 1)
+
+    def test_blank_reason_excluded(self):
+        c = make_candidate(50)
+        make_rejected(c, self.job, self.recruiter, "")  # no structured reason
+        auth(self.client, self.vp)
+        res = self.client.get(DECLINE_URL)
+        self.assertEqual(res.data["total"], 0)
+
+    def test_percent_sums_to_100(self):
+        c1, c2 = make_candidate(60), make_candidate(61)
+        make_rejected(c1, self.job, self.recruiter, "salary")
+        make_rejected(c2, self.job, self.recruiter, "culture")
+        auth(self.client, self.vp)
+        res = self.client.get(DECLINE_URL)
+        total_pct = sum(r["percent"] for r in res.data["reasons"])
+        self.assertAlmostEqual(total_pct, 100.0, places=0)
+
+    def test_client_filter(self):
+        client2 = Client.objects.create(name="OtherFirm", industry="HR", status="active")
+        job2    = make_job(client2, self.vp)
+        c1, c2  = make_candidate(70), make_candidate(71)
+        make_rejected(c1, self.job, self.recruiter, "technical")
+        make_rejected(c2, job2,     self.recruiter, "culture")
+        auth(self.client, self.vp)
+        res = self.client.get(DECLINE_URL, {"client": self.client_obj.id})
+        self.assertEqual(res.data["total"], 1)
+        self.assertEqual(res.data["reasons"][0]["reason"], "technical")
+
+    def test_recruiter_can_access(self):
+        auth(self.client, self.recruiter)
+        res = self.client.get(DECLINE_URL)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+
+# ── Diversity Tests ───────────────────────────────────────────────────────────
+
+DIVERSITY_URL = reverse("dashboard-diversity")
+
+
+def make_placed_submittal(candidate, job, submitted_by):
+    return Submittal.objects.create(
+        candidate=candidate, job=job, submitted_by=submitted_by, status="placed",
+    )
+
+
+def make_candidate_with_gender(n, gender):
+    from candidates.models import Candidate as CandidateModel
+    return CandidateModel.objects.create(
+        first_name="Gen", last_name=f"Doe{n}",
+        email=f"gen{n}@example.com", phone=f"80000000{n:02d}",
+        gender=gender,
+    )
+
+
+class DiversityTests(APITestCase):
+
+    def setUp(self):
+        self.vp        = make_user("vp_div@test.com", role=Role.VP)
+        self.recruiter = make_user("rec_div@test.com")
+        self.client_obj = make_client_obj()
+        self.job        = make_job(self.client_obj, self.vp)
+
+    def test_unauthenticated_rejected(self):
+        res = self.client.get(DIVERSITY_URL)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_empty_when_no_placements(self):
+        auth(self.client, self.vp)
+        res = self.client.get(DIVERSITY_URL)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data["by_client"], [])
+        self.assertEqual(res.data["totals"]["female"], 0)
+
+    def test_counts_by_gender_per_client(self):
+        f1 = make_candidate_with_gender(1, "female")
+        f2 = make_candidate_with_gender(2, "female")
+        m1 = make_candidate_with_gender(3, "male")
+        make_placed_submittal(f1, self.job, self.recruiter)
+        make_placed_submittal(f2, self.job, self.recruiter)
+        make_placed_submittal(m1, self.job, self.recruiter)
+        auth(self.client, self.vp)
+        res = self.client.get(DIVERSITY_URL)
+        self.assertEqual(len(res.data["by_client"]), 1)
+        row = res.data["by_client"][0]
+        self.assertEqual(row["female"], 2)
+        self.assertEqual(row["male"], 1)
+        self.assertEqual(row["non_binary"], 0)
+
+    def test_totals_aggregate_across_clients(self):
+        client2 = Client.objects.create(name="Beta Corp", industry="Fin", status="active")
+        job2    = make_job(client2, self.vp)
+        f1 = make_candidate_with_gender(10, "female")
+        m1 = make_candidate_with_gender(11, "male")
+        make_placed_submittal(f1, self.job, self.recruiter)
+        make_placed_submittal(m1, job2,     self.recruiter)
+        auth(self.client, self.vp)
+        res = self.client.get(DIVERSITY_URL)
+        self.assertEqual(res.data["totals"]["female"], 1)
+        self.assertEqual(res.data["totals"]["male"], 1)
+
+    def test_blank_gender_excluded(self):
+        from candidates.models import Candidate as CandidateModel
+        c = CandidateModel.objects.create(
+            first_name="No", last_name="Gender",
+            email="nogender@x.com", phone="9111111111",
+            gender="",
+        )
+        make_placed_submittal(c, self.job, self.recruiter)
+        auth(self.client, self.vp)
+        res = self.client.get(DIVERSITY_URL)
+        self.assertEqual(res.data["by_client"], [])
+
+    def test_client_filter(self):
+        client2 = Client.objects.create(name="Gamma Ltd", industry="Retail", status="active")
+        job2    = make_job(client2, self.vp)
+        f1 = make_candidate_with_gender(20, "female")
+        m1 = make_candidate_with_gender(21, "male")
+        make_placed_submittal(f1, self.job, self.recruiter)
+        make_placed_submittal(m1, job2,     self.recruiter)
+        auth(self.client, self.vp)
+        res = self.client.get(DIVERSITY_URL, {"client": self.client_obj.id})
+        self.assertEqual(len(res.data["by_client"]), 1)
+        self.assertEqual(res.data["by_client"][0]["female"], 1)
+        self.assertEqual(res.data["by_client"][0]["male"], 0)
+
+    def test_active_submittals_excluded(self):
+        c = make_candidate_with_gender(30, "female")
+        Submittal.objects.create(
+            candidate=c, job=self.job, submitted_by=self.recruiter, status="active",
+        )
+        auth(self.client, self.vp)
+        res = self.client.get(DIVERSITY_URL)
+        self.assertEqual(res.data["by_client"], [])
+
+    def test_recruiter_can_access(self):
+        auth(self.client, self.recruiter)
+        res = self.client.get(DIVERSITY_URL)
         self.assertEqual(res.status_code, status.HTTP_200_OK)

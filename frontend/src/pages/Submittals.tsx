@@ -399,14 +399,19 @@ function ChangeStatusDialog({
   submittal: Submittal
   onDone: (hint?: RejectionHint) => void
 }) {
-  const [open,   setOpen]   = useState(false)
-  const [value,  setValue]  = useState<'rejected' | 'withdrawn'>('rejected')
-  const [notes,  setNotes]  = useState('')
+  const [open,            setOpen]           = useState(false)
+  const [value,           setValue]          = useState<'rejected' | 'withdrawn'>('rejected')
+  const [notes,           setNotes]          = useState('')
+  const [rejectionReason, setRejectionReason] = useState('')
   const qc = useQueryClient()
 
   const change = useMutation({
     mutationFn: () =>
-      api.post(`/submittals/${submittal.id}/change-status/`, { status: value, notes }).then(r => r.data),
+      api.post(`/submittals/${submittal.id}/change-status/`, {
+        status: value,
+        notes,
+        ...(value === 'rejected' && rejectionReason ? { rejection_reason: rejectionReason } : {}),
+      }).then(r => r.data),
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ['submittals'] })
       setOpen(false)
@@ -440,12 +445,27 @@ function ChangeStatusDialog({
 
           <div className="space-y-1">
             <Label>Reason</Label>
-            <select value={value} onChange={e => setValue(e.target.value as 'rejected' | 'withdrawn')}
+            <select value={value} onChange={e => { setValue(e.target.value as 'rejected' | 'withdrawn'); setRejectionReason('') }}
               className="h-9 w-full rounded-md border border-white/[0.12] bg-[#1a1a2e] text-slate-200 px-3 py-1 text-sm">
               <option value="rejected">Rejected by client</option>
               <option value="withdrawn">Candidate withdrew</option>
             </select>
           </div>
+
+          {value === 'rejected' && (
+            <div className="space-y-1">
+              <Label>Rejection reason <span className="text-slate-500 font-normal">(optional)</span></Label>
+              <select value={rejectionReason} onChange={e => setRejectionReason(e.target.value)}
+                className="h-9 w-full rounded-md border border-white/[0.12] bg-[#1a1a2e] text-slate-200 px-3 py-1 text-sm">
+                <option value="">— select a reason —</option>
+                <option value="salary">Salary mismatch</option>
+                <option value="experience">Insufficient experience</option>
+                <option value="technical">Technical fit</option>
+                <option value="culture">Culture fit</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          )}
 
           <div className="space-y-1">
             <Label>Notes <span className="text-slate-500 font-normal">(optional)</span></Label>

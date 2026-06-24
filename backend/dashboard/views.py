@@ -1,7 +1,8 @@
 from datetime import timedelta
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.db.models import Q, Count, Avg, Min, OuterRef, Subquery
+from django.db.models import Q, Count, Avg, Min, OuterRef, Subquery, ExpressionWrapper, F, DurationField
+from django.db.models.functions import TruncMonth
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -593,3 +594,150 @@ class ConversionFunnelView(APIView):
         ]
 
         return Response({"stages": stages})
+
+
+class TimeToFillTrendView(APIView):
+    """
+    GET /api/dashboard/time-to-fill-trend/
+    Returns avg days from submittal creation to placement, grouped by month,
+    for the last 6 months. Optional ?client=<id> filter.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        six_months_ago = timezone.now() - timedelta(days=180)
+
+        qs = Submittal.objects.filter(
+            status="placed",
+            updated_at__gte=six_months_ago,
+        )
+
+        client_id = request.query_params.get("client")
+        if client_id:
+            qs = qs.filter(job__client_id=client_id)
+
+        duration_expr = ExpressionWrapper(
+            F("updated_at") - F("created_at"),
+            output_field=DurationField(),
+        )
+
+        rows = (
+            qs
+            .annotate(month=TruncMonth("updated_at"))
+            .values("month")
+            .annotate(avg_duration=Avg(duration_expr), count=Count("id"))
+            .order_by("month")
+        )
+
+        trend = []
+        for row in rows:
+            if row["avg_duration"] is None:
+                continue
+            trend.append({
+                "month":    row["month"].strftime("%b %Y"),
+                "avg_days": max(row["avg_duration"].days, 0),
+                "count":    row["count"],
+            })
+
+        overall = qs.aggregate(avg_duration=Avg(duration_expr))
+        overall_days = (
+            max(overall["avg_duration"].days, 0)
+            if overall["avg_duration"] is not None else None
+        )
+
+        return Response({"trend": trend, "avg_days": overall_days})
+
+
+REASON_LABELS = {
+    "salary":     "Salary mismatch",
+    "experience": "Insufficient experience",
+    "technical":  "Technical fit",
+    "culture":    "Culture fit",
+    "other":      "Other",
+}
+
+
+class DeclineReasonsView(APIView):
+    """
+    GET /api/dashboard/decline-reasons/
+    Returns a breakdown of rejection reasons for closed submittals.
+    Optional ?client=<id> filter.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        qs = Submittal.objects.filter(
+            status=Submittal.SubmittalStatus.REJECTED,
+            rejection_reason__gt="",  # only structured reasons, not blank
+        )
+
+        client_id = request.query_params.get("client")
+        if client_id:
+            qs = qs.filter(job__client_id=client_id)
+
+        rows = (
+            qs
+            .values("rejection_reason")
+            .annotate(count=Count("id"))
+            .order_by("-count")
+        )
+
+        total = sum(r["count"] for r in rows)
+        reasons = [
+            {
+                "reason":  row["rejection_reason"],
+                "label":   REASON_LABELS.get(row["rejection_reason"], row["rejection_reason"].title()),
+                "count":   row["count"],
+                "percent": round(row["count"] / total * 100, 1) if total else 0,
+            }
+            for row in rows
+        ]
+
+        return Response({"reasons": reasons, "total": total})
+
+
+class DiversityView(APIView):
+    """
+    GET /api/dashboard/diversity/
+    Returns hired (placed) candidate gender breakdown per client.
+    Optional ?client=<id> filter narrows to a single client.
+    """
+    permission_classes = [IsAuthenticated]
+
+    GENDERS = ["female", "male", "non_binary", "prefer_not_to_say"]
+
+    def get(self, request):
+        qs = Submittal.objects.filter(
+            status="placed",
+            candidate__gender__gt="",
+        ).select_related("job__client", "candidate")
+
+        client_id = request.query_params.get("client")
+        if client_id:
+            qs = qs.filter(job__client_id=client_id)
+
+        # Aggregate: client × gender → count
+        rows = (
+            qs
+            .values("job__client_id", "job__client__name", "candidate__gender")
+            .annotate(count=Count("id"))
+        )
+
+        # Pivot into {client_id: {name, female, male, ...}}
+        clients: dict = {}
+        for row in rows:
+            cid  = row["job__client_id"]
+            name = row["job__client__name"]
+            g    = row["candidate__gender"]
+            if cid not in clients:
+                clients[cid] = {"client_id": cid, "client": name,
+                                 "female": 0, "male": 0, "non_binary": 0, "prefer_not_to_say": 0}
+            if g in clients[cid]:
+                clients[cid][g] += row["count"]
+
+        by_client = sorted(clients.values(), key=lambda x: x["client"])
+
+        # Firm-wide totals
+        totals = {g: sum(c[g] for c in by_client) for g in self.GENDERS}
+
+        return Response({"by_client": by_client, "totals": totals})

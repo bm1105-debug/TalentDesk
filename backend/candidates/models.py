@@ -32,6 +32,12 @@ class Candidate(models.Model):
         DIRECT     = "direct",      "Direct Application"
         OTHER      = "other",       "Other"
 
+    class Gender(models.TextChoices):
+        FEMALE           = "female",           "Female"
+        MALE             = "male",             "Male"
+        NON_BINARY       = "non_binary",       "Non-binary"
+        PREFER_NOT_TO_SAY = "prefer_not_to_say", "Prefer not to say"
+
     # Core identity — both email and phone are dedup keys
     first_name = models.CharField(max_length=100)
     last_name  = models.CharField(max_length=100)
@@ -51,6 +57,13 @@ class Candidate(models.Model):
 
     # Skills — many candidates share skills, many skills belong to many candidates
     skills = models.ManyToManyField(SkillTag, blank=True, related_name="candidates")
+
+    gender = models.CharField(
+        max_length=20,
+        choices=Gender.choices,
+        blank=True,
+        default="",
+    )
 
     years_of_experience = models.PositiveSmallIntegerField(null=True, blank=True, db_index=True)
 

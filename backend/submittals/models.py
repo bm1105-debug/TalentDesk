@@ -37,6 +37,21 @@ class Submittal(models.Model):
         default=SubmittalStatus.ACTIVE,
     )
 
+    class RejectionReason(models.TextChoices):
+        SALARY     = "salary",     "Salary mismatch"
+        EXPERIENCE = "experience", "Insufficient experience"
+        TECHNICAL  = "technical",  "Technical fit"
+        CULTURE    = "culture",    "Culture fit"
+        OTHER      = "other",      "Other"
+
+    # Structured reason captured when status is set to rejected — used for analytics
+    rejection_reason = models.CharField(
+        max_length=20,
+        choices=RejectionReason.choices,
+        blank=True,
+        default="",
+    )
+
     # Recruiter marks this submittal as a top pick for the role (per-submittal, not per-candidate)
     is_shortlisted = models.BooleanField(default=False, db_index=True)
 

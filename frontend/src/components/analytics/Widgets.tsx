@@ -1,5 +1,11 @@
 // Shared analytics widget components used by Analytics.tsx and People.tsx
 
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, PieChart, Pie, Cell,
+  BarChart, Bar, Legend,
+} from 'recharts'
+
 // ── Types ──────────────────────────────────────────────────────────────────────
 
 export interface CandidatePool {
@@ -42,6 +48,50 @@ export interface TimeToFillJob {
 export interface TimeToFill {
   avg_days: number | null
   by_job: TimeToFillJob[]
+}
+
+export interface TimeToFillTrendPoint {
+  month: string
+  avg_days: number
+  count: number
+}
+
+export interface TimeToFillTrend {
+  trend:    TimeToFillTrendPoint[]
+  avg_days: number | null
+}
+
+export interface DeclineReason {
+  reason:  string
+  label:   string
+  count:   number
+  percent: number
+}
+
+export interface DeclineReasons {
+  reasons: DeclineReason[]
+  total:   number
+}
+
+export interface DiversityRow {
+  client_id:        number
+  client:           string
+  female:           number
+  male:             number
+  non_binary:       number
+  prefer_not_to_say: number
+}
+
+export interface DiversityTotals {
+  female:           number
+  male:             number
+  non_binary:       number
+  prefer_not_to_say: number
+}
+
+export interface Diversity {
+  by_client: DiversityRow[]
+  totals:    DiversityTotals
 }
 
 export const SOURCE_LABELS: Record<string, string> = {
@@ -238,7 +288,244 @@ export function InterviewOutcomesWidget({ data }: { data: InterviewOutcomes }) {
   )
 }
 
-// ── Time to fill ───────────────────────────────────────────────────────────────
+// ── Time to fill trend (Recharts AreaChart) ────────────────────────────────────
+
+const TREND_TOOLTIP_STYLE = {
+  contentStyle: {
+    background: '#1a1a2e',
+    border: '1px solid rgba(255,255,255,0.08)',
+    borderRadius: 8,
+    color: '#f1f5f9',
+    fontSize: 12,
+  },
+  labelStyle: { color: '#94a3b8', marginBottom: 4 },
+  itemStyle: { color: '#a5b4fc' },
+}
+
+export function TimeToFillTrendWidget({ data }: { data: TimeToFillTrend }) {
+  if (data.trend.length === 0) return <Empty />
+  return (
+    <div className="space-y-3">
+      {data.avg_days !== null && (
+        <div className="flex items-baseline gap-2 pb-3 border-b border-white/[0.06]">
+          <span className="text-2xl font-bold text-slate-100">{data.avg_days}</span>
+          <span className="text-sm text-slate-500">days avg to fill (last 6 months)</span>
+        </div>
+      )}
+      <ResponsiveContainer width="100%" height={180}>
+        <AreaChart data={data.trend} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+          <defs>
+            <linearGradient id="ttfGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%"  stopColor="#6366f1" stopOpacity={0.35} />
+              <stop offset="95%" stopColor="#6366f1" stopOpacity={0.03} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+          <XAxis
+            dataKey="month"
+            tick={{ fill: '#64748b', fontSize: 11 }}
+            axisLine={false}
+            tickLine={false}
+          />
+          <YAxis
+            tick={{ fill: '#64748b', fontSize: 11 }}
+            axisLine={false}
+            tickLine={false}
+            tickFormatter={(v: number) => `${v}d`}
+          />
+          <Tooltip
+            {...TREND_TOOLTIP_STYLE}
+            formatter={(value) => [`${value} days`, 'Avg time to fill']}
+          />
+          <Area
+            type="monotone"
+            dataKey="avg_days"
+            stroke="#6366f1"
+            strokeWidth={2}
+            fill="url(#ttfGradient)"
+            dot={{ fill: '#6366f1', r: 3, strokeWidth: 0 }}
+            activeDot={{ r: 5, fill: '#a5b4fc', strokeWidth: 0 }}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+      <p className="text-xs text-slate-600 text-right">{data.trend.length} month{data.trend.length !== 1 ? 's' : ''} of data</p>
+    </div>
+  )
+}
+
+// ── Decline reasons (PieChart) ────────────────────────────────────────────────
+
+const REASON_COLORS: Record<string, string> = {
+  salary:     '#6366f1',
+  experience: '#8b5cf6',
+  technical:  '#06b6d4',
+  culture:    '#f59e0b',
+  other:      '#64748b',
+}
+
+const PIE_TOOLTIP_STYLE = {
+  contentStyle: {
+    background: '#1a1a2e',
+    border: '1px solid rgba(255,255,255,0.08)',
+    borderRadius: 8,
+    color: '#f1f5f9',
+    fontSize: 12,
+  },
+  itemStyle: { color: '#a5b4fc' },
+}
+
+function DeclineLegend({ reasons }: { reasons: DeclineReason[] }) {
+  return (
+    <div className="space-y-2 mt-2">
+      {reasons.map(r => (
+        <div key={r.reason} className="flex items-center justify-between text-sm">
+          <div className="flex items-center gap-2">
+            <span className="inline-block h-2 w-2 rounded-full flex-shrink-0"
+              style={{ background: REASON_COLORS[r.reason] ?? '#64748b' }} />
+            <span className="text-slate-400">{r.label}</span>
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
+            <span className="text-slate-500 text-xs">{r.count}</span>
+            <span className="font-semibold text-slate-200 w-10 text-right">{r.percent}%</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+export function DeclineReasonsWidget({ data }: { data: DeclineReasons }) {
+  if (data.total === 0) return <Empty />
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-baseline gap-2 pb-3 border-b border-white/[0.06]">
+        <span className="text-2xl font-bold text-slate-100">{data.total}</span>
+        <span className="text-sm text-slate-500">rejections with structured reason</span>
+      </div>
+      <div className="flex gap-4 items-center">
+        <ResponsiveContainer width={160} height={160}>
+          <PieChart>
+            <Pie
+              data={data.reasons}
+              dataKey="count"
+              nameKey="label"
+              cx="50%"
+              cy="50%"
+              innerRadius={45}
+              outerRadius={72}
+              paddingAngle={2}
+              strokeWidth={0}
+            >
+              {data.reasons.map(r => (
+                <Cell key={r.reason} fill={REASON_COLORS[r.reason] ?? '#64748b'} />
+              ))}
+            </Pie>
+            <Tooltip
+              {...PIE_TOOLTIP_STYLE}
+              formatter={(value, name) => [`${value} (${data.reasons.find(r => r.label === name)?.percent ?? 0}%)`, name]}
+            />
+          </PieChart>
+        </ResponsiveContainer>
+        <div className="flex-1 min-w-0">
+          <DeclineLegend reasons={data.reasons} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Diversity breakdown (stacked BarChart) ─────────────────────────────────────
+
+const DIVERSITY_COLORS = {
+  female:            '#8b5cf6',
+  male:              '#6366f1',
+  non_binary:        '#06b6d4',
+  prefer_not_to_say: '#475569',
+}
+
+const DIVERSITY_LABELS = {
+  female:            'Female',
+  male:              'Male',
+  non_binary:        'Non-binary',
+  prefer_not_to_say: 'Prefer not to say',
+}
+
+const DIV_TOOLTIP_STYLE = {
+  contentStyle: {
+    background: '#1a1a2e',
+    border: '1px solid rgba(255,255,255,0.08)',
+    borderRadius: 8,
+    color: '#f1f5f9',
+    fontSize: 12,
+  },
+  labelStyle: { color: '#94a3b8', marginBottom: 4 },
+}
+
+export function DiversityWidget({ data }: { data: Diversity }) {
+  if (data.by_client.length === 0) return <Empty />
+
+  const total = Object.values(data.totals).reduce((a, b) => a + b, 0)
+
+  return (
+    <div className="space-y-4">
+      {/* Totals strip */}
+      <div className="grid grid-cols-4 gap-3 pb-3 border-b border-white/[0.06]">
+        {(Object.keys(DIVERSITY_COLORS) as Array<keyof typeof DIVERSITY_COLORS>).map(g => (
+          <div key={g} className="rounded-lg p-3" style={{
+            background: `linear-gradient(135deg, ${DIVERSITY_COLORS[g]}14 0%, rgba(255,255,255,0.012) 100%)`,
+            border:     '1px solid rgba(255,255,255,0.07)',
+            borderLeft: `3px solid ${DIVERSITY_COLORS[g]}`,
+          }}>
+            <p className="text-xl font-bold" style={{ color: DIVERSITY_COLORS[g] }}>{data.totals[g]}</p>
+            <p className="text-xs text-slate-400 mt-0.5">{DIVERSITY_LABELS[g]}</p>
+            {total > 0 && (
+              <p className="text-xs mt-1" style={{ color: DIVERSITY_COLORS[g], opacity: 0.7 }}>
+                {Math.round(data.totals[g] / total * 100)}%
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Stacked bar chart per client */}
+      <ResponsiveContainer width="100%" height={data.by_client.length * 52 + 40}>
+        <BarChart
+          data={data.by_client}
+          layout="vertical"
+          margin={{ top: 0, right: 16, left: 8, bottom: 0 }}
+          barSize={18}
+        >
+          <CartesianGrid horizontal={false} strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+          <XAxis
+            type="number"
+            tick={{ fill: '#64748b', fontSize: 11 }}
+            axisLine={false}
+            tickLine={false}
+            allowDecimals={false}
+          />
+          <YAxis
+            type="category"
+            dataKey="client"
+            tick={{ fill: '#94a3b8', fontSize: 12 }}
+            axisLine={false}
+            tickLine={false}
+            width={90}
+          />
+          <Tooltip {...DIV_TOOLTIP_STYLE} />
+          <Legend
+            wrapperStyle={{ fontSize: 11, color: '#64748b', paddingTop: 8 }}
+            formatter={(value) => DIVERSITY_LABELS[value as keyof typeof DIVERSITY_LABELS] ?? value}
+          />
+          {(Object.keys(DIVERSITY_COLORS) as Array<keyof typeof DIVERSITY_COLORS>).map(g => (
+            <Bar key={g} dataKey={g} stackId="div" fill={DIVERSITY_COLORS[g]} name={g} radius={g === 'prefer_not_to_say' ? [0, 3, 3, 0] : [0, 0, 0, 0]} />
+          ))}
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
+// ── Time to fill (by job, bar list) ───────────────────────────────────────────
 
 export function TimeToFillWidget({ data }: { data: TimeToFill }) {
   if (data.by_job.length === 0) return <Empty />

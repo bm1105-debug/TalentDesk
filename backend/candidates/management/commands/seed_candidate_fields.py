@@ -47,6 +47,10 @@ EDUCATION_BY_ROLE = {
 NOTICE_PERIODS = [0, 15, 30, 45, 60, 90]
 NOTICE_WEIGHTS  = [5,  10, 45, 10, 20, 10]
 
+# Realistic distribution for Indian tech hiring market
+GENDERS  = ["female", "male", "non_binary", "prefer_not_to_say"]
+GENDER_W = [38,       55,     4,            3]
+
 # CTC ranges in LPA keyed roughly by seniority tier
 CTC_BANDS = [
     (2.0,  6.0),   # junior / 0-2 yrs
@@ -132,11 +136,15 @@ class Command(BaseCommand):
                 c.location = random.choice(LOCATIONS)
                 changed = True
 
+            if not c.gender:
+                c.gender = random.choices(GENDERS, weights=GENDER_W)[0]
+                changed = True
+
             if changed:
                 c.save(update_fields=[
                     'years_of_experience', 'education',
                     'current_ctc', 'expected_ctc',
-                    'notice_period_days', 'location',
+                    'notice_period_days', 'location', 'gender',
                 ])
                 updated += 1
 

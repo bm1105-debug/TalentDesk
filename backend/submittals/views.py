@@ -149,7 +149,8 @@ class SubmittalViewSet(RoleQuerysetMixin, viewsets.ModelViewSet):
         serializer = StatusChangeSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        new_status = serializer.validated_data["status"]
+        new_status       = serializer.validated_data["status"]
+        rejection_reason = serializer.validated_data.get("rejection_reason", "")
 
         # Write the event first — always log before mutating state
         SubmittalEvent.objects.create(
@@ -160,7 +161,8 @@ class SubmittalViewSet(RoleQuerysetMixin, viewsets.ModelViewSet):
         )
 
         submittal.status = new_status
-        submittal.save(update_fields=["status", "updated_at"])
+        submittal.rejection_reason = rejection_reason if new_status == Submittal.SubmittalStatus.REJECTED else ""
+        submittal.save(update_fields=["status", "rejection_reason", "updated_at"])
 
         response_data = SubmittalSerializer(submittal, context={"request": request}).data
         return Response(response_data)

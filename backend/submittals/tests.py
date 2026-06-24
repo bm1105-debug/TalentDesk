@@ -433,3 +433,60 @@ class MatchScoreTests(APITestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         ids = [r["id"] for r in res.data["results"]]
         self.assertLess(ids.index(s2.id), ids.index(s1.id))
+
+
+# ── Rejection Reason Tests ────────────────────────────────────────────────────
+
+def make_submittal_active(candidate, job, submitted_by):
+    return Submittal.objects.create(
+        candidate=candidate, job=job, submitted_by=submitted_by, status="active",
+    )
+
+
+class RejectionReasonTests(APITestCase):
+
+    def setUp(self):
+        self.vp        = make_user("vp_rr@test.com", role=Role.VP)
+        self.recruiter = make_user("rec_rr@test.com")
+        client_obj     = make_client()
+        self.job       = make_job(client_obj, self.vp)
+        self.candidate = make_candidate(email="rr@test.com", phone="9010000001")
+        self.submittal = make_submittal_active(self.candidate, self.job, self.recruiter)
+        auth(self.client, self.vp)
+
+    def _close(self, new_status, rejection_reason=""):
+        return self.client.post(
+            reverse("submittal-change-status", args=[self.submittal.id]),
+            {"status": new_status, "rejection_reason": rejection_reason},
+            format="json",
+        )
+
+    def test_rejection_reason_saved_on_reject(self):
+        res = self._close("rejected", "salary")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.submittal.refresh_from_db()
+        self.assertEqual(self.submittal.rejection_reason, "salary")
+
+    def test_rejection_reason_cleared_on_withdraw(self):
+        self.submittal.rejection_reason = "salary"
+        self.submittal.save(update_fields=["rejection_reason"])
+        res = self._close("withdrawn", "salary")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.submittal.refresh_from_db()
+        self.assertEqual(self.submittal.rejection_reason, "")
+
+    def test_rejection_reason_optional(self):
+        res = self._close("rejected")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.submittal.refresh_from_db()
+        self.assertEqual(self.submittal.rejection_reason, "")
+
+    def test_invalid_rejection_reason_rejected(self):
+        res = self._close("rejected", "nonsense")
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_rejection_reason_in_serializer_output(self):
+        self._close("rejected", "experience")
+        res = self.client.get(reverse("submittal-detail", args=[self.submittal.id]))
+        self.assertIn("rejection_reason", res.data)
+        self.assertEqual(res.data["rejection_reason"], "experience")

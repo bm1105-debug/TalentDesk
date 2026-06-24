@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   ChevronLeft, Upload, Download, Trash2, FileText, Loader2, FileDown,
   Mail, Phone, MapPin, Share2, Calendar, Copy, Pencil, MoreHorizontal,
-  Plus, Send, CheckCircle, X, ExternalLink,
+  Plus, Send, CheckCircle, X, ExternalLink, UserCircle,
 } from 'lucide-react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import api from '@/api/client'
@@ -38,6 +38,7 @@ interface Candidate {
   current_ctc: string | null
   expected_ctc: string | null
   notice_period_days: number | null
+  gender: string
   created_at: string
 }
 
@@ -542,6 +543,14 @@ export default function CandidateDetail() {
                     <dd className="text-slate-100 text-sm">
                       {candidate.notice_period_days === 0 ? 'Immediate' : `${candidate.notice_period_days} days`}
                     </dd>
+                  </div>
+                )}
+                {candidate.gender && (
+                  <div className="flex items-start gap-3">
+                    <dt className="flex items-center gap-1.5 text-slate-400 text-sm w-32 shrink-0 pt-px">
+                      <UserCircle className="h-3.5 w-3.5 shrink-0" /> Gender
+                    </dt>
+                    <dd className="text-slate-100 text-sm capitalize">{candidate.gender.replace(/_/g, ' ')}</dd>
                   </div>
                 )}
                 <div className="flex items-start gap-3">

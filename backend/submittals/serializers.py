@@ -48,7 +48,7 @@ class SubmittalSerializer(serializers.ModelSerializer):
             "id", "candidate", "candidate_name",
             "job", "job_title",
             "current_stage", "current_stage_name",
-            "status", "cover_note", "is_shortlisted",
+            "status", "rejection_reason", "cover_note", "is_shortlisted",
             "match_score",
             "submitted_by", "created_at", "updated_at",
             "candidate_last_contacted_at",
@@ -56,8 +56,9 @@ class SubmittalSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = [
             "submitted_by", "created_at", "updated_at",
-            "current_stage",   # stage is only moved via advance action, never set directly
-            "status",          # status is only changed via change-status action
+            "current_stage",    # stage is only moved via advance action, never set directly
+            "status",           # status is only changed via change-status action
+            "rejection_reason", # set only via change-status action
         ]
 
     def get_candidate_name(self, obj):
@@ -110,5 +111,9 @@ class NoteSerializer(serializers.Serializer):
 
 class StatusChangeSerializer(serializers.Serializer):
     """Payload for POST /submittals/{id}/change-status/"""
-    status = serializers.ChoiceField(choices=Submittal.SubmittalStatus.choices)
-    notes  = serializers.CharField(required=False, allow_blank=True, default="")
+    status           = serializers.ChoiceField(choices=Submittal.SubmittalStatus.choices)
+    notes            = serializers.CharField(required=False, allow_blank=True, default="")
+    rejection_reason = serializers.ChoiceField(
+        choices=Submittal.RejectionReason.choices,
+        required=False, allow_blank=True, default="",
+    )
