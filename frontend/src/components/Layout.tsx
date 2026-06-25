@@ -347,7 +347,7 @@ export default function Layout() {
 
         {/* ── Header: direct style injection on the header bar ──────── */}
         <header
-          className="h-14 flex items-center justify-between px-6 shrink-0"
+          className="shrink-0 flex flex-col"
           style={{
             background:     'rgba(8, 8, 15, 0.85)',
             backdropFilter: 'blur(12px)',
@@ -355,6 +355,12 @@ export default function Layout() {
             boxShadow:      '0 4px 24px rgba(0,0,0,0.2)',
           }}
         >
+          {/* Blue accent stripe */}
+          <div style={{
+            height: '2px',
+            background: 'linear-gradient(90deg, #1d4ed8 0%, #3b82f6 50%, transparent 100%)',
+          }} />
+          <div className="h-14 flex items-center justify-between px-6">
           {/* Left: breadcrumb on detail routes, plain title on list routes */}
           {isDetail && parentLabel ? (
             <nav className="flex items-center gap-1.5 min-w-0 shrink-0" aria-label="Breadcrumb">
@@ -370,7 +376,7 @@ export default function Layout() {
               </span>
             </nav>
           ) : (
-            <TitleTag className="text-lg font-semibold text-slate-100 shrink-0" style={{ margin: 0, letterSpacing: '-0.3px' }}>
+            <TitleTag className="text-xl font-bold text-slate-100 shrink-0" style={{ margin: 0, letterSpacing: '-0.5px' }}>
               {pageTitle}
             </TitleTag>
           )}
@@ -449,6 +455,7 @@ export default function Layout() {
                 </DropdownMenu.Content>
               </DropdownMenu.Portal>
             </DropdownMenu.Root>
+          </div>
           </div>
         </header>
 

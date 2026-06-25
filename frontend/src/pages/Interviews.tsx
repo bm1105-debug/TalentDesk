@@ -633,8 +633,8 @@ export default function Interviews() {
 
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button size="sm" className="gap-1.5">
-                <Plus className="h-4 w-4" /> Schedule Interview
+              <Button size="sm" className="gap-1.5 rounded-full px-4" style={{ boxShadow: '0 0 16px rgba(37,99,235,0.4)' }}>
+                <Plus className="h-3.5 w-3.5" /> Schedule Interview
               </Button>
             </DialogTrigger>
             <DialogContent>
