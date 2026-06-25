@@ -71,7 +71,7 @@ function SectionHeader({ icon: Icon, label, count }: {
 }) {
   return (
     <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-100">
-      <Icon className="h-4 w-4 text-slate-500" />
+      <Icon className="h-4 w-4 text-blue-400" />
       <span className="text-sm font-semibold text-slate-300">{label}</span>
       <span className="ml-auto text-xs text-slate-500">{count} result{count !== 1 ? 's' : ''}</span>
     </div>
@@ -130,7 +130,7 @@ export default function Search() {
       {/* Empty state */}
       {trimmed.length < 2 && (
         <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <SearchIcon className="h-8 w-8 text-slate-600" />
+          <SearchIcon className="h-8 w-8 text-blue-400/50" />
           <p className="text-sm text-slate-500">Search across candidates, jobs, and clients</p>
         </div>
       )}

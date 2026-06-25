@@ -91,7 +91,7 @@ export default function ActivityLog() {
       </div>
 
       {/* Table */}
-      <div className="bg-[#0d1117] rounded-xl border border-white/[0.06] overflow-hidden">
+      <div className="bg-[#0d1117] rounded-xl border border-white/[0.06] overflow-hidden" style={{ borderTop: '2px solid #2563eb' }}>
         {isLoading && (
           <div className="py-10 text-center text-sm text-slate-500">Loading…</div>
         )}

@@ -135,7 +135,14 @@ export function WidgetCard({ title, children, loading }: {
 
 export function StatCard({ label, value, loading }: { label: string; value?: number | null; loading: boolean }) {
   return (
-    <div className="bg-[#0d1117] rounded-xl border border-white/[0.06] p-5">
+    <div style={{
+      background: 'linear-gradient(135deg, rgba(37,99,235,0.07) 0%, rgba(255,255,255,0.018) 100%)',
+      border: '1px solid rgba(255,255,255,0.07)',
+      borderLeft: '3px solid #2563eb',
+      borderRadius: '12px',
+      padding: '18px 20px',
+      boxShadow: '0 2px 12px rgba(37,99,235,0.10)',
+    }}>
       {loading ? (
         <>
           <Skeleton className="h-8 w-16 mb-2" />
@@ -143,8 +150,8 @@ export function StatCard({ label, value, loading }: { label: string; value?: num
         </>
       ) : (
         <>
-          <p className="text-2xl font-bold text-slate-100">{value ?? '—'}</p>
-          <p className="text-sm text-slate-500 mt-0.5">{label}</p>
+          <p className="stat-num" style={{ fontSize: '28px', fontWeight: 800, color: '#f1f5f9', lineHeight: 1, letterSpacing: '-0.5px' }}>{value ?? '—'}</p>
+          <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)', marginTop: '5px' }}>{label}</p>
         </>
       )}
     </div>
