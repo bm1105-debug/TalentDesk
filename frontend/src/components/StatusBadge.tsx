@@ -1,8 +1,8 @@
 const STYLES: Record<string, string> = {
-  // green
-  open:        'bg-emerald-500/15 text-emerald-300 border border-emerald-500/25',
-  active:      'bg-emerald-500/15 text-emerald-300 border border-emerald-500/25',
-  create:      'bg-emerald-500/15 text-emerald-300 border border-emerald-500/25',
+  // blue — open/active states
+  open:        'bg-blue-500/15 text-blue-300 border border-blue-500/25',
+  active:      'bg-blue-500/15 text-blue-300 border border-blue-500/25',
+  create:      'bg-blue-500/15 text-blue-300 border border-blue-500/25',
   // red
   urgent:      'bg-red-500/15 text-red-300 border border-red-500/25',
   rejected:    'bg-red-500/15 text-red-300 border border-red-500/25',

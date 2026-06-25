@@ -73,9 +73,9 @@ function PriorityBadge({ priority }: { priority: string }) {
 }
 
 const JOB_STATUS_STYLES: Record<string, string> = {
-  open:      'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25',
+  open:      'bg-blue-500/15 text-blue-400 border border-blue-500/25',
   on_hold:   'bg-amber-500/15 text-amber-400 border border-amber-500/25',
-  filled:    'bg-blue-500/15 text-blue-400 border border-blue-500/25',
+  filled:    'bg-cyan-500/15 text-cyan-400 border border-cyan-500/25',
   draft:     'bg-slate-500/15 text-slate-400 border border-slate-500/25',
   cancelled: 'bg-slate-500/10 text-slate-500 border border-slate-500/20',
 }

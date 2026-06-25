@@ -102,7 +102,7 @@ function CopyButton({ text }: { text: string }) {
   return (
     <button onClick={copy} title="Copy" className="ml-1 p-0.5 rounded text-slate-600 hover:text-slate-300 transition-colors shrink-0">
       {copied
-        ? <CheckCircle className="h-3.5 w-3.5 text-emerald-400" />
+        ? <CheckCircle className="h-3.5 w-3.5 text-blue-400" />
         : <Copy className="h-3.5 w-3.5" />
       }
     </button>

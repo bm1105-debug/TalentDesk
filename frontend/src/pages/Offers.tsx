@@ -65,7 +65,7 @@ type ActionForm = z.infer<typeof actionSchema>
 type OfferAction = 'accept' | 'decline' | 'withdraw'
 
 const ACTION_LABELS: Record<OfferAction, { title: string; btn: string; btnClass: string }> = {
-  accept:   { title: 'Accept Offer',    btn: 'Accept',   btnClass: 'bg-green-600 hover:bg-green-700 text-white' },
+  accept:   { title: 'Accept Offer',    btn: 'Accept',   btnClass: 'bg-blue-600 hover:bg-blue-700 text-white' },
   decline:  { title: 'Decline Offer',   btn: 'Decline',  btnClass: 'bg-red-600 hover:bg-red-700 text-white' },
   withdraw: { title: 'Withdraw Offer',  btn: 'Withdraw', btnClass: 'bg-gray-600 hover:bg-gray-700 text-white' },
 }

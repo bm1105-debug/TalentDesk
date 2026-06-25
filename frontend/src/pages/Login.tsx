@@ -52,6 +52,10 @@ export default function Login() {
         bottom: '-100px', left: '-60px', width: '340px', height: '340px', borderRadius: '50%',
         background: 'radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 65%)',
       }} />
+      {/* Sparkle decorations */}
+      <span className="absolute pointer-events-none select-none" style={{ top: '18%', right: '22%', color: '#fbbf24', fontSize: '18px', opacity: 0.6 }}>✦</span>
+      <span className="absolute pointer-events-none select-none" style={{ bottom: '22%', left: '18%', color: '#fbbf24', fontSize: '12px', opacity: 0.4 }}>✦</span>
+      <span className="absolute pointer-events-none select-none" style={{ top: '55%', right: '12%', color: '#60a5fa', fontSize: '10px', opacity: 0.35 }}>✦</span>
 
       {/* Card */}
       <div

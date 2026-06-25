@@ -490,7 +490,7 @@ function ChangeStatusDialog({
 // ── Status badge ──────────────────────────────────────────────────────────────
 
 const SUBMITTAL_STATUS_STYLES: Record<string, string> = {
-  active:    'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25',
+  active:    'bg-blue-500/15 text-blue-400 border border-blue-500/25',
   placed:    'bg-blue-500/15 text-blue-400 border border-blue-500/25',
   rejected:  'bg-red-500/15 text-red-400 border border-red-500/25',
   withdrawn: 'bg-slate-500/15 text-slate-400 border border-slate-500/25',
@@ -524,7 +524,7 @@ function SortTh({ label, col, sortCol, sortDir, onSort }: {
 function MatchBadge({ score }: { score: number | null }) {
   if (score === null) return <span className="text-slate-500 text-xs">—</span>
   const cls =
-    score >= 70 ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25' :
+    score >= 70 ? 'bg-blue-500/15 text-blue-400 border border-blue-500/25' :
     score >= 40 ? 'bg-amber-500/15 text-amber-400 border border-amber-500/25' :
                   'bg-red-500/15 text-red-400 border border-red-500/25'
   return (

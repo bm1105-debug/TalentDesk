@@ -928,10 +928,20 @@ export default function Dashboard() {
             background: 'radial-gradient(circle, rgba(37,99,235,0.28) 0%, rgba(59,130,246,0.10) 50%, transparent 70%)',
           }}
         />
+        {/* Sparkle star decorations */}
+        {[
+          { top: '12px',  right: '160px', size: '14px', opacity: 0.7 },
+          { top: '32px',  right: '80px',  size: '10px', opacity: 0.5 },
+          { bottom: '14px', right: '120px', size: '8px',  opacity: 0.4 },
+        ].map((s, i) => (
+          <span key={i} className="absolute pointer-events-none z-0 select-none" style={{
+            ...s, color: '#fbbf24', fontSize: s.size, lineHeight: 1,
+          }}>✦</span>
+        ))}
         <div className="relative z-10 space-y-1">
           <h1 style={{
-            fontSize: '1.1rem', fontWeight: 700, color: '#f1f5f9',
-            letterSpacing: '-0.5px', textShadow: '0 0 30px rgba(37,99,235,0.35)',
+            fontSize: '1.45rem', fontWeight: 800, color: '#f1f5f9',
+            letterSpacing: '-0.6px', textShadow: '0 0 40px rgba(37,99,235,0.4)',
           }}>
             {greeting(user?.first_name ?? 'there')}
           </h1>
