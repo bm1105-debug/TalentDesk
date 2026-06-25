@@ -6,12 +6,12 @@ function nameHash(first: string, last: string): number {
 }
 
 const COLOURS = [
-  { bg: 'bg-blue-600/20',    text: 'text-blue-200'    },
-  { bg: 'bg-blue-500/20',    text: 'text-blue-300'    },
-  { bg: 'bg-emerald-500/20', text: 'text-emerald-300' },
-  { bg: 'bg-amber-500/20',   text: 'text-amber-300'   },
-  { bg: 'bg-rose-500/20',    text: 'text-rose-300'    },
-  { bg: 'bg-cyan-500/20',    text: 'text-cyan-300'    },
+  { bg: 'bg-blue-600/20',  text: 'text-blue-200'  },
+  { bg: 'bg-blue-500/20',  text: 'text-blue-300'  },
+  { bg: 'bg-blue-400/20',  text: 'text-blue-200'  },
+  { bg: 'bg-blue-700/20',  text: 'text-blue-300'  },
+  { bg: 'bg-slate-500/20', text: 'text-slate-300' },
+  { bg: 'bg-blue-500/15',  text: 'text-blue-400'  },
 ]
 
 interface Props {

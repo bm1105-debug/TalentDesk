@@ -234,7 +234,7 @@ export default function Offers() {
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => setActionState({ offer: o, action: 'accept' })}
-                        className="flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300 font-medium px-1.5 py-1 rounded hover:bg-emerald-500/10"
+                        className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 font-medium px-1.5 py-1 rounded hover:bg-blue-500/10"
                       >
                         <CheckCircle className="h-3.5 w-3.5" /> Accept
                       </button>

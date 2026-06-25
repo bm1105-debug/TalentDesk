@@ -77,7 +77,7 @@ function fmtLastContacted(dt: string | null): string {
 function MatchBadge({ score }: { score: number | null }) {
   if (score === null) return <span className="text-slate-600 text-xs">—</span>
   const cls =
-    score >= 70 ? 'bg-emerald-500/15 text-emerald-400' :
+    score >= 70 ? 'bg-blue-500/15 text-blue-400' :
     score >= 40 ? 'bg-amber-500/15 text-amber-400' :
                   'bg-red-500/15 text-red-400'
   return (
@@ -234,7 +234,7 @@ function MakeOfferDialog({ submittal }: { submittal: Submittal }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs text-emerald-600 hover:text-emerald-700">
+        <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs text-blue-400 hover:text-blue-300">
           <HandCoins className="h-3.5 w-3.5" /> Offer
         </Button>
       </DialogTrigger>

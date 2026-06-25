@@ -171,14 +171,14 @@ export function SourceBar({ entry, max }: { entry: SourceEntry; max: number }) {
           className="absolute inset-y-0 left-0 rounded-full transition-all duration-500"
           style={{
             width: `${candidatePct}%`,
-            background: 'linear-gradient(90deg, #7c3aed, #3b82f6)',
-            boxShadow: '0 0 8px rgba(124,58,237,0.35)',
+            background: 'linear-gradient(90deg, #1d4ed8, #3b82f6)',
+            boxShadow: '0 0 8px rgba(37,99,235,0.35)',
           }}
         />
         {entry.placements > 0 && (
           <div
             className="absolute inset-y-0 left-0 rounded-full transition-all duration-700"
-            style={{ width: `${placedPct}%`, background: 'rgba(16,185,129,0.75)' }}
+            style={{ width: `${placedPct}%`, background: 'rgba(96,165,250,0.85)' }}
           />
         )}
       </div>
@@ -211,7 +211,7 @@ export function OpenJobsWidget({ data }: { data: OpenJobs }) {
           <CountRow label="Open"    value={data.by_status.open}   dot="#2563eb" />
           <CountRow label="On Hold" value={data.by_status.on_hold} dot="#f59e0b" />
           <CountRow label="Draft"   value={data.by_status.draft}   dot="#64748b" />
-          <CountRow label="Filled"  value={data.by_status.filled}  dot="#10b981" />
+          <CountRow label="Filled"  value={data.by_status.filled}  dot="#3b82f6" />
         </div>
       </div>
       <div className="border-t border-white/[0.06] pt-3">
@@ -264,7 +264,7 @@ export function InterviewOutcomesWidget({ data }: { data: InterviewOutcomes }) {
     <div className="space-y-3">
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Completed', value: data.completed, color: '#10b981' },
+          { label: 'Completed', value: data.completed, color: '#2563eb' },
           { label: 'Cancelled', value: data.cancelled, color: '#f59e0b' },
           { label: 'No Show',   value: data.no_show,   color: '#ef4444' },
         ].map(({ label, value, color }) => (

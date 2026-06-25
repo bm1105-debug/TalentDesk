@@ -69,7 +69,7 @@ function SortTh({ label, col, sortCol, sortDir, onSort }: {
 
 const CALENDAR_CHIP: Record<string, string> = {
   scheduled: 'bg-blue-500/15 text-blue-300',
-  completed: 'bg-emerald-500/15 text-emerald-300',
+  completed: 'bg-blue-500/15 text-blue-300',
   cancelled: 'bg-slate-500/15 text-slate-400',
   no_show:   'bg-orange-500/15 text-orange-300',
 }
@@ -240,7 +240,7 @@ function StatusButtons({ interview }: { interview: Interview }) {
     <div className="flex items-center gap-1">
       <button onClick={() => update.mutate('completed')} disabled={update.isPending}
         title="Mark completed"
-        className="p-1 rounded text-green-400 hover:bg-green-500/10 transition-colors">
+        className="p-1 rounded text-blue-400 hover:bg-blue-500/10 transition-colors">
         <CheckCircle className="h-4 w-4" />
       </button>
       <button onClick={() => update.mutate('cancelled')} disabled={update.isPending}
@@ -509,7 +509,7 @@ function ListView({ statusFilter, page, setPage }: {
   return (
     <>
       <div className="bg-[#0d1117] rounded-xl border border-white/[0.08] overflow-x-auto shadow-sm"
-        style={{ borderTop: '2px solid #10b981' }}>
+        style={{ borderTop: '2px solid #2563eb' }}>
         <table className="w-full min-w-[650px] text-sm">
           <thead className="bg-[#09090f] border-b border-white/[0.08] sticky top-0 z-10">
             <tr>

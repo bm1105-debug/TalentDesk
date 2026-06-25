@@ -86,7 +86,7 @@ function ChangePasswordDialog({ open, onClose }: { open: boolean; onClose: () =>
         </DialogHeader>
         {success ? (
           <div className="space-y-4 pt-2">
-            <p className="text-sm text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-md px-3 py-2">
+            <p className="text-sm text-blue-400 bg-blue-500/10 border border-blue-500/20 rounded-md px-3 py-2">
               Password updated successfully.
             </p>
             <div className="flex justify-end">

@@ -235,7 +235,7 @@ function MakeOfferDialog({ submittal, onDone }: { submittal: Submittal; onDone: 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10">
+        <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs text-blue-400 hover:text-blue-300 hover:bg-blue-500/10">
           <HandCoins className="h-3.5 w-3.5" /> Offer
         </Button>
       </DialogTrigger>

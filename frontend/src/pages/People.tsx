@@ -53,8 +53,8 @@ interface UserAnalyticsData {
 const KPI_CFG = [
   { label: 'Total Submittals', key: 'total',           color: '#2563eb', icon: FileText,    fmt: (v: number) => String(v) },
   { label: 'Active',           key: 'active',          color: '#3b82f6', icon: Users,       fmt: (v: number) => String(v) },
-  { label: 'Placed',           key: 'placed',          color: '#10b981', icon: CheckCircle, fmt: (v: number) => String(v) },
-  { label: 'Conversion Rate',  key: 'conversion_rate', color: '#8b5cf6', icon: TrendingUp,  fmt: (v: number) => `${v}%`  },
+  { label: 'Placed',           key: 'placed',          color: '#60a5fa', icon: CheckCircle, fmt: (v: number) => String(v) },
+  { label: 'Conversion Rate',  key: 'conversion_rate', color: '#2563eb', icon: TrendingUp,  fmt: (v: number) => `${v}%`  },
 ] as const
 
 function RecruiterStatsWidget({ data, loading }: { data: RecruiterStats | undefined; loading: boolean }) {
