@@ -149,10 +149,10 @@ function DashboardSkeleton() {
 // ── Status pills ───────────────────────────────────────────────────────────────
 
 const PILL_STYLES: Record<'red' | 'purple' | 'cyan' | 'orange', string> = {
-  red:    'bg-red-500/15    border-red-500/25    text-red-200',
-  purple: 'bg-blue-500/15 border-blue-500/25 text-blue-200',
-  cyan:   'bg-cyan-500/15   border-cyan-500/25   text-cyan-200',
-  orange: 'bg-orange-500/15 border-orange-500/25 text-orange-200',
+  red:    'bg-red-500/15   border-red-500/25   text-red-200',
+  purple: 'bg-blue-500/15  border-blue-500/25  text-blue-200',
+  cyan:   'bg-blue-400/15  border-blue-400/25  text-blue-200',
+  orange: 'bg-amber-500/15 border-amber-500/25 text-amber-200',
 }
 
 function StatusPill({ label, color, to }: { label: string; color: 'red' | 'purple' | 'cyan' | 'orange'; to?: string }) {
@@ -178,12 +178,12 @@ interface HiringKpiConfig {
 }
 
 const HIRING_KPI_CONFIGS: HiringKpiConfig[] = [
-  { icon: Clock,         borderColor: '#3b82f6', iconBg: 'bg-blue-500/20',    iconText: 'text-blue-400',    suffix: 'd'  },
-  { icon: Trophy,        borderColor: '#10b981', iconBg: 'bg-emerald-500/20', iconText: 'text-emerald-400', suffix: '%'  },
-  { icon: HandCoins,     borderColor: '#3b82f6', iconBg: 'bg-blue-500/20',   iconText: 'text-blue-400'                 },
-  { icon: CheckSquare,   borderColor: '#60a5fa', iconBg: 'bg-blue-400/20',   iconText: 'text-blue-300'                 },
-  { icon: FileText,      borderColor: '#f59e0b', iconBg: 'bg-amber-500/20',   iconText: 'text-amber-400'                },
-  { icon: AlertTriangle, borderColor: '#ef4444', iconBg: 'bg-red-500/20',     iconText: 'text-red-400'                  },
+  { icon: Clock,         borderColor: '#2563eb', iconBg: 'bg-blue-500/20', iconText: 'text-blue-400', suffix: 'd' },
+  { icon: Trophy,        borderColor: '#3b82f6', iconBg: 'bg-blue-500/20', iconText: 'text-blue-400', suffix: '%' },
+  { icon: HandCoins,     borderColor: '#2563eb', iconBg: 'bg-blue-500/20', iconText: 'text-blue-400'              },
+  { icon: CheckSquare,   borderColor: '#60a5fa', iconBg: 'bg-blue-400/20', iconText: 'text-blue-300'              },
+  { icon: FileText,      borderColor: '#3b82f6', iconBg: 'bg-blue-500/20', iconText: 'text-blue-400'              },
+  { icon: AlertTriangle, borderColor: '#1d4ed8', iconBg: 'bg-blue-700/20', iconText: 'text-blue-500'              },
 ]
 
 function HiringKpiTile({ label, value, cfg, loading }: {
@@ -298,7 +298,7 @@ function PerformanceSidebar({ data, loading }: { data: ScorecardData | undefined
             {[
               { label: 'Total',  value: stats?.total  ?? 0, bg: 'bg-white/5'        },
               { label: 'Active', value: stats?.active ?? 0, bg: 'bg-blue-500/10'  },
-              { label: 'Placed', value: stats?.placed ?? 0, bg: 'bg-emerald-500/10' },
+              { label: 'Placed', value: stats?.placed ?? 0, bg: 'bg-blue-600/10' },
             ].map(s => (
               <div key={s.label} className={`${s.bg} rounded-xl p-2.5 text-center`}>
                 <p className="stat-num" style={{ fontSize: '1.4rem', fontWeight: 800, color: 'white', lineHeight: 1 }}>{s.value}</p>
@@ -338,8 +338,8 @@ function PerformanceSidebar({ data, loading }: { data: ScorecardData | undefined
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Recent Placements</p>
               {places.map((p, i) => (
                 <div key={i} className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-full bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
-                    <span className="text-[10px] font-bold text-emerald-400">
+                  <div className="w-7 h-7 rounded-full bg-blue-500/15 flex items-center justify-center flex-shrink-0">
+                    <span className="text-[10px] font-bold text-blue-400">
                       {p.candidate.charAt(0)}
                     </span>
                   </div>
@@ -465,8 +465,8 @@ function UpcomingDeadlinesPanel({ deadlines }: { deadlines: DashboardData['upcom
   return (
     <div className="panel-card overflow-hidden">
       <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <div className="p-1.5 bg-amber-500/15 rounded-lg">
-          <Clock className="h-4 w-4 text-amber-400" />
+        <div className="p-1.5 bg-blue-500/15 rounded-lg">
+          <Clock className="h-4 w-4 text-blue-400" />
         </div>
         <span style={{ color: '#e2e8f0', fontWeight: 700, fontSize: '13px' }}>Upcoming Deadlines</span>
       </div>
@@ -482,8 +482,8 @@ function UpcomingDeadlinesPanel({ deadlines }: { deadlines: DashboardData['upcom
           {jobs_due_soon.map(j => (
             <Link key={`job-${j.id}`} to={`/jobs/${j.id}`}
               className="flex items-center gap-3 px-4 py-3 hover:bg-white/[0.03] transition-colors">
-              <div className="w-7 h-7 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0">
-                <Briefcase className="h-3.5 w-3.5 text-amber-400" />
+              <div className="w-7 h-7 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                <Briefcase className="h-3.5 w-3.5 text-blue-400" />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-slate-100 truncate">{j.title}</p>
@@ -495,8 +495,8 @@ function UpcomingDeadlinesPanel({ deadlines }: { deadlines: DashboardData['upcom
           {offers_expiring_soon.map(o => (
             <Link key={`offer-${o.id}`} to="/offers"
               className="flex items-center gap-3 px-4 py-3 hover:bg-white/[0.03] transition-colors">
-              <div className="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
-                <HandCoins className="h-3.5 w-3.5 text-emerald-400" />
+              <div className="w-7 h-7 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                <HandCoins className="h-3.5 w-3.5 text-blue-400" />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium text-slate-100 truncate">{o.candidate_name}</p>
@@ -671,15 +671,15 @@ function TaskPanel() {
 interface FunnelStage { stage: string; count: number }
 
 const FUNNEL_COLORS = [
-  '#1d4ed8', // Sourced
-  '#2563eb', // Screened
-  '#3b82f6', // Submitted
-  '#60a5fa', // Shortlisted
-  '#93c5fd', // L1 Interview
-  '#bfdbfe', // L2 Interview
-  '#f59e0b', // Offer Released
-  '#10b981', // Offer Accepted
-  '#22c55e', // Joined
+  '#1d4ed8',
+  '#2563eb',
+  '#3b82f6',
+  '#4f8ef7',
+  '#60a5fa',
+  '#7bb8fb',
+  '#93c5fd',
+  '#a8d4fe',
+  '#bfdbfe',
 ]
 
 function ConversionFunnel({ stages, loading, error }: {
@@ -924,8 +924,8 @@ export default function Dashboard() {
         <div
           className="absolute pointer-events-none z-0"
           style={{
-            top: '-40px', right: 0, width: '200px', height: '200px', borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(37,99,235,0.18) 0%, transparent 70%)',
+            top: '-60px', right: '-20px', width: '280px', height: '280px', borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(37,99,235,0.28) 0%, rgba(59,130,246,0.10) 50%, transparent 70%)',
           }}
         />
         <div className="relative z-10 space-y-1">

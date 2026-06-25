@@ -70,7 +70,7 @@ function CopyBtn({ text, label = 'Copy' }: { text: string; label?: string }) {
   }
   return (
     <button onClick={copy}
-      className="w-full mt-2.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg text-sm transition-colors">
+      className="w-full mt-2.5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg text-sm transition-colors">
       {copied ? 'Copied!' : label}
     </button>
   )
@@ -86,7 +86,7 @@ function CopySmall({ text }: { text: string }) {
   }
   return (
     <button onClick={copy}
-      className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-2.5 py-1 rounded-md transition-colors">
+      className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-2.5 py-1 rounded-md transition-colors">
       {copied ? 'Copied!' : 'Copy'}
     </button>
   )
