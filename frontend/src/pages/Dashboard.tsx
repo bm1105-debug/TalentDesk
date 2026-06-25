@@ -213,7 +213,7 @@ function HiringKpiTile({ label, value, cfg, loading }: {
       ) : (
         <div>
           <p className="stat-num" style={{
-            fontSize: value == null ? '16px' : '24px', fontWeight: 700, lineHeight: 1, letterSpacing: '-0.5px',
+            fontSize: value == null ? '16px' : '28px', fontWeight: 800, lineHeight: 1, letterSpacing: '-0.5px',
             color: value == null ? 'rgba(255,255,255,0.4)' : '#f1f5f9',
           }}>
             {value == null ? 'No data' : `${value}${cfg.suffix ?? ''}`}
@@ -425,7 +425,7 @@ function TodaySchedulePanel({ interviews }: { interviews: InterviewToday[] }) {
 
       {interviews.length === 0 ? (
         <div className="px-4 py-6 text-center space-y-1.5">
-          <CalendarDays className="h-5 w-5 mx-auto text-slate-600" />
+          <CalendarDays className="h-5 w-5 mx-auto text-blue-400/50" />
           <p className="text-sm text-slate-500">No interviews today</p>
         </div>
       ) : (
@@ -940,8 +940,8 @@ export default function Dashboard() {
         ))}
         <div className="relative z-10 space-y-1">
           <h1 style={{
-            fontSize: '1.45rem', fontWeight: 800, color: '#f1f5f9',
-            letterSpacing: '-0.6px', textShadow: '0 0 40px rgba(37,99,235,0.4)',
+            fontSize: '1.55rem', fontWeight: 900, color: '#f1f5f9',
+            letterSpacing: '-0.8px', textShadow: '0 0 40px rgba(37,99,235,0.4)',
           }}>
             {greeting(user?.first_name ?? 'there')}
           </h1>

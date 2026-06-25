@@ -177,6 +177,10 @@ button:focus-visible, a:focus-visible {
   outline-offset: 2px;
 }
 
+/* ── Table row hover — subtle blue tint ─────────────────────────────────── */
+tbody tr { transition: background 0.12s ease; }
+tbody tr:hover { background: rgba(37,99,235,0.05) !important; }
+
 /* ── Tabular numeric figures ─────────────────────────────────────────────── */
 .stat-num { font-variant-numeric: tabular-nums }
 
@@ -205,7 +209,7 @@ button:focus-visible, a:focus-visible {
     border-width: 1px;
     border-style: solid;
   }
-  .badge-active      { background: rgba(16,185,129,0.15);  color: #6ee7b7; border-color: rgba(16,185,129,0.25);  font-weight: 600; }
+  .badge-active      { background: rgba(37,99,235,0.15);   color: #93c5fd; border-color: rgba(37,99,235,0.25);   font-weight: 600; }
   .badge-passive     { background: rgba(245,158,11,0.15);  color: #fcd34d; border-color: rgba(245,158,11,0.25);  font-weight: 600; }
   .badge-placed      { background: rgba(59,130,246,0.15);  color: #93c5fd; border-color: rgba(59,130,246,0.25);  font-weight: 600; }
   .badge-blacklisted { background: rgba(239,68,68,0.15);   color: #fca5a5; border-color: rgba(239,68,68,0.25);   font-weight: 600; }

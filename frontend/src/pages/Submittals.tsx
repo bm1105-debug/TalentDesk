@@ -641,7 +641,7 @@ export default function Submittals() {
 
       {/* ── Table ── */}
       <div className="bg-[#0d1117] rounded-xl border border-white/[0.08] overflow-x-auto shadow-sm"
-        style={{ borderTop: '2px solid #8b5cf6' }}>
+        style={{ borderTop: '2px solid #2563eb' }}>
         <table className="w-full min-w-[800px] text-sm">
           <thead className="bg-[#09090f] border-b border-white/[0.08] sticky top-0 z-10">
             <tr>

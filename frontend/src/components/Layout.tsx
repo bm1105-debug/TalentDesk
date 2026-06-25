@@ -461,7 +461,7 @@ export default function Layout() {
 
         {/* ── Main content: direct style injection on main ─────────── */}
         <main className="flex-1 overflow-y-auto p-6" style={{
-          background: 'radial-gradient(ellipse at 20% 50%, rgba(37,99,235,0.07) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(59,130,246,0.05) 0%, transparent 50%), #08080f',
+          background: 'radial-gradient(ellipse at 15% 50%, rgba(37,99,235,0.11) 0%, transparent 55%), radial-gradient(ellipse at 85% 15%, rgba(59,130,246,0.08) 0%, transparent 45%), #08080f',
           transition: 'background 0.3s ease',
         }}>
           <Outlet />

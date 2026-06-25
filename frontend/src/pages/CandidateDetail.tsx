@@ -358,7 +358,7 @@ export default function CandidateDetail() {
             firstName={candidate.first_name}
             lastName={candidate.last_name}
             size="xl"
-            style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', flexShrink: 0 }}
+            style={{ background: 'linear-gradient(135deg, #1d4ed8, #2563eb)', flexShrink: 0 }}
           />
 
           <div className="flex-1 min-w-0">
