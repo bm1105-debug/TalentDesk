@@ -214,9 +214,9 @@ function AIEmailGenerator() {
   const progressPct   = bulkState ? Math.round((bulkState.done / bulkState.total) * 100) : 0
 
   const fieldCls  = "w-full px-3 py-2 border border-white/[0.12] rounded-lg bg-white/[0.04] text-slate-100 placeholder:text-slate-600 text-sm focus:outline-none focus:border-indigo-500 transition-colors"
-  const selectCls = "w-full px-3 py-2 border border-white/[0.12] rounded-lg bg-[#1a1a2e] text-slate-100 text-sm focus:outline-none focus:border-indigo-500 transition-colors"
+  const selectCls = "w-full px-3 py-2 border border-white/[0.12] rounded-lg bg-[#0d1117] text-slate-100 text-sm focus:outline-none focus:border-indigo-500 transition-colors"
   const labelCls  = "block text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-1.5"
-  const cardCls   = "rounded-xl border border-white/[0.07] bg-[#1a1a2e] p-6"
+  const cardCls   = "rounded-xl border border-white/[0.07] bg-[#0d1117] p-6"
   const h2Cls     = "text-sm font-semibold text-slate-100 pb-3 mb-4 border-b border-white/[0.06]"
 
   return (

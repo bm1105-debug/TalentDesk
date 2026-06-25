@@ -44,7 +44,7 @@ function StatCard({ label, value, sub, highlight }: {
   highlight?: boolean
 }) {
   return (
-    <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.06] p-5">
+    <div className="bg-[#0d1117] rounded-xl border border-white/[0.06] p-5">
       <p className={`text-2xl font-bold ${highlight ? 'text-indigo-400' : 'text-slate-100'}`}>{value}</p>
       <p className="text-sm text-slate-500 mt-0.5">{label}</p>
       {sub && <p className="text-xs text-slate-500 mt-1">{sub}</p>}
@@ -72,7 +72,7 @@ export default function Scorecard() {
       {isLoading ? (
         <div className="grid grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="bg-[#1a1a2e] rounded-xl border border-white/[0.06] p-5 space-y-2">
+            <div key={i} className="bg-[#0d1117] rounded-xl border border-white/[0.06] p-5 space-y-2">
               <Skeleton className="h-8 w-16" />
               <Skeleton className="h-3 w-24" />
             </div>
@@ -97,7 +97,7 @@ export default function Scorecard() {
       <div className="grid grid-cols-2 gap-4">
 
         {/* ── Pipeline breakdown ── */}
-        <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.06] p-5">
+        <div className="bg-[#0d1117] rounded-xl border border-white/[0.06] p-5">
           <h2 className="text-sm font-semibold text-slate-300 mb-4">My Pipeline</h2>
           {isLoading ? (
             <div className="space-y-2">
@@ -130,7 +130,7 @@ export default function Scorecard() {
         </div>
 
         {/* ── Recent placements ── */}
-        <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.06] p-5">
+        <div className="bg-[#0d1117] rounded-xl border border-white/[0.06] p-5">
           <h2 className="text-sm font-semibold text-slate-300 mb-4">Recent Placements</h2>
           {isLoading ? (
             <div className="space-y-2">

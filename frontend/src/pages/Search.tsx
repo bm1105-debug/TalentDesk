@@ -109,7 +109,7 @@ export default function Search() {
       <div className="relative max-w-lg">
         <SearchIcon className="absolute left-3.5 top-3.5 h-5 w-5 text-slate-500" />
         <Input
-          className="pl-11 h-12 text-lg bg-[#1a1a2e] border-white/[0.15] focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50"
+          className="pl-11 h-12 text-lg bg-[#0d1117] border-white/[0.15] focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50"
           placeholder="Search candidates, jobs, clients…"
           value={q}
           onChange={e => setQ(e.target.value)}
@@ -145,7 +145,7 @@ export default function Search() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
 
           {/* Candidates */}
-          <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.06] p-4">
+          <div className="bg-[#0d1117] rounded-xl border border-white/[0.06] p-4">
             <SectionHeader icon={Users} label="Candidates" count={data.candidates.length} />
             {data.candidates.length === 0
               ? <EmptySection message="No candidates" />
@@ -157,7 +157,7 @@ export default function Search() {
           </div>
 
           {/* Jobs */}
-          <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.06] p-4">
+          <div className="bg-[#0d1117] rounded-xl border border-white/[0.06] p-4">
             <SectionHeader icon={Briefcase} label="Jobs" count={data.jobs.length} />
             {data.jobs.length === 0
               ? <EmptySection message="No jobs" />
@@ -169,7 +169,7 @@ export default function Search() {
           </div>
 
           {/* Clients */}
-          <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.06] p-4">
+          <div className="bg-[#0d1117] rounded-xl border border-white/[0.06] p-4">
             <SectionHeader icon={Building2} label="Clients" count={data.clients.length} />
             {data.clients.length === 0
               ? <EmptySection message="No clients" />

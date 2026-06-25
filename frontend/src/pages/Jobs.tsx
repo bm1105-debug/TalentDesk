@@ -156,7 +156,7 @@ function AddJobForm({ onSuccess }: { onSuccess: () => void }) {
 
       <div className="space-y-1">
         <Label>Client *</Label>
-        <select {...register('client')} className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#1a1a2e] text-slate-200 px-3 py-1 text-sm shadow-sm">
+        <select {...register('client')} className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#0d1117] text-slate-200 px-3 py-1 text-sm shadow-sm">
           <option value="">— select client —</option>
           {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
@@ -166,7 +166,7 @@ function AddJobForm({ onSuccess }: { onSuccess: () => void }) {
       <div className="grid grid-cols-3 gap-3">
         <div className="space-y-1">
           <Label>Type</Label>
-          <select {...register('job_type')} className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#1a1a2e] text-slate-200 px-3 py-1 text-sm shadow-sm">
+          <select {...register('job_type')} className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#0d1117] text-slate-200 px-3 py-1 text-sm shadow-sm">
             <option value="full_time">Full Time</option>
             <option value="part_time">Part Time</option>
             <option value="contract">Contract</option>
@@ -175,7 +175,7 @@ function AddJobForm({ onSuccess }: { onSuccess: () => void }) {
         </div>
         <div className="space-y-1">
           <Label>Status</Label>
-          <select {...register('status')} className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#1a1a2e] text-slate-200 px-3 py-1 text-sm shadow-sm">
+          <select {...register('status')} className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#0d1117] text-slate-200 px-3 py-1 text-sm shadow-sm">
             <option value="draft">Draft</option>
             <option value="open">Open</option>
             <option value="on_hold">On Hold</option>
@@ -183,7 +183,7 @@ function AddJobForm({ onSuccess }: { onSuccess: () => void }) {
         </div>
         <div className="space-y-1">
           <Label>Priority</Label>
-          <select {...register('priority')} className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#1a1a2e] text-slate-200 px-3 py-1 text-sm shadow-sm">
+          <select {...register('priority')} className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#0d1117] text-slate-200 px-3 py-1 text-sm shadow-sm">
             <option value="low">Low</option>
             <option value="medium">Medium</option>
             <option value="high">High</option>
@@ -306,7 +306,7 @@ export default function Jobs() {
         </div>
 
         <select value={status} onChange={e => { setStatus(e.target.value); setPage(1) }}
-          className="h-9 rounded-lg border border-white/[0.12] bg-[#1a1a2e] px-3 text-sm hover:border-white/[0.25] hover:bg-[#1e1e36] transition-colors">
+          className="h-9 rounded-lg border border-white/[0.12] bg-[#0d1117] px-3 text-sm hover:border-white/[0.25] hover:bg-[#1e1e36] transition-colors">
           <option value="">All statuses</option>
           <option value="draft">Draft</option>
           <option value="open">Open</option>
@@ -316,7 +316,7 @@ export default function Jobs() {
         </select>
 
         <select value={priority} onChange={e => { setPriority(e.target.value); setPage(1) }}
-          className="h-9 rounded-lg border border-white/[0.12] bg-[#1a1a2e] px-3 text-sm hover:border-white/[0.25] hover:bg-[#1e1e36] transition-colors">
+          className="h-9 rounded-lg border border-white/[0.12] bg-[#0d1117] px-3 text-sm hover:border-white/[0.25] hover:bg-[#1e1e36] transition-colors">
           <option value="">All priorities</option>
           <option value="urgent">Urgent</option>
           <option value="high">High</option>
@@ -326,10 +326,10 @@ export default function Jobs() {
       </div>
 
       {/* ── Table ── */}
-      <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.08] overflow-x-auto shadow-sm"
+      <div className="bg-[#0d1117] rounded-xl border border-white/[0.08] overflow-x-auto shadow-sm"
         style={{ borderTop: '2px solid #3b82f6' }}>
         <table className="w-full min-w-[700px] text-sm">
-          <thead className="bg-[#12121f] border-b border-white/[0.08] sticky top-0 z-10">
+          <thead className="bg-[#09090f] border-b border-white/[0.08] sticky top-0 z-10">
             <tr>
               <SortTh label="Title"    col="title"    sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
               <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Client</th>

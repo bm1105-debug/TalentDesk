@@ -171,7 +171,7 @@ export default function Offers() {
         <select
           value={statusFilter}
           onChange={e => { setStatusFilter(e.target.value); setPage(1) }}
-          className="h-9 rounded-lg border border-white/[0.12] bg-[#1a1a2e] px-3 text-sm hover:border-white/[0.25] hover:bg-[#1e1e36] transition-colors"
+          className="h-9 rounded-lg border border-white/[0.12] bg-[#0d1117] px-3 text-sm hover:border-white/[0.25] hover:bg-[#1e1e36] transition-colors"
         >
           <option value="">All statuses</option>
           <option value="pending">Pending</option>
@@ -182,7 +182,7 @@ export default function Offers() {
       </div>
 
       {/* ── Table ── */}
-      <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.06] overflow-hidden">
+      <div className="bg-[#0d1117] rounded-xl border border-white/[0.06] overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-white/[0.04] border-b border-white/[0.06]">
             <tr>

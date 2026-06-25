@@ -11,8 +11,8 @@ export function Toaster() {
           key={t.id}
           className={`pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl border text-sm font-medium shadow-xl ${
             t.variant === 'success'
-              ? 'bg-[#1a1a2e] border-emerald-500/40 text-emerald-300'
-              : 'bg-[#1a1a2e] border-red-500/40 text-red-300'
+              ? 'bg-[#0d1117] border-emerald-500/40 text-emerald-300'
+              : 'bg-[#0d1117] border-red-500/40 text-red-300'
           }`}
         >
           {t.variant === 'success'

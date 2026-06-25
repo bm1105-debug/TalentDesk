@@ -79,10 +79,10 @@ export default function Reports() {
       <p className="text-sm text-slate-400">View pipeline metrics by job</p>
 
       {/* ── Job selector ── */}
-      <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.06] p-4 flex items-center gap-3">
+      <div className="bg-[#0d1117] rounded-xl border border-white/[0.06] p-4 flex items-center gap-3">
         <label className="text-sm font-medium text-slate-300 shrink-0">Select job</label>
         <select
-          className="flex-1 h-9 rounded-lg border border-white/[0.12] bg-[#1a1a2e] px-3 text-sm hover:border-white/[0.25] hover:bg-[#1e1e36] transition-colors"
+          className="flex-1 h-9 rounded-lg border border-white/[0.12] bg-[#0d1117] px-3 text-sm hover:border-white/[0.25] hover:bg-[#1e1e36] transition-colors"
           value={selectedJobId ?? ''}
           onChange={e => setSelectedJobId(e.target.value ? Number(e.target.value) : null)}
         >
@@ -97,7 +97,7 @@ export default function Reports() {
 
       {/* ── Empty state ── */}
       {!selectedJobId && (
-        <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.07] min-h-[280px] flex items-center justify-center">
+        <div className="bg-[#0d1117] rounded-xl border border-white/[0.07] min-h-[280px] flex items-center justify-center">
           <EmptyState
             icon={BarChart2}
             title="Select a job to view its pipeline"
@@ -108,7 +108,7 @@ export default function Reports() {
 
       {/* ── Loading ── */}
       {selectedJobId && reportLoading && (
-        <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.06] py-16 text-center text-slate-500 text-sm">
+        <div className="bg-[#0d1117] rounded-xl border border-white/[0.06] py-16 text-center text-slate-500 text-sm">
           Loading…
         </div>
       )}
@@ -126,7 +126,7 @@ export default function Reports() {
           </div>
 
           {/* Pipeline stage breakdown */}
-          <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.06] p-6 space-y-4">
+          <div className="bg-[#0d1117] rounded-xl border border-white/[0.06] p-6 space-y-4">
             <div className="flex items-baseline justify-between">
               <h2 className="font-semibold text-slate-100">Pipeline breakdown</h2>
               <span className="text-sm text-slate-500">{report.total} total candidates</span>

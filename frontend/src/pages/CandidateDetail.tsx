@@ -144,7 +144,7 @@ function QuickSubmitDialog({ candidateId, candidateName }: { candidateId: number
           <div className="space-y-1">
             <Label>Open job *</Label>
             <select value={jobId} onChange={e => setJobId(Number(e.target.value))}
-              className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#1a1a2e] text-slate-200 px-3 py-1 text-sm shadow-sm">
+              className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#0d1117] text-slate-200 px-3 py-1 text-sm shadow-sm">
               <option value="">— select job —</option>
               {jobs.map(j => <option key={j.id} value={j.id}>{j.title} · {j.client_name}</option>)}
             </select>
@@ -242,7 +242,7 @@ function AttachmentsTab({ candidateId }: { candidateId: number }) {
       <div className="space-y-2">
         {data?.results.map(att => (
           <div key={att.id}
-            className="flex items-center justify-between px-4 py-3 bg-[#1a1a2e] border border-white/[0.08] rounded-lg">
+            className="flex items-center justify-between px-4 py-3 bg-[#0d1117] border border-white/[0.08] rounded-lg">
             <div className="flex items-center gap-3 min-w-0">
               <FileText className="h-5 w-5 text-slate-500 shrink-0" />
               <div className="min-w-0">
@@ -610,7 +610,7 @@ export default function CandidateDetail() {
                   onChange={e => setNoteText(e.target.value)}
                   rows={5}
                   placeholder="Add notes about this candidate…"
-                  className="w-full bg-[#12121f] border border-white/[0.12] rounded-lg px-3 py-2 text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-violet-500/60 resize-none"
+                  className="w-full bg-[#09090f] border border-white/[0.12] rounded-lg px-3 py-2 text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-violet-500/60 resize-none"
                 />
                 <div className="flex items-center gap-2 justify-end">
                   <button

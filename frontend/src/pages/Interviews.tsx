@@ -167,7 +167,7 @@ function ScheduleForm({ onSuccess }: { onSuccess: () => void }) {
       <div className="space-y-1">
         <Label>Submittal *</Label>
         <select {...register('submittal')}
-          className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#1a1a2e] text-slate-200 px-3 py-1 text-sm shadow-sm">
+          className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#0d1117] text-slate-200 px-3 py-1 text-sm shadow-sm">
           <option value="">— select active submittal —</option>
           {submittals.map(s => (
             <option key={s.id} value={s.id}>{s.candidate_name} → {s.job_title}</option>
@@ -180,7 +180,7 @@ function ScheduleForm({ onSuccess }: { onSuccess: () => void }) {
         <div className="space-y-1">
           <Label>Type</Label>
           <select {...register('interview_type')}
-            className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#1a1a2e] text-slate-200 px-3 py-1 text-sm shadow-sm">
+            className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#0d1117] text-slate-200 px-3 py-1 text-sm shadow-sm">
             <option value="phone">Phone</option>
             <option value="video">Video</option>
             <option value="in_person">In Person</option>
@@ -363,7 +363,7 @@ function CalendarView({ year, month }: { year: number; month: number }) {
   const today = isoDate(new Date())
 
   return (
-    <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.06] overflow-hidden">
+    <div className="bg-[#0d1117] rounded-xl border border-white/[0.06] overflow-hidden">
       {/* Day headers */}
       <div className="grid grid-cols-7 border-b border-white/[0.06] bg-white/[0.04]">
         {DAY_NAMES.map(d => (
@@ -422,7 +422,7 @@ function CalendarView({ year, month }: { year: number; month: number }) {
       {selected && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/30"
           onClick={() => setSelected(null)}>
-          <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.06] shadow-xl p-5 w-80 space-y-3"
+          <div className="bg-[#0d1117] rounded-xl border border-white/[0.06] shadow-xl p-5 w-80 space-y-3"
             onClick={e => e.stopPropagation()}>
             <div className="flex items-start justify-between gap-2">
               <div>
@@ -508,10 +508,10 @@ function ListView({ statusFilter, page, setPage }: {
 
   return (
     <>
-      <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.08] overflow-x-auto shadow-sm"
+      <div className="bg-[#0d1117] rounded-xl border border-white/[0.08] overflow-x-auto shadow-sm"
         style={{ borderTop: '2px solid #10b981' }}>
         <table className="w-full min-w-[650px] text-sm">
-          <thead className="bg-[#12121f] border-b border-white/[0.08] sticky top-0 z-10">
+          <thead className="bg-[#09090f] border-b border-white/[0.08] sticky top-0 z-10">
             <tr>
               <SortTh label="Candidate" col="candidate" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
               <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Job</th>
@@ -648,7 +648,7 @@ export default function Interviews() {
       {view === 'list' && (
         <div className="flex gap-3">
           <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1) }}
-            className="h-9 rounded-lg border border-white/[0.12] bg-[#1a1a2e] px-3 text-sm hover:border-white/[0.25] hover:bg-[#1e1e36] transition-colors">
+            className="h-9 rounded-lg border border-white/[0.12] bg-[#0d1117] px-3 text-sm hover:border-white/[0.25] hover:bg-[#1e1e36] transition-colors">
             <option value="">All statuses</option>
             <option value="scheduled">Scheduled</option>
             <option value="completed">Completed</option>

@@ -137,7 +137,7 @@ function AdvanceStageDialog({ submittal, stages }: { submittal: Submittal; stage
           <div className="space-y-1">
             <Label>Move to stage</Label>
             <select value={stageId} onChange={e => setStageId(Number(e.target.value))}
-              className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#1a1a2e] text-slate-200 px-3 py-1 text-sm shadow-sm">
+              className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#0d1117] text-slate-200 px-3 py-1 text-sm shadow-sm">
               <option value="">— pick stage —</option>
               {stages.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
@@ -245,31 +245,31 @@ function MakeOfferDialog({ submittal }: { submittal: Submittal }) {
             <div className="flex-1 space-y-1">
               <Label>Salary *</Label>
               <input {...register('salary')} type="number" placeholder="75000"
-                className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#12121f] text-slate-200 px-3 py-1 text-sm shadow-sm" />
+                className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#09090f] text-slate-200 px-3 py-1 text-sm shadow-sm" />
               {errors.salary && <p className="text-xs text-red-500">{errors.salary.message}</p>}
             </div>
             <div className="w-20 space-y-1">
               <Label>Currency</Label>
               <input {...register('currency')} maxLength={3}
-                className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#12121f] text-slate-200 px-3 py-1 text-sm shadow-sm uppercase" />
+                className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#09090f] text-slate-200 px-3 py-1 text-sm shadow-sm uppercase" />
             </div>
           </div>
           <div className="space-y-1">
             <Label>Offer date *</Label>
             <input {...register('offer_date')} type="date"
-              className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#12121f] text-slate-200 px-3 py-1 text-sm shadow-sm" />
+              className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#09090f] text-slate-200 px-3 py-1 text-sm shadow-sm" />
             {errors.offer_date && <p className="text-xs text-red-500">{errors.offer_date.message}</p>}
           </div>
           <div className="flex gap-2">
             <div className="flex-1 space-y-1">
               <Label>Expiry <span className="text-slate-500 font-normal">(opt)</span></Label>
               <input {...register('expiry_date')} type="date"
-                className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#12121f] text-slate-200 px-3 py-1 text-sm shadow-sm" />
+                className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#09090f] text-slate-200 px-3 py-1 text-sm shadow-sm" />
             </div>
             <div className="flex-1 space-y-1">
               <Label>Start <span className="text-slate-500 font-normal">(opt)</span></Label>
               <input {...register('start_date')} type="date"
-                className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#12121f] text-slate-200 px-3 py-1 text-sm shadow-sm" />
+                className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#09090f] text-slate-200 px-3 py-1 text-sm shadow-sm" />
             </div>
           </div>
           {create.isError && (
@@ -296,7 +296,7 @@ function KanbanCard({ submittal, isError }: { submittal: Submittal; isError: boo
   return (
     <div
       ref={setNodeRef} {...listeners} {...attributes}
-      className={`bg-[#1a1a2e] border rounded-lg p-3 cursor-grab active:cursor-grabbing select-none transition-all ${
+      className={`bg-[#0d1117] border rounded-lg p-3 cursor-grab active:cursor-grabbing select-none transition-all ${
         isDragging ? 'opacity-40 shadow-lg scale-95' : ''
       } ${isError ? 'border-red-400 bg-red-500/10' : 'border-white/[0.06] hover:border-white/[0.12] hover:shadow-sm'}`}
     >
@@ -361,7 +361,7 @@ function KanbanClosedColumn({ submittals }: { submittals: Submittal[] }) {
       </div>
       <div className="flex-1 p-2 space-y-2">
         {submittals.map(s => (
-          <div key={s.id} className="bg-[#1a1a2e] border border-white/[0.06] rounded-lg p-3">
+          <div key={s.id} className="bg-[#0d1117] border border-white/[0.06] rounded-lg p-3">
             <p className="text-sm font-medium text-slate-500 truncate">{s.candidate_name}</p>
             <p className="text-xs text-slate-500 capitalize mt-0.5">{s.status}</p>
           </div>
@@ -504,7 +504,7 @@ export default function JobDetail() {
           <div className="h-4 bg-white/[0.05] rounded w-1/4" />
         </div>
       ) : job && (
-        <div className="bg-[#1a1a2e] border border-white/[0.06] rounded-xl p-6">
+        <div className="bg-[#0d1117] border border-white/[0.06] rounded-xl p-6">
           <div className="flex items-start justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold text-slate-100">{job.title}</h1>
@@ -537,7 +537,7 @@ export default function JobDetail() {
 
       {/* ── Pipeline / Kanban ── */}
       {job && (
-        <div className="bg-[#1a1a2e] border border-white/[0.06] rounded-xl p-6">
+        <div className="bg-[#0d1117] border border-white/[0.06] rounded-xl p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold text-slate-300">Pipeline</h2>
             <button
@@ -600,7 +600,7 @@ export default function JobDetail() {
       )}
 
       {/* ── Candidate List ── */}
-      <div className="bg-[#1a1a2e] border border-white/[0.06] rounded-xl overflow-hidden">
+      <div className="bg-[#0d1117] border border-white/[0.06] rounded-xl overflow-hidden">
         <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between">
           <h2 className="text-sm font-semibold text-slate-300">
             Candidates

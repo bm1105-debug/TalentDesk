@@ -130,14 +130,14 @@ export default function Analytics() {
     <div className="space-y-4">
 
       {/* ── Client filter bar ── */}
-      <div className="flex items-center gap-3 bg-[#1a1a2e] border border-white/[0.06] rounded-xl px-4 py-3">
+      <div className="flex items-center gap-3 bg-[#0d1117] border border-white/[0.06] rounded-xl px-4 py-3">
         <Building2 className="h-4 w-4 text-slate-500 shrink-0" />
         <span className="text-sm text-slate-400 shrink-0">Filter by client</span>
         <select
           value={selectedClient ?? ''}
           onChange={e => setSelectedClient(e.target.value ? Number(e.target.value) : null)}
           disabled={clientsLoading}
-          className="h-8 rounded-md border border-white/[0.12] bg-[#12121f] text-slate-200 px-2.5 text-sm flex-1 max-w-xs disabled:opacity-50"
+          className="h-8 rounded-md border border-white/[0.12] bg-[#09090f] text-slate-200 px-2.5 text-sm flex-1 max-w-xs disabled:opacity-50"
         >
           {clientsLoading
             ? <option value="">Loading clients…</option>

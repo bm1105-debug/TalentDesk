@@ -83,7 +83,7 @@ function AddSubmittalForm({ onSuccess }: { onSuccess: () => void }) {
       <div className="space-y-1">
         <Label>Candidate *</Label>
         <select {...register('candidate')}
-          className="h-9 w-full rounded-md border border-white/[0.12] bg-[#1a1a2e] text-slate-200 px-3 py-1 text-sm">
+          className="h-9 w-full rounded-md border border-white/[0.12] bg-[#0d1117] text-slate-200 px-3 py-1 text-sm">
           <option value="">— select candidate —</option>
           {candidates.map(c => (
             <option key={c.id} value={c.id}>{c.first_name} {c.last_name}</option>
@@ -95,7 +95,7 @@ function AddSubmittalForm({ onSuccess }: { onSuccess: () => void }) {
       <div className="space-y-1">
         <Label>Job *</Label>
         <select {...register('job')}
-          className="h-9 w-full rounded-md border border-white/[0.12] bg-[#1a1a2e] text-slate-200 px-3 py-1 text-sm">
+          className="h-9 w-full rounded-md border border-white/[0.12] bg-[#0d1117] text-slate-200 px-3 py-1 text-sm">
           <option value="">— select open job —</option>
           {jobs.map(j => (
             <option key={j.id} value={j.id}>{j.title} · {j.client_name}</option>
@@ -169,7 +169,7 @@ function AdvanceStageDialog({ submittal, onDone }: { submittal: Submittal; onDon
           <div className="space-y-1">
             <Label>Move to stage</Label>
             <select value={stageId} onChange={e => setStageId(Number(e.target.value))}
-              className="h-9 w-full rounded-md border border-white/[0.12] bg-[#1a1a2e] text-slate-200 px-3 py-1 text-sm">
+              className="h-9 w-full rounded-md border border-white/[0.12] bg-[#0d1117] text-slate-200 px-3 py-1 text-sm">
               <option value="">— pick stage —</option>
               {stages.map(s => (
                 <option key={s.id} value={s.id}>{s.name}</option>
@@ -250,20 +250,20 @@ function MakeOfferDialog({ submittal, onDone }: { submittal: Submittal; onDone: 
             <div className="flex-1 space-y-1">
               <Label>Salary *</Label>
               <input {...register('salary')} type="number" placeholder="75000"
-                className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#12121f] text-slate-200 px-3 py-1 text-sm shadow-sm" />
+                className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#09090f] text-slate-200 px-3 py-1 text-sm shadow-sm" />
               {errors.salary && <p className="text-xs text-red-500">{errors.salary.message}</p>}
             </div>
             <div className="w-20 space-y-1">
               <Label>Currency</Label>
               <input {...register('currency')} placeholder="USD" maxLength={3}
-                className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#12121f] text-slate-200 px-3 py-1 text-sm shadow-sm uppercase" />
+                className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#09090f] text-slate-200 px-3 py-1 text-sm shadow-sm uppercase" />
             </div>
           </div>
 
           <div className="space-y-1">
             <Label>Offer date *</Label>
             <input {...register('offer_date')} type="date"
-              className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#12121f] text-slate-200 px-3 py-1 text-sm shadow-sm" />
+              className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#09090f] text-slate-200 px-3 py-1 text-sm shadow-sm" />
             {errors.offer_date && <p className="text-xs text-red-500">{errors.offer_date.message}</p>}
           </div>
 
@@ -271,12 +271,12 @@ function MakeOfferDialog({ submittal, onDone }: { submittal: Submittal; onDone: 
             <div className="flex-1 space-y-1">
               <Label>Expiry date <span className="text-slate-500 font-normal">(optional)</span></Label>
               <input {...register('expiry_date')} type="date"
-                className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#12121f] text-slate-200 px-3 py-1 text-sm shadow-sm" />
+                className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#09090f] text-slate-200 px-3 py-1 text-sm shadow-sm" />
             </div>
             <div className="flex-1 space-y-1">
               <Label>Start date <span className="text-slate-500 font-normal">(optional)</span></Label>
               <input {...register('start_date')} type="date"
-                className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#12121f] text-slate-200 px-3 py-1 text-sm shadow-sm" />
+                className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#09090f] text-slate-200 px-3 py-1 text-sm shadow-sm" />
             </div>
           </div>
 
@@ -372,7 +372,7 @@ function RejectionEmailPrompt({ hint, onClose }: { hint: RejectionHint; onClose:
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center pb-8 pointer-events-none">
-      <div className="pointer-events-auto bg-[#1a1a2e] border border-white/[0.06] rounded-xl shadow-2xl p-5 max-w-sm w-full mx-4">
+      <div className="pointer-events-auto bg-[#0d1117] border border-white/[0.06] rounded-xl shadow-2xl p-5 max-w-sm w-full mx-4">
         <p className="text-sm font-medium text-slate-100 mb-1">Send rejection email?</p>
         <p className="text-xs text-slate-500 mb-4">
           To: <span className="font-medium">{hint.candidate_name}</span> ({hint.candidate_email})
@@ -446,7 +446,7 @@ function ChangeStatusDialog({
           <div className="space-y-1">
             <Label>Reason</Label>
             <select value={value} onChange={e => { setValue(e.target.value as 'rejected' | 'withdrawn'); setRejectionReason('') }}
-              className="h-9 w-full rounded-md border border-white/[0.12] bg-[#1a1a2e] text-slate-200 px-3 py-1 text-sm">
+              className="h-9 w-full rounded-md border border-white/[0.12] bg-[#0d1117] text-slate-200 px-3 py-1 text-sm">
               <option value="rejected">Rejected by client</option>
               <option value="withdrawn">Candidate withdrew</option>
             </select>
@@ -456,7 +456,7 @@ function ChangeStatusDialog({
             <div className="space-y-1">
               <Label>Rejection reason <span className="text-slate-500 font-normal">(optional)</span></Label>
               <select value={rejectionReason} onChange={e => setRejectionReason(e.target.value)}
-                className="h-9 w-full rounded-md border border-white/[0.12] bg-[#1a1a2e] text-slate-200 px-3 py-1 text-sm">
+                className="h-9 w-full rounded-md border border-white/[0.12] bg-[#0d1117] text-slate-200 px-3 py-1 text-sm">
                 <option value="">— select a reason —</option>
                 <option value="salary">Salary mismatch</option>
                 <option value="experience">Insufficient experience</option>
@@ -618,7 +618,7 @@ export default function Submittals() {
       {/* ── Filters ── */}
       <div className="flex items-center gap-3">
         <select value={status} onChange={e => { setStatus(e.target.value); setPage(1) }}
-          className="h-9 rounded-lg border border-white/[0.12] bg-[#1a1a2e] px-3 text-sm hover:border-white/[0.25] hover:bg-[#1e1e36] transition-colors">
+          className="h-9 rounded-lg border border-white/[0.12] bg-[#0d1117] px-3 text-sm hover:border-white/[0.25] hover:bg-[#1e1e36] transition-colors">
           <option value="">All statuses</option>
           <option value="active">Active</option>
           <option value="placed">Placed</option>
@@ -631,7 +631,7 @@ export default function Submittals() {
           className={`flex items-center gap-1.5 h-9 px-3 rounded-md border text-sm transition-colors ${
             showShortlisted
               ? 'border-amber-400/50 bg-amber-500/15 text-amber-400 font-medium'
-              : 'border-white/[0.12] bg-[#1a1a2e] text-slate-400 hover:bg-white/[0.03]'
+              : 'border-white/[0.12] bg-[#0d1117] text-slate-400 hover:bg-white/[0.03]'
           }`}
         >
           <Star className={`h-3.5 w-3.5 ${showShortlisted ? 'fill-amber-400 stroke-amber-400' : 'stroke-gray-400'}`} />
@@ -640,10 +640,10 @@ export default function Submittals() {
       </div>
 
       {/* ── Table ── */}
-      <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.08] overflow-x-auto shadow-sm"
+      <div className="bg-[#0d1117] rounded-xl border border-white/[0.08] overflow-x-auto shadow-sm"
         style={{ borderTop: '2px solid #8b5cf6' }}>
         <table className="w-full min-w-[800px] text-sm">
-          <thead className="bg-[#12121f] border-b border-white/[0.08] sticky top-0 z-10">
+          <thead className="bg-[#09090f] border-b border-white/[0.08] sticky top-0 z-10">
             <tr>
               <th className="px-3 py-3 w-8"></th>
               <SortTh label="Candidate"    col="candidate"    sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />

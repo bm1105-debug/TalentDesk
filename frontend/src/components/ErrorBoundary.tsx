@@ -14,7 +14,7 @@ export default class ErrorBoundary extends Component<Props, State> {
     if (!this.state.hasError) return this.props.children
     return (
       <div className="min-h-screen bg-[#0f0f1a] flex items-center justify-center p-8">
-        <div className="bg-[#1a1a2e] border border-red-500/20 rounded-xl p-8 max-w-md text-center space-y-4">
+        <div className="bg-[#0d1117] border border-red-500/20 rounded-xl p-8 max-w-md text-center space-y-4">
           <p className="text-2xl font-bold text-red-400">Something went wrong</p>
           <p className="text-sm text-slate-400">{this.state.message}</p>
           <button

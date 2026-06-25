@@ -245,7 +245,7 @@ function AddCandidateForm({ onSuccess }: { onSuccess: () => void }) {
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1">
           <Label>Status</Label>
-          <select {...register('status')} className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#1a1a2e] text-slate-200 px-3 py-1 text-sm shadow-sm">
+          <select {...register('status')} className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#0d1117] text-slate-200 px-3 py-1 text-sm shadow-sm">
             <option value="active">Active</option>
             <option value="passive">Passive</option>
             <option value="placed">Placed</option>
@@ -254,7 +254,7 @@ function AddCandidateForm({ onSuccess }: { onSuccess: () => void }) {
         </div>
         <div className="space-y-1">
           <Label>Source</Label>
-          <select {...register('source')} className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#1a1a2e] text-slate-200 px-3 py-1 text-sm shadow-sm">
+          <select {...register('source')} className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#0d1117] text-slate-200 px-3 py-1 text-sm shadow-sm">
             <option value="referral">Referral</option>
             <option value="job_board">Job Board</option>
             <option value="linkedin">LinkedIn</option>
@@ -343,7 +343,7 @@ function AddCandidateForm({ onSuccess }: { onSuccess: () => void }) {
 
 function CandidateCardSkeleton() {
   return (
-    <div className="bg-[#1a1a2e] border border-white/[0.06] rounded-xl p-4 animate-pulse">
+    <div className="bg-[#0d1117] border border-white/[0.06] rounded-xl p-4 animate-pulse">
       <div className="flex justify-between mb-2">
         <div className="space-y-1.5 flex-1">
           <div className="h-4 bg-slate-700/50 rounded w-3/4" />
@@ -598,7 +598,7 @@ export default function Candidates() {
         <select
           value={status}
           onChange={e => { setStatus(e.target.value); setPage(1) }}
-          className={`h-9 rounded-lg border bg-[#1a1a2e] px-3 text-sm hover:bg-[#1e1e36] transition-colors ${
+          className={`h-9 rounded-lg border bg-[#0d1117] px-3 text-sm hover:bg-[#1e1e36] transition-colors ${
             status
               ? 'border-violet-500 text-violet-300'
               : 'border-white/[0.12] text-slate-300 hover:border-white/[0.25]'
@@ -668,7 +668,7 @@ export default function Candidates() {
 
       {/* ── Table view ── */}
       {viewMode === 'table' && (
-        <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.06] overflow-x-auto">
+        <div className="bg-[#0d1117] rounded-xl border border-white/[0.06] overflow-x-auto">
           <table className="w-full min-w-[750px] text-sm">
             <thead className="bg-white/[0.04] border-b border-white/[0.06]">
               <tr>
