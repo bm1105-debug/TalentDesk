@@ -70,7 +70,7 @@ export default function ActivityLog() {
         <select
           value={model}
           onChange={handleFilterChange(setModel)}
-          className="text-sm border border-white/[0.06] rounded-md px-3 py-1.5 bg-[#0d1117] text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="text-sm border border-white/[0.06] rounded-md px-3 py-1.5 bg-[#0d1117] text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">All models</option>
           {MODEL_OPTIONS.map(m => (
@@ -81,7 +81,7 @@ export default function ActivityLog() {
         <select
           value={action}
           onChange={handleFilterChange(setAction)}
-          className="text-sm border border-white/[0.06] rounded-md px-3 py-1.5 bg-[#0d1117] text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="text-sm border border-white/[0.06] rounded-md px-3 py-1.5 bg-[#0d1117] text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="">All actions</option>
           {ACTION_OPTIONS.map(a => (

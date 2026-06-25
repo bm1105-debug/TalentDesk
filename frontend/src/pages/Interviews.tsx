@@ -38,7 +38,7 @@ interface SubmittalOption {
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 const INTERVIEW_STATUS_STYLES: Record<string, string> = {
-  scheduled: 'bg-violet-500/15 text-violet-400 border border-violet-500/25',
+  scheduled: 'bg-blue-500/15 text-blue-400 border border-blue-500/25',
   completed: 'bg-blue-500/15 text-blue-400 border border-blue-500/25',
   cancelled: 'bg-slate-500/15 text-slate-400 border border-slate-500/25',
   no_show:   'bg-orange-500/15 text-orange-400 border border-orange-500/25',
@@ -59,7 +59,7 @@ function SortTh({ label, col, sortCol, sortDir, onSort }: {
       <div className="flex items-center gap-1">
         {label}
         {active
-          ? (sortDir === 'asc' ? <ChevronUp className="h-3 w-3 text-violet-400" /> : <ChevronDown className="h-3 w-3 text-violet-400" />)
+          ? (sortDir === 'asc' ? <ChevronUp className="h-3 w-3 text-blue-400" /> : <ChevronDown className="h-3 w-3 text-blue-400" />)
           : <ChevronDown className="h-3 w-3 text-slate-700" />
         }
       </div>
@@ -68,7 +68,7 @@ function SortTh({ label, col, sortCol, sortDir, onSort }: {
 }
 
 const CALENDAR_CHIP: Record<string, string> = {
-  scheduled: 'bg-indigo-500/15 text-indigo-300',
+  scheduled: 'bg-blue-500/15 text-blue-300',
   completed: 'bg-emerald-500/15 text-emerald-300',
   cancelled: 'bg-slate-500/15 text-slate-400',
   no_show:   'bg-orange-500/15 text-orange-300',
@@ -394,7 +394,7 @@ function CalendarView({ year, month }: { year: number; month: number }) {
                   <>
                     <span className={`inline-flex items-center justify-center w-6 h-6 text-xs font-medium rounded-full mb-1 ${
                       isToday
-                        ? 'bg-indigo-600 text-white'
+                        ? 'bg-blue-600 text-white'
                         : 'text-slate-400'
                     }`}>
                       {date.getDate()}
@@ -451,7 +451,7 @@ function CalendarView({ year, month }: { year: number; month: number }) {
                   <dt className="text-slate-500 w-20 shrink-0">Link</dt>
                   <dd>
                     <a href={selected.meeting_link} target="_blank" rel="noreferrer"
-                      className="text-violet-400 hover:underline truncate block max-w-[180px]">
+                      className="text-blue-400 hover:underline truncate block max-w-[180px]">
                       Join
                     </a>
                   </dd>

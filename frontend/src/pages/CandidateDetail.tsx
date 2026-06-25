@@ -439,7 +439,7 @@ export default function CandidateDetail() {
             onClick={() => setTab(t)}
             className={`rounded-md px-4 py-1.5 text-sm font-medium capitalize transition-colors ${
               tab === t
-                ? 'bg-violet-600 text-white shadow-sm'
+                ? 'bg-blue-600 text-white shadow-sm'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -495,7 +495,7 @@ export default function CandidateDetail() {
                     </dt>
                     <dd className="text-sm min-w-0">
                       <a href={candidate.linkedin_url} target="_blank" rel="noreferrer"
-                        className="text-violet-400 hover:underline truncate block max-w-[180px]">
+                        className="text-blue-400 hover:underline truncate block max-w-[180px]">
                         View profile
                       </a>
                     </dd>
@@ -610,7 +610,7 @@ export default function CandidateDetail() {
                   onChange={e => setNoteText(e.target.value)}
                   rows={5}
                   placeholder="Add notes about this candidate…"
-                  className="w-full bg-[#09090f] border border-white/[0.12] rounded-lg px-3 py-2 text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-violet-500/60 resize-none"
+                  className="w-full bg-[#09090f] border border-white/[0.12] rounded-lg px-3 py-2 text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500/60 resize-none"
                 />
                 <div className="flex items-center gap-2 justify-end">
                   <button
@@ -648,7 +648,7 @@ export default function CandidateDetail() {
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-slate-100 truncate">{s.job_title}</p>
                       {s.current_stage_name && (
-                        <p className="text-xs text-violet-400 font-medium mt-0.5">{s.current_stage_name}</p>
+                        <p className="text-xs text-blue-400 font-medium mt-0.5">{s.current_stage_name}</p>
                       )}
                     </div>
                     <span className="ml-3 shrink-0">
@@ -665,10 +665,10 @@ export default function CandidateDetail() {
             <p className="section-label">Activity</p>
 
             <div className="relative pl-5 space-y-4">
-              <div className="absolute left-1.5 top-1 bottom-1 w-px bg-violet-500/25" />
+              <div className="absolute left-1.5 top-1 bottom-1 w-px bg-blue-500/25" />
               {timelineEvents.map((ev, i) => (
                 <div key={i} className="relative">
-                  <div className="absolute -left-[14px] top-1.5 h-2 w-2 rounded-full bg-violet-500 border-2 border-[#1a1a2e] z-10" />
+                  <div className="absolute -left-[14px] top-1.5 h-2 w-2 rounded-full bg-blue-500 border-2 border-[#1a1a2e] z-10" />
                   <p className="text-sm text-slate-200">{ev.label}</p>
                   {ev.sub && <p className="text-xs text-slate-500 mt-0.5">{ev.sub}</p>}
                   <p className="text-xs text-slate-600 mt-0.5">{fmtDate(ev.date)}</p>

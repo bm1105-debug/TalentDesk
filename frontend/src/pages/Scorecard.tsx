@@ -45,7 +45,7 @@ function StatCard({ label, value, sub, highlight }: {
 }) {
   return (
     <div className="bg-[#0d1117] rounded-xl border border-white/[0.06] p-5">
-      <p className={`text-2xl font-bold ${highlight ? 'text-indigo-400' : 'text-slate-100'}`}>{value}</p>
+      <p className={`text-2xl font-bold ${highlight ? 'text-blue-400' : 'text-slate-100'}`}>{value}</p>
       <p className="text-sm text-slate-500 mt-0.5">{label}</p>
       {sub && <p className="text-xs text-slate-500 mt-1">{sub}</p>}
     </div>

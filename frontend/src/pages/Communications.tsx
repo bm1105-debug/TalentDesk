@@ -213,8 +213,8 @@ function AIEmailGenerator() {
   const isGenerating  = singleMutation.isPending || isRunningBulk
   const progressPct   = bulkState ? Math.round((bulkState.done / bulkState.total) * 100) : 0
 
-  const fieldCls  = "w-full px-3 py-2 border border-white/[0.12] rounded-lg bg-white/[0.04] text-slate-100 placeholder:text-slate-600 text-sm focus:outline-none focus:border-indigo-500 transition-colors"
-  const selectCls = "w-full px-3 py-2 border border-white/[0.12] rounded-lg bg-[#0d1117] text-slate-100 text-sm focus:outline-none focus:border-indigo-500 transition-colors"
+  const fieldCls  = "w-full px-3 py-2 border border-white/[0.12] rounded-lg bg-white/[0.04] text-slate-100 placeholder:text-slate-600 text-sm focus:outline-none focus:border-blue-500 transition-colors"
+  const selectCls = "w-full px-3 py-2 border border-white/[0.12] rounded-lg bg-[#0d1117] text-slate-100 text-sm focus:outline-none focus:border-blue-500 transition-colors"
   const labelCls  = "block text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-1.5"
   const cardCls   = "rounded-xl border border-white/[0.07] bg-[#0d1117] p-6"
   const h2Cls     = "text-sm font-semibold text-slate-100 pb-3 mb-4 border-b border-white/[0.06]"
@@ -241,7 +241,7 @@ function AIEmailGenerator() {
               <button key={m} onClick={() => switchMode(m)}
                 className={`flex-1 py-2 rounded-lg border text-sm font-medium transition-colors ${
                   aiMode === m
-                    ? 'bg-indigo-600 border-indigo-600 text-white'
+                    ? 'bg-blue-600 border-blue-600 text-white'
                     : 'border-white/[0.12] text-slate-400 hover:text-slate-200 bg-transparent'
                 }`}>
                 {m === 'single' ? 'Single Email' : 'Bulk Mode'}
@@ -253,7 +253,7 @@ function AIEmailGenerator() {
           <div className="flex flex-wrap gap-2 mb-5">
             {(Object.keys(QUICK_TEMPLATES) as Array<keyof typeof QUICK_TEMPLATES>).map(name => (
               <button key={name} onClick={() => loadTemplate(name)}
-                className="px-3 py-1.5 rounded-full border border-indigo-500/50 text-indigo-400 text-xs hover:bg-indigo-500 hover:text-white transition-colors">
+                className="px-3 py-1.5 rounded-full border border-blue-500/50 text-blue-400 text-xs hover:bg-blue-500 hover:text-white transition-colors">
                 {QUICK_TEMPLATES[name].purpose}
               </button>
             ))}
@@ -320,7 +320,7 @@ function AIEmailGenerator() {
           <button
             onClick={() => aiMode === 'single' ? handleSingleGenerate(false) : runBulkGeneration()}
             disabled={isGenerating || !purpose}
-            className="w-full py-3 mt-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-lg text-sm transition-colors flex items-center justify-center gap-2">
+            className="w-full py-3 mt-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-lg text-sm transition-colors flex items-center justify-center gap-2">
             {isGenerating ? (
               <>
                 <span className="h-3.5 w-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
@@ -355,7 +355,7 @@ function AIEmailGenerator() {
             <div style={{ marginTop: 0 }}>
               {singleMutation.isPending ? (
                 <div className="rounded-lg border border-white/[0.08] bg-white/[0.03] flex items-center justify-center" style={{ minHeight: '200px' }}>
-                  <span className="h-8 w-8 rounded-full border-[3px] border-white/[0.12] border-t-indigo-500 animate-spin" />
+                  <span className="h-8 w-8 rounded-full border-[3px] border-white/[0.12] border-t-blue-500 animate-spin" />
                 </div>
               ) : singleResult?.body ? (
                 <div className="rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-3 text-sm text-slate-200 whitespace-pre-wrap leading-relaxed" style={{ minHeight: '200px' }}>
@@ -410,7 +410,7 @@ function AIEmailGenerator() {
             <div className="mb-4">
               <div className="h-2 rounded-full bg-white/[0.06] overflow-hidden">
                 <div
-                  className="h-full bg-indigo-500 rounded-full transition-all duration-300"
+                  className="h-full bg-blue-500 rounded-full transition-all duration-300"
                   style={{ width: `${progressPct}%` }}
                 />
               </div>
@@ -424,7 +424,7 @@ function AIEmailGenerator() {
             {/* Per-recipient result cards */}
             <div className="space-y-3">
               {bulkState.results.map((item, i) => (
-                <div key={i} className="rounded-lg border border-white/[0.06] p-4 hover:border-indigo-500/40 transition-colors">
+                <div key={i} className="rounded-lg border border-white/[0.06] p-4 hover:border-blue-500/40 transition-colors">
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-sm font-semibold text-slate-200">{item.recipient}</p>
                     {!item.error && (
@@ -462,7 +462,7 @@ function AIEmailGenerator() {
             <div className="space-y-2">
               {history?.map(item => (
                 <button key={item.id} onClick={() => restoreFromHistory(item)}
-                  className="w-full text-left rounded-lg border border-white/[0.06] bg-white/[0.02] hover:border-indigo-500/40 px-4 py-3 transition-colors">
+                  className="w-full text-left rounded-lg border border-white/[0.06] bg-white/[0.02] hover:border-blue-500/40 px-4 py-3 transition-colors">
                   <p className="text-sm font-semibold text-slate-200">{item.purpose}</p>
                   <p className="text-xs text-slate-500 mt-0.5">{timeAgo(item.created_at)}</p>
                 </button>

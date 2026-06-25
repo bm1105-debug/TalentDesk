@@ -274,8 +274,8 @@ function PerformanceSidebar({ data, loading }: { data: ScorecardData | undefined
     <div className="panel-card col-span-4 p-5 space-y-5">
       {/* Header */}
       <div className="flex items-center gap-2">
-        <div className="p-1.5 bg-violet-500/10 rounded-lg">
-          <Trophy className="h-4 w-4 text-violet-400" />
+        <div className="p-1.5 bg-blue-500/10 rounded-lg">
+          <Trophy className="h-4 w-4 text-blue-400" />
         </div>
         <span style={{ color: '#93c5fd', fontWeight: 700, fontSize: '13px' }}>My Performance</span>
       </div>
@@ -297,7 +297,7 @@ function PerformanceSidebar({ data, loading }: { data: ScorecardData | undefined
           <div className="grid grid-cols-3 gap-2">
             {[
               { label: 'Total',  value: stats?.total  ?? 0, bg: 'bg-white/5'        },
-              { label: 'Active', value: stats?.active ?? 0, bg: 'bg-indigo-500/10'  },
+              { label: 'Active', value: stats?.active ?? 0, bg: 'bg-blue-500/10'  },
               { label: 'Placed', value: stats?.placed ?? 0, bg: 'bg-emerald-500/10' },
             ].map(s => (
               <div key={s.label} className={`${s.bg} rounded-xl p-2.5 text-center`}>
@@ -393,10 +393,10 @@ const INTERVIEW_TYPE_LABEL: Record<string, string> = {
 
 const INTERVIEW_TYPE_BADGE: Record<string, string> = {
   phone:     'bg-slate-500/15 text-slate-300',
-  video:     'bg-violet-500/15 text-violet-300',
+  video:     'bg-blue-500/15 text-blue-300',
   onsite:    'bg-blue-500/15 text-blue-300',
   technical: 'bg-amber-500/15 text-amber-300',
-  panel:     'bg-violet-500/15 text-violet-300',
+  panel:     'bg-blue-500/15 text-blue-300',
 }
 
 function InterviewTypeBadge({ type }: { type: string }) {
@@ -412,8 +412,8 @@ function TodaySchedulePanel({ interviews }: { interviews: InterviewToday[] }) {
   return (
     <div className="panel-card overflow-hidden">
       <div className="flex items-center gap-2 px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <div className="p-1.5 bg-indigo-500/15 rounded-lg">
-          <CalendarDays className="h-4 w-4 text-indigo-400" />
+        <div className="p-1.5 bg-blue-500/15 rounded-lg">
+          <CalendarDays className="h-4 w-4 text-blue-400" />
         </div>
         <span style={{ color: '#e2e8f0', fontWeight: 700, fontSize: '13px' }}>Today's Schedule</span>
         {interviews.length > 0 && (
@@ -434,7 +434,7 @@ function TodaySchedulePanel({ interviews }: { interviews: InterviewToday[] }) {
             const time = new Date(i.scheduled_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
             return (
               <div key={i.id} className="flex items-stretch gap-3 px-4 py-3">
-                <div className="w-0.5 rounded-full bg-violet-500/60 flex-shrink-0" />
+                <div className="w-0.5 rounded-full bg-blue-500/60 flex-shrink-0" />
                 <p className="text-xs font-bold text-slate-300 w-10 flex-shrink-0 tabular-nums self-center">{time}</p>
                 <div className="min-w-0 flex-1 self-center">
                   <p className="text-sm font-medium text-slate-100 truncate">{i.candidate_name}</p>
@@ -602,8 +602,8 @@ function TaskPanel() {
         style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
       >
         <div className="flex items-center gap-2">
-          <div className="p-1.5 bg-indigo-500/15 rounded-lg">
-            <ListTodo className="h-4 w-4 text-indigo-400" />
+          <div className="p-1.5 bg-blue-500/15 rounded-lg">
+            <ListTodo className="h-4 w-4 text-blue-400" />
           </div>
           <span style={{ color: '#e2e8f0', fontWeight: 700, fontSize: '13px' }}>My Tasks</span>
           {overdueCount > 0 && (
@@ -974,7 +974,7 @@ export default function Dashboard() {
         </select>
         {selectedClient && (
           <>
-            <span className="text-xs text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 rounded-full px-2.5 py-0.5 shrink-0">
+            <span className="text-xs text-blue-400 bg-blue-500/10 border border-blue-500/20 rounded-full px-2.5 py-0.5 shrink-0">
               {selectedClientName}
             </span>
             <button

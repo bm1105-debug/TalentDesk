@@ -306,7 +306,7 @@ function KanbanCard({ submittal, isError }: { submittal: Submittal; isError: boo
           <Link
             to={`/candidates/${submittal.candidate}`}
             onClick={e => e.stopPropagation()}
-            className="text-sm font-medium text-slate-100 hover:text-indigo-400 hover:underline block truncate"
+            className="text-sm font-medium text-slate-100 hover:text-blue-400 hover:underline block truncate"
           >
             {submittal.candidate_name}
           </Link>
@@ -331,7 +331,7 @@ function KanbanColumn({ stageId, stageName, submittals, errorId }: {
     <div
       ref={setNodeRef}
       className={`flex-shrink-0 w-56 flex flex-col rounded-xl border transition-colors ${
-        isOver ? 'border-indigo-500/50 bg-indigo-500/5' : 'border-white/[0.06] bg-white/[0.02]'
+        isOver ? 'border-blue-500/50 bg-blue-500/5' : 'border-white/[0.06] bg-white/[0.02]'
       }`}
     >
       <div className="px-3 py-2.5 border-b border-white/[0.06]">
@@ -343,7 +343,7 @@ function KanbanColumn({ stageId, stageName, submittals, errorId }: {
           <KanbanCard key={s.id} submittal={s} isError={errorId === s.id} />
         ))}
         {submittals.length === 0 && (
-          <div className={`h-16 rounded-lg border-2 border-dashed flex items-center justify-center text-xs text-slate-600 ${isOver ? 'border-indigo-500/50' : 'border-white/[0.06]'}`}>
+          <div className={`h-16 rounded-lg border-2 border-dashed flex items-center justify-center text-xs text-slate-600 ${isOver ? 'border-blue-500/50' : 'border-white/[0.06]'}`}>
             Drop here
           </div>
         )}
@@ -566,19 +566,19 @@ export default function JobDetail() {
                         key={stage.id}
                         onClick={() => setStageFilter(active ? null : stage.id)}
                         className={`w-full flex items-center gap-3 group rounded-lg px-2 py-1.5 transition-colors ${
-                          active ? 'bg-indigo-500/10' : 'hover:bg-white/[0.03]'
+                          active ? 'bg-blue-500/10' : 'hover:bg-white/[0.03]'
                         }`}
                       >
-                        <span className={`text-xs w-32 text-left truncate ${active ? 'text-indigo-400 font-medium' : 'text-slate-500'}`}>
+                        <span className={`text-xs w-32 text-left truncate ${active ? 'text-blue-400 font-medium' : 'text-slate-500'}`}>
                           {stage.name}
                         </span>
                         <div className="flex-1 bg-white/[0.06] rounded-full h-5 overflow-hidden">
                           <div
-                            className={`h-full rounded-full transition-all ${active ? 'bg-indigo-500' : 'bg-indigo-400/50 group-hover:bg-indigo-400/70'}`}
+                            className={`h-full rounded-full transition-all ${active ? 'bg-blue-500' : 'bg-blue-400/50 group-hover:bg-blue-400/70'}`}
                             style={{ width: count === 0 ? '0%' : `${Math.max(pct, 3)}%` }}
                           />
                         </div>
-                        <span className={`text-xs w-8 text-right font-medium ${active ? 'text-indigo-400' : 'text-slate-500'}`}>
+                        <span className={`text-xs w-8 text-right font-medium ${active ? 'text-blue-400' : 'text-slate-500'}`}>
                           {count}
                         </span>
                       </button>
@@ -637,7 +637,7 @@ export default function JobDetail() {
                 <td className="px-4 py-3">
                   <Link
                     to={`/candidates/${s.candidate}`}
-                    className="font-medium text-slate-100 hover:text-indigo-400 hover:underline"
+                    className="font-medium text-slate-100 hover:text-blue-400 hover:underline"
                     onClick={e => e.stopPropagation()}
                   >
                     {s.candidate_name}
@@ -646,7 +646,7 @@ export default function JobDetail() {
                 <td className="px-4 py-3"><MatchBadge score={s.match_score} /></td>
                 <td className="px-4 py-3 text-slate-400">
                   {s.current_stage_name
-                    ? <span className="text-indigo-400 font-medium">{s.current_stage_name}</span>
+                    ? <span className="text-blue-400 font-medium">{s.current_stage_name}</span>
                     : <span className="text-slate-500">Not started</span>
                   }
                 </td>

@@ -161,7 +161,7 @@ export default function Offers() {
 
       {/* ── Top bar ── */}
       <div className="flex items-center justify-between">
-        <Link to="/submittals" className="text-sm text-indigo-400 underline-offset-2 hover:underline">
+        <Link to="/submittals" className="text-sm text-blue-400 underline-offset-2 hover:underline">
           Create offers from the Submittals page
         </Link>
       </div>

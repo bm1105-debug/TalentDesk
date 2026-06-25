@@ -110,7 +110,7 @@ function SortTh({ label, col, sortCol, sortDir, onSort }: {
       <div className="flex items-center gap-1">
         {label}
         {active
-          ? (sortDir === 'asc' ? <ChevronUp className="h-3 w-3 text-violet-400" /> : <ChevronDown className="h-3 w-3 text-violet-400" />)
+          ? (sortDir === 'asc' ? <ChevronUp className="h-3 w-3 text-blue-400" /> : <ChevronDown className="h-3 w-3 text-blue-400" />)
           : <ChevronDown className="h-3 w-3 text-slate-700" />
         }
       </div>
@@ -351,7 +351,7 @@ export default function Jobs() {
             {data?.results.map(j => (
               <tr key={j.id} className="hover:bg-white/[0.03] transition-colors duration-100">
                 <td className="px-4 py-3 font-medium text-slate-100">
-                  <Link to={`/jobs/${j.id}`} state={{ name: j.title }} className="hover:text-violet-400 hover:underline">
+                  <Link to={`/jobs/${j.id}`} state={{ name: j.title }} className="hover:text-blue-400 hover:underline">
                     {j.title}
                   </Link>
                   {j.location && <span className="block text-xs text-slate-500 font-normal">{j.location}</span>}

@@ -44,7 +44,7 @@ export default function Login() {
       <Card className="w-full max-w-sm">
         <CardHeader className="space-y-1">
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-xl font-bold text-indigo-400">TalentDesk</span>
+            <span className="text-xl font-bold text-blue-400">TalentDesk</span>
           </div>
           <CardTitle className="text-xl">Sign in</CardTitle>
           <CardDescription>Enter your credentials to continue</CardDescription>

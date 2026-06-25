@@ -511,7 +511,7 @@ function SortTh({ label, col, sortCol, sortDir, onSort }: {
       <div className="flex items-center gap-1">
         {label}
         {active
-          ? (sortDir === 'asc' ? <ChevronUp className="h-3 w-3 text-violet-400" /> : <ChevronDown className="h-3 w-3 text-violet-400" />)
+          ? (sortDir === 'asc' ? <ChevronUp className="h-3 w-3 text-blue-400" /> : <ChevronDown className="h-3 w-3 text-blue-400" />)
           : <ChevronDown className="h-3 w-3 text-slate-700" />
         }
       </div>
@@ -669,7 +669,7 @@ export default function Submittals() {
                 <td className="px-4 py-3 text-slate-400">{s.job_title}</td>
                 <td className="px-4 py-3">
                   {s.current_stage_name
-                    ? <span className="text-violet-400 font-medium">{s.current_stage_name}</span>
+                    ? <span className="text-blue-400 font-medium">{s.current_stage_name}</span>
                     : <span className="text-slate-500">Not started</span>
                   }
                 </td>

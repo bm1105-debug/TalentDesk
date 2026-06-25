@@ -57,10 +57,10 @@ function LeaderboardWidget({ rows, currentUserId }: { rows: LeaderboardEntry[]; 
           const isMe = row.id === currentUserId
           const pct  = Math.round((row.placements / maxPlacements) * 100)
           return (
-            <tr key={row.id} className={isMe ? 'bg-indigo-500/10' : ''}>
+            <tr key={row.id} className={isMe ? 'bg-blue-500/10' : ''}>
               <td className="py-2.5 pr-4 font-medium text-slate-100">
                 {row.name}
-                {isMe && <span className="ml-2 text-xs text-indigo-400 font-normal">you</span>}
+                {isMe && <span className="ml-2 text-xs text-blue-400 font-normal">you</span>}
               </td>
               <td className="py-2.5 text-right text-slate-400">{row.active}</td>
               <td className="py-2.5 text-right text-slate-400">{row.placements}</td>
@@ -149,7 +149,7 @@ export default function Analytics() {
         </select>
         {selectedClient && (
           <>
-            <span className="text-xs text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 rounded-full px-2.5 py-0.5 shrink-0">
+            <span className="text-xs text-blue-400 bg-blue-500/10 border border-blue-500/20 rounded-full px-2.5 py-0.5 shrink-0">
               {selectedClientName}
             </span>
             <button

@@ -33,7 +33,7 @@ interface SearchResults {
 function CandidateCard({ c, onClick }: { c: CandidateResult; onClick: () => void }) {
   return (
     <button onClick={onClick}
-      className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-indigo-500/10 transition-colors border border-transparent hover:border-indigo-500/20">
+      className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-blue-500/10 transition-colors border border-transparent hover:border-blue-500/20">
       <p className="text-sm font-medium text-slate-100">{c.full_name}</p>
       <p className="text-xs text-slate-500">{c.current_title || c.email}</p>
       <div className="mt-1"><StatusBadge status={c.status} /></div>
@@ -44,7 +44,7 @@ function CandidateCard({ c, onClick }: { c: CandidateResult; onClick: () => void
 function JobCard({ j, onClick }: { j: JobResult; onClick: () => void }) {
   return (
     <button onClick={onClick}
-      className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-indigo-500/10 transition-colors border border-transparent hover:border-indigo-500/20">
+      className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-blue-500/10 transition-colors border border-transparent hover:border-blue-500/20">
       <p className="text-sm font-medium text-slate-100">{j.title}</p>
       <p className="text-xs text-slate-500">{j.client_name}</p>
       <div className="flex gap-1 mt-1">
@@ -58,7 +58,7 @@ function JobCard({ j, onClick }: { j: JobResult; onClick: () => void }) {
 function ClientCard({ c, onClick }: { c: ClientResult; onClick: () => void }) {
   return (
     <button onClick={onClick}
-      className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-indigo-500/10 transition-colors border border-transparent hover:border-indigo-500/20">
+      className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-blue-500/10 transition-colors border border-transparent hover:border-blue-500/20">
       <p className="text-sm font-medium text-slate-100">{c.name}</p>
       <p className="text-xs text-slate-500">{c.industry}</p>
       <div className="mt-1"><StatusBadge status={c.status} /></div>
@@ -109,7 +109,7 @@ export default function Search() {
       <div className="relative max-w-lg">
         <SearchIcon className="absolute left-3.5 top-3.5 h-5 w-5 text-slate-500" />
         <Input
-          className="pl-11 h-12 text-lg bg-[#0d1117] border-white/[0.15] focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50"
+          className="pl-11 h-12 text-lg bg-[#0d1117] border-white/[0.15] focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50"
           placeholder="Search candidates, jobs, clients…"
           value={q}
           onChange={e => setQ(e.target.value)}
@@ -122,7 +122,7 @@ export default function Search() {
 
       {/* Boolean parsed_query hint */}
       {data?.parsed_query && (
-        <p className="text-xs text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 rounded-md px-3 py-1.5 max-w-lg">
+        <p className="text-xs text-blue-400 bg-blue-500/10 border border-blue-500/20 rounded-md px-3 py-1.5 max-w-lg">
           Interpreted as: <span className="font-mono font-medium">{data.parsed_query}</span>
         </p>
       )}

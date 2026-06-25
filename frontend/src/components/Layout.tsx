@@ -398,7 +398,7 @@ export default function Layout() {
                 >
                   {user && (
                     <>
-                      <div className="rounded-full transition-all group-hover:ring-2 group-hover:ring-violet-500/50">
+                      <div className="rounded-full transition-all group-hover:ring-2 group-hover:ring-blue-500/50">
                         <InitialsAvatar
                           id={user.id}
                           firstName={user.first_name ?? ''}

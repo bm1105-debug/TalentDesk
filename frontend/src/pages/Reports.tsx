@@ -48,7 +48,7 @@ function StageBar({ name, count, max }: { name: string; count: number; max: numb
       </div>
       <div className="h-2.5 w-full bg-white/[0.06] rounded-full overflow-hidden">
         <div
-          className="h-full bg-indigo-500 rounded-full transition-all duration-500"
+          className="h-full bg-blue-500 rounded-full transition-all duration-500"
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -119,7 +119,7 @@ export default function Reports() {
 
           {/* Outcome summary */}
           <div className="grid grid-cols-4 gap-4">
-            <OutcomeCard label="Active"    count={report.outcomes.active}    color="bg-indigo-500/10 border-indigo-500/20 text-indigo-300" />
+            <OutcomeCard label="Active"    count={report.outcomes.active}    color="bg-blue-500/10 border-blue-500/20 text-blue-300" />
             <OutcomeCard label="Placed"    count={report.outcomes.placed}    color="bg-green-500/10 border-green-500/20 text-green-300" />
             <OutcomeCard label="Rejected"  count={report.outcomes.rejected}  color="bg-red-500/10 border-red-500/20 text-red-300" />
             <OutcomeCard label="Withdrawn" count={report.outcomes.withdrawn} color="bg-white/[0.04] border-white/[0.06] text-slate-300" />
