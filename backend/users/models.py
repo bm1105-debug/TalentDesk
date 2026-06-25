@@ -60,6 +60,9 @@ class User(AbstractUser):
         """True for roles that can see all recruiters' data."""
         return self.role in (Role.CEO, Role.VP)
 
+    def __str__(self):
+        return self.get_full_name() or self.get_username()
+
     def clean(self):
         from django.core.exceptions import ValidationError
         if self.reports_to_id and self.reports_to_id == self.pk:

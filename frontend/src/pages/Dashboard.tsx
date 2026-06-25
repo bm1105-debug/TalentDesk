@@ -213,10 +213,10 @@ function HiringKpiTile({ label, value, cfg, loading }: {
       ) : (
         <div>
           <p className="stat-num" style={{
-            fontSize: '24px', fontWeight: 700, lineHeight: 1, letterSpacing: '-0.5px',
-            color: value == null ? 'rgba(255,255,255,0.25)' : '#f1f5f9',
+            fontSize: value == null ? '16px' : '24px', fontWeight: 700, lineHeight: 1, letterSpacing: '-0.5px',
+            color: value == null ? 'rgba(255,255,255,0.4)' : '#f1f5f9',
           }}>
-            {value == null ? '—' : `${value}${cfg.suffix ?? ''}`}
+            {value == null ? 'No data' : `${value}${cfg.suffix ?? ''}`}
           </p>
           <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', marginTop: '3px' }}>{label}</p>
         </div>
@@ -986,8 +986,8 @@ export default function Dashboard() {
           </>
         )}
         {!selectedClient && (
-          <p className="ml-auto text-xs text-slate-600">
-            Filters: KPIs · Time to Fill · Decline Reasons · Diversity
+          <p className="ml-auto text-xs text-slate-500 italic">
+            Pick a client to scope: KPIs, Time to Fill, Decline Reasons, Diversity
           </p>
         )}
       </div>

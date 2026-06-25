@@ -690,8 +690,8 @@ export default function Submittals() {
                       )}
                     </div>
                   )}
-                  {isManager && s.status !== 'active' && (
-                    <span className="text-xs text-slate-500">Closed</span>
+                  {s.status !== 'active' && (
+                    <span className="text-xs text-slate-500 capitalize">{s.status}</span>
                   )}
                 </td>
               </tr>

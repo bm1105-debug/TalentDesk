@@ -89,6 +89,15 @@ function fmtLastContacted(dt: string | null): string {
   return `${days}d ago`
 }
 
+function lastContactedClass(dt: string | null, status: string): string {
+  if (status !== 'active') return 'text-slate-500'
+  if (!dt) return 'text-amber-400 font-medium'
+  const days = Math.floor((Date.now() - new Date(dt).getTime()) / 86_400_000)
+  if (days >= 60) return 'text-red-400 font-medium'
+  if (days >= 30) return 'text-amber-400'
+  return 'text-slate-500'
+}
+
 // ── Add Candidate Form ─────────────────────────────────────────────────────────
 
 interface DuplicateInfo {
@@ -718,7 +727,7 @@ export default function Candidates() {
                       )}
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-slate-500 text-xs whitespace-nowrap">
+                  <td className={`px-4 py-3 text-xs whitespace-nowrap ${lastContactedClass(c.last_contacted_at, c.status)}`}>
                     {fmtLastContacted(c.last_contacted_at)}
                   </td>
                   <td className="px-4 py-3">

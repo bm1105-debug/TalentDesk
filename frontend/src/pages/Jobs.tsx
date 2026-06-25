@@ -84,6 +84,21 @@ function JobStatusBadge({ status }: { status: string }) {
   return <span className={`priority-badge ${cls}`}>{status.replace('_', ' ')}</span>
 }
 
+function daysOpen(createdAt: string) {
+  return Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000)
+}
+
+function DaysOpenCell({ job }: { job: Job }) {
+  if (!['open', 'on_hold'].includes(job.status))
+    return <span className="text-slate-600 text-xs">—</span>
+  const days = daysOpen(job.created_at)
+  const cls =
+    days >= 60 ? 'text-red-400 font-semibold' :
+    days >= 30 ? 'text-amber-400 font-medium' :
+                 'text-slate-400'
+  return <span className={`text-xs tabular-nums ${cls}`}>{days}d</span>
+}
+
 function SortTh({ label, col, sortCol, sortDir, onSort }: {
   label: string; col: string; sortCol: string | null; sortDir: 'asc' | 'desc'
   onSort: (col: string) => void
@@ -321,13 +336,14 @@ export default function Jobs() {
               <SortTh label="Status"   col="status"   sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
               <SortTh label="Priority" col="priority" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
               <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Openings</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Age</th>
               <SortTh label="Target"   col="target"   sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
               <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Assigned</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-white/[0.05]">
             {isLoading && (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">Loading…</td></tr>
+              <tr><td colSpan={8} className="px-4 py-8 text-center text-slate-500">Loading…</td></tr>
             )}
             {!isLoading && data?.results.length === 0 && (
               <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">No jobs found</td></tr>
@@ -344,6 +360,7 @@ export default function Jobs() {
                 <td className="px-4 py-3"><JobStatusBadge status={j.status} /></td>
                 <td className="px-4 py-3"><PriorityBadge priority={j.priority} /></td>
                 <td className="px-4 py-3 text-slate-400">{j.openings}</td>
+                <td className="px-4 py-3"><DaysOpenCell job={j} /></td>
                 <td className="px-4 py-3 text-slate-400">
                   {j.target_date
                     ? new Date(j.target_date).toLocaleDateString()

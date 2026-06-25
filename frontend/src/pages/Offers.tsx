@@ -46,6 +46,17 @@ function fmtSalary(amount: string, currency: string) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: 0 }).format(Number(amount))
 }
 
+function ExpiryCell({ expiry_date, status }: { expiry_date: string | null; status: string }) {
+  if (!expiry_date) return <span className="text-slate-500">—</span>
+  const days = Math.ceil((new Date(expiry_date).getTime() - Date.now()) / 86400000)
+  const text = fmt(expiry_date)
+  if (status !== 'pending') return <span className="text-slate-500">{text}</span>
+  if (days < 0)  return <span className="text-red-400 font-medium text-xs">{text} · expired</span>
+  if (days <= 3) return <span className="text-red-400 font-medium text-xs">{text} · {days}d left</span>
+  if (days <= 7) return <span className="text-amber-400 text-xs">{text} · {days}d left</span>
+  return <span className="text-slate-500">{text}</span>
+}
+
 // ── Action confirmation dialog ─────────────────────────────────────────────────
 
 const actionSchema = z.object({ notes: z.string().optional() })
@@ -213,7 +224,7 @@ export default function Offers() {
                   {fmtSalary(o.salary, o.currency)}
                 </td>
                 <td className="px-4 py-3 text-slate-400">{fmt(o.offer_date)}</td>
-                <td className="px-4 py-3 text-slate-500">{fmt(o.expiry_date)}</td>
+                <td className="px-4 py-3"><ExpiryCell expiry_date={o.expiry_date} status={o.status} /></td>
                 <td className="px-4 py-3 text-slate-500">{fmt(o.start_date)}</td>
                 <td className="px-4 py-3">
                   <StatusBadge status={o.status} />
