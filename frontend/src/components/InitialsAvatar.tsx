@@ -6,7 +6,7 @@ function nameHash(first: string, last: string): number {
 }
 
 const COLOURS = [
-  { bg: 'bg-violet-500/20',  text: 'text-violet-300'  },
+  { bg: 'bg-blue-600/20',    text: 'text-blue-200'    },
   { bg: 'bg-blue-500/20',    text: 'text-blue-300'    },
   { bg: 'bg-emerald-500/20', text: 'text-emerald-300' },
   { bg: 'bg-amber-500/20',   text: 'text-amber-300'   },

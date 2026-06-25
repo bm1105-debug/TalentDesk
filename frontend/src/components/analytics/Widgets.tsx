@@ -118,7 +118,7 @@ export function WidgetCard({ title, children, loading }: {
   loading: boolean
 }) {
   return (
-    <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.06] p-5">
+    <div className="bg-[#0d1117] rounded-xl border border-white/[0.06] p-5">
       <h2 className="text-sm font-semibold text-slate-300 mb-4">{title}</h2>
       {loading ? (
         <div className="space-y-2">
@@ -135,7 +135,7 @@ export function WidgetCard({ title, children, loading }: {
 
 export function StatCard({ label, value, loading }: { label: string; value?: number | null; loading: boolean }) {
   return (
-    <div className="bg-[#1a1a2e] rounded-xl border border-white/[0.06] p-5">
+    <div className="bg-[#0d1117] rounded-xl border border-white/[0.06] p-5">
       {loading ? (
         <>
           <Skeleton className="h-8 w-16 mb-2" />
@@ -208,7 +208,7 @@ export function OpenJobsWidget({ data }: { data: OpenJobs }) {
       <div>
         <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">By Status</p>
         <div className="divide-y divide-white/[0.04]">
-          <CountRow label="Open"    value={data.by_status.open}   dot="#6366f1" />
+          <CountRow label="Open"    value={data.by_status.open}   dot="#2563eb" />
           <CountRow label="On Hold" value={data.by_status.on_hold} dot="#f59e0b" />
           <CountRow label="Draft"   value={data.by_status.draft}   dot="#64748b" />
           <CountRow label="Filled"  value={data.by_status.filled}  dot="#10b981" />
@@ -245,7 +245,7 @@ export function PipelineFunnelWidget({ stages }: { stages: FunnelStage[] }) {
             <div className="h-2.5 w-full bg-white/10 rounded-full overflow-hidden">
               <div
               className="h-full rounded-full transition-all duration-500"
-              style={{ width: `${pct}%`, background: 'linear-gradient(90deg, #7c3aed, #6366f1)' }}
+              style={{ width: `${pct}%`, background: 'linear-gradient(90deg, #1d4ed8, #3b82f6)' }}
             />
             </div>
           </div>
@@ -292,7 +292,7 @@ export function InterviewOutcomesWidget({ data }: { data: InterviewOutcomes }) {
 
 const TREND_TOOLTIP_STYLE = {
   contentStyle: {
-    background: '#1a1a2e',
+    background: '#0d1117',
     border: '1px solid rgba(255,255,255,0.08)',
     borderRadius: 8,
     color: '#f1f5f9',
@@ -316,8 +316,8 @@ export function TimeToFillTrendWidget({ data }: { data: TimeToFillTrend }) {
         <AreaChart data={data.trend} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
           <defs>
             <linearGradient id="ttfGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%"  stopColor="#6366f1" stopOpacity={0.35} />
-              <stop offset="95%" stopColor="#6366f1" stopOpacity={0.03} />
+              <stop offset="5%"  stopColor="#2563eb" stopOpacity={0.35} />
+              <stop offset="95%" stopColor="#2563eb" stopOpacity={0.03} />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
@@ -340,11 +340,11 @@ export function TimeToFillTrendWidget({ data }: { data: TimeToFillTrend }) {
           <Area
             type="monotone"
             dataKey="avg_days"
-            stroke="#6366f1"
+            stroke="#2563eb"
             strokeWidth={2}
             fill="url(#ttfGradient)"
-            dot={{ fill: '#6366f1', r: 3, strokeWidth: 0 }}
-            activeDot={{ r: 5, fill: '#a5b4fc', strokeWidth: 0 }}
+            dot={{ fill: '#3b82f6', r: 3, strokeWidth: 0 }}
+            activeDot={{ r: 5, fill: '#93c5fd', strokeWidth: 0 }}
           />
         </AreaChart>
       </ResponsiveContainer>
@@ -356,16 +356,16 @@ export function TimeToFillTrendWidget({ data }: { data: TimeToFillTrend }) {
 // ── Decline reasons (PieChart) ────────────────────────────────────────────────
 
 const REASON_COLORS: Record<string, string> = {
-  salary:     '#6366f1',
-  experience: '#8b5cf6',
-  technical:  '#06b6d4',
+  salary:     '#1d4ed8',
+  experience: '#2563eb',
+  technical:  '#3b82f6',
   culture:    '#f59e0b',
   other:      '#64748b',
 }
 
 const PIE_TOOLTIP_STYLE = {
   contentStyle: {
-    background: '#1a1a2e',
+    background: '#0d1117',
     border: '1px solid rgba(255,255,255,0.08)',
     borderRadius: 8,
     color: '#f1f5f9',
@@ -437,9 +437,9 @@ export function DeclineReasonsWidget({ data }: { data: DeclineReasons }) {
 // ── Diversity breakdown (stacked BarChart) ─────────────────────────────────────
 
 const DIVERSITY_COLORS = {
-  female:            '#8b5cf6',
-  male:              '#6366f1',
-  non_binary:        '#06b6d4',
+  female:            '#3b82f6',
+  male:              '#1d4ed8',
+  non_binary:        '#60a5fa',
   prefer_not_to_say: '#475569',
 }
 
@@ -452,7 +452,7 @@ const DIVERSITY_LABELS = {
 
 const DIV_TOOLTIP_STYLE = {
   contentStyle: {
-    background: '#1a1a2e',
+    background: '#0d1117',
     border: '1px solid rgba(255,255,255,0.08)',
     borderRadius: 8,
     color: '#f1f5f9',

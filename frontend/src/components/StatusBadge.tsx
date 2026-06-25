@@ -7,11 +7,11 @@ const STYLES: Record<string, string> = {
   urgent:      'bg-red-500/15 text-red-300 border border-red-500/25',
   rejected:    'bg-red-500/15 text-red-300 border border-red-500/25',
   declined:    'bg-red-500/15 text-red-300 border border-red-500/25',
-  // indigo
-  scheduled:   'bg-indigo-500/15 text-indigo-300 border border-indigo-500/25',
-  screening:   'bg-indigo-500/15 text-indigo-300 border border-indigo-500/25',
-  submitted:   'bg-indigo-500/15 text-indigo-300 border border-indigo-500/25',
-  shortlisted: 'bg-indigo-500/15 text-indigo-300 border border-indigo-500/25',
+  // blue
+  scheduled:   'bg-blue-500/15 text-blue-300 border border-blue-500/25',
+  screening:   'bg-blue-500/15 text-blue-300 border border-blue-500/25',
+  submitted:   'bg-blue-500/15 text-blue-300 border border-blue-500/25',
+  shortlisted: 'bg-blue-500/15 text-blue-300 border border-blue-500/25',
   // amber
   medium:      'bg-amber-500/15 text-amber-300 border border-amber-500/25',
   interview:   'bg-amber-500/15 text-amber-300 border border-amber-500/25',
@@ -30,11 +30,11 @@ const STYLES: Record<string, string> = {
   no_show:     'bg-orange-500/15 text-orange-300 border border-orange-500/25',
   overdue:     'bg-orange-500/15 text-orange-300 border border-orange-500/25',
   // interview types
-  phone:       'bg-indigo-500/15 text-indigo-300 border border-indigo-500/25',
-  video:       'bg-indigo-500/15 text-indigo-300 border border-indigo-500/25',
+  phone:       'bg-blue-500/15 text-blue-300 border border-blue-500/25',
+  video:       'bg-blue-500/15 text-blue-300 border border-blue-500/25',
   onsite:      'bg-cyan-500/15 text-cyan-300 border border-cyan-500/25',
   technical:   'bg-amber-500/15 text-amber-300 border border-amber-500/25',
-  panel:       'bg-violet-500/15 text-violet-300 border border-violet-500/25',
+  panel:       'bg-blue-400/15 text-blue-200 border border-blue-400/25',
 }
 
 const BASE = 'inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold tracking-wide capitalize'

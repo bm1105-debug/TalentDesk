@@ -136,7 +136,7 @@ export default function CommandBar() {
     >
       <div
         className="w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden"
-        style={{ background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.1)' }}
+        style={{ background: '#0d1117', border: '1px solid rgba(255,255,255,0.1)' }}
         onClick={e => e.stopPropagation()}
       >
         {/* Input */}
@@ -179,7 +179,7 @@ export default function CommandBar() {
                 key={`${item.path}-${i}`}
                 onClick={() => goTo(item.path, item.label)}
                 className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors"
-                style={{ background: focused === i ? 'rgba(99,102,241,0.15)' : 'transparent' }}
+                style={{ background: focused === i ? 'rgba(37,99,235,0.15)' : 'transparent' }}
                 onMouseEnter={() => setFocused(i)}
               >
                 <div className="p-1.5 rounded-lg shrink-0" style={{ background: 'rgba(255,255,255,0.07)' }}>

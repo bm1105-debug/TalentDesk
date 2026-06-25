@@ -51,8 +51,8 @@ interface UserAnalyticsData {
 // ── Recruiter stats widget (replaces leaderboard for per-user view) ────────────
 
 const KPI_CFG = [
-  { label: 'Total Submittals', key: 'total',           color: '#6366f1', icon: FileText,    fmt: (v: number) => String(v) },
-  { label: 'Active',           key: 'active',          color: '#06b6d4', icon: Users,       fmt: (v: number) => String(v) },
+  { label: 'Total Submittals', key: 'total',           color: '#2563eb', icon: FileText,    fmt: (v: number) => String(v) },
+  { label: 'Active',           key: 'active',          color: '#3b82f6', icon: Users,       fmt: (v: number) => String(v) },
   { label: 'Placed',           key: 'placed',          color: '#10b981', icon: CheckCircle, fmt: (v: number) => String(v) },
   { label: 'Conversion Rate',  key: 'conversion_rate', color: '#8b5cf6', icon: TrendingUp,  fmt: (v: number) => `${v}%`  },
 ] as const
@@ -192,7 +192,7 @@ function AddUserDialog({ teamLeads, onSuccess }: { teamLeads: UserEntry[]; onSuc
           <div className="space-y-1.5">
             <Label>Role</Label>
             <select {...register('role')}
-              className="h-9 w-full rounded-md border border-white/[0.12] bg-[#1a1a2e] text-slate-200 px-3 py-1 text-sm"
+              className="h-9 w-full rounded-md border border-white/[0.12] bg-[#0d1117] text-slate-200 px-3 py-1 text-sm"
             >
               <option value="recruiter">Recruiter</option>
               <option value="team_lead">Team Lead</option>
@@ -205,7 +205,7 @@ function AddUserDialog({ teamLeads, onSuccess }: { teamLeads: UserEntry[]; onSuc
             <div className="space-y-1.5">
               <Label>Reports To <span className="text-slate-500">(optional)</span></Label>
               <select {...register('reports_to')}
-                className="h-9 w-full rounded-md border border-white/[0.12] bg-[#1a1a2e] text-slate-200 px-3 py-1 text-sm"
+                className="h-9 w-full rounded-md border border-white/[0.12] bg-[#0d1117] text-slate-200 px-3 py-1 text-sm"
               >
                 <option value="">— None —</option>
                 {teamLeads.map(tl => (
@@ -283,7 +283,7 @@ function EmployeePicker({
       {/* Trigger */}
       <button
         onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between gap-2 h-10 px-3 rounded-lg border border-white/[0.12] bg-[#1a1a2e] text-sm text-slate-200 hover:border-white/[0.25] transition-colors"
+        className="w-full flex items-center justify-between gap-2 h-10 px-3 rounded-lg border border-white/[0.12] bg-[#0d1117] text-sm text-slate-200 hover:border-white/[0.25] transition-colors"
       >
         <span className={selected ? 'text-slate-100' : 'text-slate-500'}>
           {selected ? `${selected.first_name} ${selected.last_name}` : 'Select employee…'}
@@ -293,7 +293,7 @@ function EmployeePicker({
 
       {/* Dropdown */}
       {open && (
-        <div className="absolute z-50 mt-1 w-full rounded-lg border border-white/[0.12] bg-[#1a1a2e] shadow-xl overflow-hidden">
+        <div className="absolute z-50 mt-1 w-full rounded-lg border border-white/[0.12] bg-[#0d1117] shadow-xl overflow-hidden">
           {/* Search input */}
           <div className="flex items-center gap-2 px-3 py-2 border-b border-white/[0.06]">
             <Search className="h-3.5 w-3.5 text-slate-500 flex-shrink-0" />
@@ -383,9 +383,9 @@ export default function People() {
 
       {/* ── Empty state ── */}
       {!selectedId && (
-        <div className="flex flex-col items-center justify-center h-64 rounded-xl border border-white/[0.06] bg-[#1a1a2e] gap-3">
-          <div className="p-3 rounded-full bg-indigo-500/10">
-            <Users className="h-6 w-6 text-indigo-400" />
+        <div className="flex flex-col items-center justify-center h-64 rounded-xl border border-white/[0.06] bg-[#0d1117] gap-3">
+          <div className="p-3 rounded-full bg-blue-500/10">
+            <Users className="h-6 w-6 text-blue-400" />
           </div>
           {usersLoaded && users.length === 0 ? (
             <>
@@ -406,9 +406,9 @@ export default function People() {
         <>
           {/* Selected employee profile strip */}
           {selected && (
-            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-[#1a1a2e] border border-white/[0.06]">
-              <div className="h-9 w-9 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center flex-shrink-0">
-                <span className="text-sm font-semibold text-indigo-300">
+            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-[#0d1117] border border-white/[0.06]">
+              <div className="h-9 w-9 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center flex-shrink-0">
+                <span className="text-sm font-semibold text-blue-300">
                   {selected.first_name[0]}{selected.last_name[0]}
                 </span>
               </div>

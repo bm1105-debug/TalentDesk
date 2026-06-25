@@ -107,7 +107,7 @@ export default function NotificationBell() {
             {unread.count > 0 && (
               <button
                 onClick={() => markAll.mutate()}
-                className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+                className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
               >
                 Mark all read
               </button>
@@ -124,12 +124,12 @@ export default function NotificationBell() {
                 key={n.id}
                 onClick={() => handleClick(n)}
                 className={`w-full text-left px-4 py-3 transition-colors block hover:bg-white/5 ${
-                  !n.is_read ? 'bg-indigo-500/10' : ''
+                  !n.is_read ? 'bg-blue-500/10' : ''
                 }`}
               >
                 <div className="flex items-start gap-2">
                   {!n.is_read && (
-                    <span className="mt-1.5 h-2 w-2 rounded-full bg-indigo-400 flex-shrink-0" />
+                    <span className="mt-1.5 h-2 w-2 rounded-full bg-blue-400 flex-shrink-0" />
                   )}
                   <div className={!n.is_read ? '' : 'ml-4'}>
                     <p className="text-sm text-slate-200 leading-snug">{n.message}</p>

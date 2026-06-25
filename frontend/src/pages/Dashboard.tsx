@@ -150,7 +150,7 @@ function DashboardSkeleton() {
 
 const PILL_STYLES: Record<'red' | 'purple' | 'cyan' | 'orange', string> = {
   red:    'bg-red-500/15    border-red-500/25    text-red-200',
-  purple: 'bg-violet-500/15 border-violet-500/25 text-violet-200',
+  purple: 'bg-blue-500/15 border-blue-500/25 text-blue-200',
   cyan:   'bg-cyan-500/15   border-cyan-500/25   text-cyan-200',
   orange: 'bg-orange-500/15 border-orange-500/25 text-orange-200',
 }
@@ -180,8 +180,8 @@ interface HiringKpiConfig {
 const HIRING_KPI_CONFIGS: HiringKpiConfig[] = [
   { icon: Clock,         borderColor: '#3b82f6', iconBg: 'bg-blue-500/20',    iconText: 'text-blue-400',    suffix: 'd'  },
   { icon: Trophy,        borderColor: '#10b981', iconBg: 'bg-emerald-500/20', iconText: 'text-emerald-400', suffix: '%'  },
-  { icon: HandCoins,     borderColor: '#8b5cf6', iconBg: 'bg-violet-500/20',  iconText: 'text-violet-400'               },
-  { icon: CheckSquare,   borderColor: '#06b6d4', iconBg: 'bg-cyan-500/20',    iconText: 'text-cyan-400'                 },
+  { icon: HandCoins,     borderColor: '#3b82f6', iconBg: 'bg-blue-500/20',   iconText: 'text-blue-400'                 },
+  { icon: CheckSquare,   borderColor: '#60a5fa', iconBg: 'bg-blue-400/20',   iconText: 'text-blue-300'                 },
   { icon: FileText,      borderColor: '#f59e0b', iconBg: 'bg-amber-500/20',   iconText: 'text-amber-400'                },
   { icon: AlertTriangle, borderColor: '#ef4444', iconBg: 'bg-red-500/20',     iconText: 'text-red-400'                  },
 ]
@@ -235,12 +235,12 @@ function ConversionRing({ rate }: { rate: number }) {
       <svg className="w-full h-full -rotate-90" viewBox="0 0 88 88">
         <defs>
           <linearGradient id="ringGradient" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%"   stopColor="#6366f1" />
-            <stop offset="50%"  stopColor="#8b5cf6" />
-            <stop offset="100%" stopColor="#06b6d4" />
+            <stop offset="0%"   stopColor="#1d4ed8" />
+            <stop offset="50%"  stopColor="#2563eb" />
+            <stop offset="100%" stopColor="#60a5fa" />
           </linearGradient>
           <filter id="ringGlow">
-            <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="rgba(99,102,241,0.6)" />
+            <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="rgba(37,99,235,0.7)" />
           </filter>
         </defs>
         <circle cx="44" cy="44" r={R} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="8" />
@@ -277,7 +277,7 @@ function PerformanceSidebar({ data, loading }: { data: ScorecardData | undefined
         <div className="p-1.5 bg-violet-500/10 rounded-lg">
           <Trophy className="h-4 w-4 text-violet-400" />
         </div>
-        <span style={{ color: '#c4b5fd', fontWeight: 700, fontSize: '13px' }}>My Performance</span>
+        <span style={{ color: '#93c5fd', fontWeight: 700, fontSize: '13px' }}>My Performance</span>
       </div>
 
       {loading ? (
@@ -322,7 +322,7 @@ function PerformanceSidebar({ data, loading }: { data: ScorecardData | undefined
                       className="h-full rounded-full"
                       style={{
                         width: `${Math.round((row.count / maxPipe) * 100)}%`,
-                        background: 'linear-gradient(90deg, #6366f1, #8b5cf6)',
+                        background: 'linear-gradient(90deg, #1d4ed8, #3b82f6)',
                         transition: 'width 0.6s ease',
                       }}
                     />
@@ -360,14 +360,14 @@ function PerformanceSidebar({ data, loading }: { data: ScorecardData | undefined
                 to="/candidates"
                 style={{
                   display:         'inline-block',
-                  background:      'linear-gradient(135deg, rgba(99,102,241,0.25), rgba(139,92,246,0.2))',
-                  color:           '#a5b4fc',
-                  border:          '1px solid rgba(99,102,241,0.35)',
+                  background:      'linear-gradient(135deg, rgba(37,99,235,0.25), rgba(59,130,246,0.18))',
+                  color:           '#93c5fd',
+                  border:          '1px solid rgba(37,99,235,0.35)',
                   borderRadius:    '10px',
                   padding:         '8px 16px',
                   fontSize:        '12px',
                   fontWeight:      600,
-                  boxShadow:       '0 4px 12px rgba(99,102,241,0.2)',
+                  boxShadow:       '0 4px 12px rgba(37,99,235,0.2)',
                   textDecoration:  'none',
                 }}
               >
@@ -548,7 +548,7 @@ function AddTaskDialog({ onAdded }: { onAdded: () => void }) {
         <Button
           size="sm"
           className="gap-1.5 h-7 text-xs text-white border-none"
-          style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', borderRadius: '9px', boxShadow: '0 4px 12px rgba(99,102,241,0.4)' }}
+          style={{ background: 'linear-gradient(135deg, #1d4ed8, #2563eb)', borderRadius: '9px', boxShadow: '0 4px 12px rgba(37,99,235,0.4)' }}
         >
           <Plus className="h-3 w-3" /> Add Task
         </Button>
@@ -640,7 +640,7 @@ function TaskPanel() {
               <input
                 type="checkbox"
                 className="h-4 w-4 rounded cursor-pointer"
-                style={{ accentColor: '#6366f1' }}
+                style={{ accentColor: '#2563eb' }}
                 onChange={() => markDone.mutate(task.id)}
               />
               <div className="flex-1 min-w-0">
@@ -671,12 +671,12 @@ function TaskPanel() {
 interface FunnelStage { stage: string; count: number }
 
 const FUNNEL_COLORS = [
-  '#6366f1', // Sourced
-  '#7c3aed', // Screened
-  '#8b5cf6', // Submitted
-  '#a855f7', // Shortlisted
-  '#06b6d4', // L1 Interview
-  '#0ea5e9', // L2 Interview
+  '#1d4ed8', // Sourced
+  '#2563eb', // Screened
+  '#3b82f6', // Submitted
+  '#60a5fa', // Shortlisted
+  '#93c5fd', // L1 Interview
+  '#bfdbfe', // L2 Interview
   '#f59e0b', // Offer Released
   '#10b981', // Offer Accepted
   '#22c55e', // Joined
@@ -707,15 +707,15 @@ function ConversionFunnel({ stages, loading, error }: {
     <div className="panel-card" style={{ padding: '14px 16px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
-          <div style={{ background: 'rgba(139,92,246,0.12)', padding: '5px', borderRadius: '7px', display: 'flex' }}>
-            <Filter style={{ width: 14, height: 14, color: '#a78bfa' }} />
+          <div style={{ background: 'rgba(37,99,235,0.12)', padding: '5px', borderRadius: '7px', display: 'flex' }}>
+            <Filter style={{ width: 14, height: 14, color: '#60a5fa' }} />
           </div>
           <span style={{ color: '#e2e8f0', fontWeight: 700, fontSize: '13px' }}>Hiring Pipeline Funnel</span>
         </div>
         {!loading && !error && stages.length > 0 && (
           <span style={{
-            background: 'rgba(167,139,250,0.1)', border: '1px solid rgba(167,139,250,0.2)',
-            borderRadius: '5px', padding: '2px 8px', fontSize: '11px', color: '#a78bfa', fontWeight: 600,
+            background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.25)',
+            borderRadius: '5px', padding: '2px 8px', fontSize: '11px', color: '#60a5fa', fontWeight: 600,
           }}>
             {endToEnd}% end-to-end
           </span>
@@ -749,7 +749,7 @@ function ConversionFunnel({ stages, loading, error }: {
         <div>
           {stages.map((s, i) => {
             const pct     = max > 0 ? Math.max(6, (s.count / max) * 100) : 100
-            const color   = FUNNEL_COLORS[i] ?? '#6366f1'
+            const color   = FUNNEL_COLORS[i] ?? '#2563eb'
             const prev    = stages[i - 1]
             const convPct = prev && prev.count > 0
               ? Math.round((s.count / prev.count) * 100)
@@ -914,24 +914,24 @@ export default function Dashboard() {
       <div
         className="relative overflow-hidden"
         style={{
-          background:   'radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0 / 22px 22px, linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(139,92,246,0.08) 50%, rgba(6,182,212,0.06) 100%)',
-          border:       '1px solid rgba(99,102,241,0.2)',
+          background:   'radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px) 0 0 / 22px 22px, linear-gradient(135deg, rgba(37,99,235,0.12) 0%, rgba(59,130,246,0.08) 50%, rgba(96,165,250,0.05) 100%)',
+          border:       '1px solid rgba(37,99,235,0.2)',
           borderRadius: '14px',
           padding:      '14px 20px',
-          boxShadow:    '0 0 40px rgba(99,102,241,0.08)',
+          boxShadow:    '0 0 40px rgba(37,99,235,0.10)',
         }}
       >
         <div
           className="absolute pointer-events-none z-0"
           style={{
             top: '-40px', right: 0, width: '200px', height: '200px', borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(37,99,235,0.18) 0%, transparent 70%)',
           }}
         />
         <div className="relative z-10 space-y-1">
           <h1 style={{
             fontSize: '1.1rem', fontWeight: 700, color: '#f1f5f9',
-            letterSpacing: '-0.5px', textShadow: '0 0 30px rgba(99,102,241,0.3)',
+            letterSpacing: '-0.5px', textShadow: '0 0 30px rgba(37,99,235,0.35)',
           }}>
             {greeting(user?.first_name ?? 'there')}
           </h1>
@@ -955,14 +955,14 @@ export default function Dashboard() {
       </div>
 
       {/* ── Client filter bar ── */}
-      <div className="flex items-center gap-3 bg-[#1a1a2e] border border-white/[0.06] rounded-xl px-4 py-3">
+      <div className="flex items-center gap-3 bg-[#0d1117] border border-white/[0.06] rounded-xl px-4 py-3">
         <Building2 className="h-4 w-4 text-slate-500 shrink-0" />
         <span className="text-sm text-slate-400 shrink-0">Filter by client</span>
         <select
           value={selectedClient ?? ''}
           onChange={e => setSelectedClient(e.target.value ? Number(e.target.value) : null)}
           disabled={clientsLoading}
-          className="h-8 rounded-md border border-white/[0.12] bg-[#12121f] text-slate-200 px-2.5 text-sm flex-1 max-w-xs disabled:opacity-50"
+          className="h-8 rounded-md border border-white/[0.12] bg-[#09090f] text-slate-200 px-2.5 text-sm flex-1 max-w-xs disabled:opacity-50"
         >
           {clientsLoading
             ? <option value="">Loading clients…</option>

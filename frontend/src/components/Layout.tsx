@@ -257,7 +257,7 @@ export default function Layout() {
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         style={{
-          background:  '#0e0e1b',
+          background:  '#09090f',
           borderRight: '1px solid rgba(255,255,255,0.05)',
           boxShadow:   '4px 0 30px rgba(0,0,0,0.5)',
           transition:  'width 0.22s cubic-bezier(0.4,0,0.2,1)',
@@ -270,12 +270,12 @@ export default function Layout() {
           className={cn('h-14 flex items-center flex-shrink-0 gap-2.5 overflow-hidden', isExpanded ? 'px-4' : 'justify-center px-2')}
           style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
         >
-          <div className="flex-shrink-0 rounded-lg p-1.5" style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+          <div className="flex-shrink-0 rounded-lg p-1.5" style={{ background: 'linear-gradient(135deg, #1d4ed8, #2563eb)' }}>
             <Layers className="h-4 w-4 text-white" aria-hidden="true" />
           </div>
           {isExpanded && (
             <span style={{
-              background:           'linear-gradient(135deg, #6366f1, #8b5cf6, #06b6d4)',
+              background:           'linear-gradient(135deg, #2563eb, #3b82f6, #60a5fa)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor:  'transparent',
               backgroundClip:       'text',
@@ -290,10 +290,10 @@ export default function Layout() {
         {/* Nav links — scroll-aware fade overlays */}
         <div ref={scrollRef} onScroll={handleNavScroll} className="sidebar-scroll flex-1 overflow-y-auto relative">
           {showTopFade && (
-            <div className="pointer-events-none absolute top-0 left-0 right-0 h-10 z-10 bg-gradient-to-b from-[#0e0e1b] to-transparent" />
+            <div className="pointer-events-none absolute top-0 left-0 right-0 h-10 z-10 bg-gradient-to-b from-[#09090f] to-transparent" />
           )}
           {showBottomFade && (
-            <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-16 z-10 bg-gradient-to-t from-[#0e0e1b] to-transparent" />
+            <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-16 z-10 bg-gradient-to-t from-[#09090f] to-transparent" />
           )}
           <nav className="py-2 px-2 space-y-0.5">
             <SectionLabel label="Pipeline" collapsed={!isExpanded} />
@@ -349,7 +349,7 @@ export default function Layout() {
         <header
           className="h-14 flex items-center justify-between px-6 shrink-0"
           style={{
-            background:     'rgba(15, 15, 26, 0.8)',
+            background:     'rgba(8, 8, 15, 0.85)',
             backdropFilter: 'blur(12px)',
             borderBottom:   '1px solid rgba(255,255,255,0.08)',
             boxShadow:      '0 4px 24px rgba(0,0,0,0.2)',
@@ -405,8 +405,8 @@ export default function Layout() {
                           lastName={user.last_name ?? ''}
                           size="md"
                           style={{
-                            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                            boxShadow:  '0 0 0 2px rgba(99,102,241,0.5), 0 4px 12px rgba(99,102,241,0.4)',
+                            background: 'linear-gradient(135deg, #1d4ed8, #2563eb)',
+                            boxShadow:  '0 0 0 2px rgba(37,99,235,0.5), 0 4px 12px rgba(37,99,235,0.4)',
                           }}
                         />
                       </div>
@@ -454,7 +454,7 @@ export default function Layout() {
 
         {/* ── Main content: direct style injection on main ─────────── */}
         <main className="flex-1 overflow-y-auto p-6" style={{
-          background: 'radial-gradient(ellipse at 20% 50%, rgba(99,102,241,0.08) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(139,92,246,0.06) 0%, transparent 50%), #0f0f1a',
+          background: 'radial-gradient(ellipse at 20% 50%, rgba(37,99,235,0.07) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(59,130,246,0.05) 0%, transparent 50%), #08080f',
           transition: 'background 0.3s ease',
         }}>
           <Outlet />
