@@ -135,8 +135,13 @@ export default function CommandBar() {
       onClick={() => setOpen(false)}
     >
       <div
-        className="w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden"
-        style={{ background: '#0d1117', border: '1px solid rgba(255,255,255,0.1)' }}
+        className="w-full max-w-xl rounded-2xl overflow-hidden"
+        style={{
+          background: 'rgba(13,17,23,0.98)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          borderTop: '2px solid #2563eb',
+          boxShadow: '0 0 0 1px rgba(255,255,255,0.03), 0 32px 80px rgba(0,0,0,0.8), 0 0 40px rgba(37,99,235,0.15)',
+        }}
         onClick={e => e.stopPropagation()}
       >
         {/* Input */}
