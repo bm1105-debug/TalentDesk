@@ -182,7 +182,7 @@ export default function Offers() {
       </div>
 
       {/* ── Table ── */}
-      <div className="bg-[#0d1117] rounded-xl border border-white/[0.06] overflow-hidden">
+      <div className="bg-[#0d1117] rounded-xl border border-white/[0.06] overflow-hidden" style={{ borderTop: '2px solid #2563eb' }}>
         <table className="w-full text-sm">
           <thead className="bg-white/[0.04] border-b border-white/[0.06]">
             <tr>
@@ -204,7 +204,7 @@ export default function Offers() {
               <tr>
                 <td colSpan={8} className="py-16">
                   <div className="flex flex-col items-center gap-2">
-                    <FileText className="h-6 w-6 text-slate-600" />
+                    <FileText className="h-6 w-6 text-blue-400/50" />
                     <p className="text-sm font-medium text-slate-300">No offers yet</p>
                     <p className="text-xs text-slate-500 text-center max-w-xs">
                       Offers are created from the Submittals page once a candidate reaches offer stage.
