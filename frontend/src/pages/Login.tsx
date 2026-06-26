@@ -104,34 +104,6 @@ export default function Login() {
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* Role dropdown */}
-          <div className="space-y-1.5">
-            <Label htmlFor="role" style={{ fontSize: '12px', fontWeight: 500, color: '#94a3b8' }}>Role</Label>
-            <select
-              id="role"
-              {...register('role')}
-              style={{
-                width: '100%', padding: '9px 12px', borderRadius: '8px', fontSize: '14px',
-                background: '#0d1117', color: '#f1f5f9',
-                border: '1px solid rgba(255,255,255,0.10)',
-                outline: 'none', cursor: 'pointer',
-                appearance: 'none',
-                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'right 12px center',
-                paddingRight: '36px',
-              }}
-            >
-              <option value="" disabled style={{ color: '#64748b' }}>Select your role…</option>
-              {ROLES.map(r => (
-                <option key={r.value} value={r.value} style={{ background: '#0d1117' }}>{r.label}</option>
-              ))}
-            </select>
-            {errors.role && (
-              <p className="text-xs text-red-400">{errors.role.message}</p>
-            )}
-          </div>
-
           {/* Username */}
           <div className="space-y-1.5">
             <Label htmlFor="username" style={{ fontSize: '12px', fontWeight: 500, color: '#94a3b8' }}>Username</Label>
@@ -158,6 +130,34 @@ export default function Login() {
             />
             {errors.password && (
               <p className="text-xs text-red-400">{errors.password.message}</p>
+            )}
+          </div>
+
+          {/* Role dropdown */}
+          <div className="space-y-1.5">
+            <Label htmlFor="role" style={{ fontSize: '12px', fontWeight: 500, color: '#94a3b8' }}>Role</Label>
+            <select
+              id="role"
+              {...register('role')}
+              style={{
+                width: '100%', padding: '9px 12px', borderRadius: '8px', fontSize: '14px',
+                background: '#0d1117', color: '#f1f5f9',
+                border: '1px solid rgba(255,255,255,0.10)',
+                outline: 'none', cursor: 'pointer',
+                appearance: 'none',
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'right 12px center',
+                paddingRight: '36px',
+              }}
+            >
+              <option value="" disabled style={{ color: '#64748b' }}>Select your role…</option>
+              {ROLES.map(r => (
+                <option key={r.value} value={r.value} style={{ background: '#0d1117' }}>{r.label}</option>
+              ))}
+            </select>
+            {errors.role && (
+              <p className="text-xs text-red-400">{errors.role.message}</p>
             )}
           </div>
 
