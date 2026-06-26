@@ -27,6 +27,11 @@ class RegisterSerializer(serializers.ModelSerializer):
             "reports_to":  {"required": False},
         }
 
+    def validate_email(self, value):
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("A user with this email already exists.")
+        return value
+
     def validate_reports_to(self, value):
         if value and value.role != 'team_lead':
             raise serializers.ValidationError("reports_to must be a Team Lead.")
@@ -57,9 +62,20 @@ class UserSerializer(serializers.ModelSerializer):
         fields = (
             "id", "username", "email", "first_name", "last_name",
             "role", "role_display", "phone", "is_active", "date_joined",
-            "reports_to", "reports_to_name",
+            "last_login", "reports_to", "reports_to_name",
         )
         read_only_fields = fields
+
+class MeUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ("first_name", "last_name", "email", "phone")
+
+    def validate_email(self, value):
+        if User.objects.filter(email=value).exclude(pk=self.instance.pk).exists():
+            raise serializers.ValidationError("A user with this email already exists.")
+        return value
+
 
 class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField(write_only=True)

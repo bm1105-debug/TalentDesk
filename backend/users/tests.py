@@ -1,10 +1,17 @@
+from django.test import override_settings
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from users.models import User, Role
 
+# Disable login throttle for all test classes that perform multiple logins
+_NO_THROTTLE = override_settings(DEFAULT_THROTTLE_RATES={
+    "anon": "1000/minute", "user": "1000/minute", "login": "1000/minute"
+})
 
+
+@_NO_THROTTLE
 class AuthTests(APITestCase):
     """Tests for login and token endpoints."""
 
@@ -40,6 +47,7 @@ class AuthTests(APITestCase):
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
+@_NO_THROTTLE
 class RegisterTests(APITestCase):
     """Tests for user registration — CEO only."""
 
@@ -54,10 +62,8 @@ class RegisterTests(APITestCase):
         )
 
     def _auth(self, user):
-        """Helper: set JWT auth header for the test client."""
-        token_url = reverse("token_obtain")
-        res = self.client.post(token_url, {"username": user.username, "password": "Str0ng!Pass"})
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {res.data['access']}")
+        """Helper: authenticate as user without hitting the throttled token endpoint."""
+        self.client.force_authenticate(user=user)
 
     def test_ceo_can_register_user(self):
         """CEO can create a new recruiter."""
@@ -99,6 +105,7 @@ class RegisterTests(APITestCase):
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
 
+@_NO_THROTTLE
 class ReportsToPodTests(APITestCase):
     """Tests for the reports_to FK — AM can set it, validation prevents bad values."""
 
@@ -115,9 +122,7 @@ class ReportsToPodTests(APITestCase):
             username="rec", password="Str0ng!Pass", role=Role.RECRUITER,
             first_name="Rob", last_name="Rec", email="rec@test.com",
         )
-        token_url = reverse("token_obtain")
-        res = self.client.post(token_url, {"username": "am", "password": "Str0ng!Pass"})
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {res.data['access']}")
+        self.client.force_authenticate(user=self.am)
         self.register_url = reverse("user_register")
 
     def test_am_can_register_user(self):
@@ -169,14 +174,13 @@ class ReportsToPodTests(APITestCase):
     def test_me_returns_reports_to_name(self):
         self.recruiter.reports_to = self.team_lead
         self.recruiter.save()
-        token_url = reverse("token_obtain")
-        res = self.client.post(token_url, {"username": "rec", "password": "Str0ng!Pass"})
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {res.data['access']}")
+        self.client.force_authenticate(user=self.recruiter)
         res = self.client.get(reverse("user_me"))
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.data["reports_to_name"], "Tom Lead")
 
 
+@_NO_THROTTLE
 class MeViewTests(APITestCase):
     """Tests for the /me/ endpoint."""
 
@@ -188,10 +192,7 @@ class MeViewTests(APITestCase):
 
     def test_me_returns_own_profile(self):
         """Authenticated user gets their own profile."""
-        token_url = reverse("token_obtain")
-        res = self.client.post(token_url, {"username": "recruiter1", "password": "Str0ng!Pass"})
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {res.data['access']}")
-
+        self.client.force_authenticate(user=self.user)
         res = self.client.get(reverse("user_me"))
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data["username"], "recruiter1")
@@ -203,6 +204,7 @@ class MeViewTests(APITestCase):
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
+@_NO_THROTTLE
 class ChangePasswordTests(APITestCase):
 
     def setUp(self):
@@ -210,9 +212,7 @@ class ChangePasswordTests(APITestCase):
             username="rec", password="OldPass!99", role=Role.RECRUITER,
             first_name="Rec", last_name="User", email="rec@test.com",
         )
-        token_url = reverse("token_obtain")
-        res = self.client.post(token_url, {"username": "rec", "password": "OldPass!99"})
-        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {res.data['access']}")
+        self.client.force_authenticate(user=self.user)
         self.url = reverse("change_password")
 
     def test_correct_old_password_changes_it(self):
@@ -251,17 +251,16 @@ class ChangePasswordTests(APITestCase):
         self.assertTrue(self.user.check_password("OldPass!99"))
 
     def test_unauthenticated_rejected(self):
-        self.client.credentials()
+        self.client.force_authenticate(user=None)
         res = self.client.post(self.url, {}, format="json")
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
 def _auth(client, user, password="Str0ng!Pass"):
-    url = reverse("token_obtain")
-    res = client.post(url, {"username": user.username, "password": password})
-    client.credentials(HTTP_AUTHORIZATION=f"Bearer {res.data['access']}")
+    client.force_authenticate(user=user)
 
 
+@_NO_THROTTLE
 class UserListTeamLeadTests(APITestCase):
     """Team Lead can list users; sees only their own direct reports."""
 
@@ -326,9 +325,105 @@ class UserListTeamLeadTests(APITestCase):
 
     def test_vp_sees_all_users(self):
         _auth(self.client, self.am)
-        res = self.client.get(self.url)
-        ids = [u["id"] for u in (res.data.get("results") if "results" in res.data else res.data)]
+        ids = []
+        url = self.url
+        while url:
+            res = self.client.get(url)
+            page = res.data
+            ids.extend(u["id"] for u in (page.get("results") if "results" in page else page))
+            url = page.get("next") if "next" in page else None
         self.assertIn(self.rec_in_pod.id, ids)
         self.assertIn(self.rec_other_pod.id, ids)
         self.assertIn(self.tl.id, ids)
-        self.assertIn(self.am.id, ids)  # VP sees themselves too
+        self.assertIn(self.am.id, ids)
+
+
+@_NO_THROTTLE
+class AdminPasswordResetTests(APITestCase):
+    def setUp(self):
+        self.vp = User.objects.create_user(
+            username="vp_reset", password="Str0ng!Pass", role=Role.VP,
+            first_name="VP", last_name="Reset", email="vp_reset@test.com",
+        )
+        self.recruiter = User.objects.create_user(
+            username="rec_reset", password="Str0ng!Pass", role=Role.RECRUITER,
+            first_name="Rec", last_name="Reset", email="rec_reset@test.com",
+        )
+        _auth(self.client, self.vp)
+        self.url = reverse("user_reset_password", kwargs={"pk": self.recruiter.pk})
+
+    def test_vp_can_reset_password(self):
+        res = self.client.post(self.url)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn("temp_password", res.data)
+        self.recruiter.refresh_from_db()
+        self.assertTrue(self.recruiter.check_password(res.data["temp_password"]))
+
+    def test_recruiter_cannot_reset_others_password(self):
+        _auth(self.client, self.recruiter)
+        res = self.client.post(self.url)
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+
+@_NO_THROTTLE
+class MePatchTests(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="me_patch", password="Str0ng!Pass", role=Role.RECRUITER,
+            first_name="Old", last_name="Name", email="me_patch@test.com", phone="",
+        )
+        _auth(self.client, self.user)
+        self.url = reverse("user_me")
+
+    def test_patch_updates_name(self):
+        res = self.client.patch(self.url, {"first_name": "New", "last_name": "Name2"}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.first_name, "New")
+        self.assertEqual(self.user.last_name, "Name2")
+
+    def test_patch_rejects_duplicate_email(self):
+        other = User.objects.create_user(
+            username="other_me", password="Str0ng!Pass", role=Role.RECRUITER,
+            first_name="X", last_name="Y", email="taken_me@test.com",
+        )
+        res = self.client.patch(self.url, {"email": other.email}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_patch_cannot_change_role(self):
+        res = self.client.patch(self.url, {"role": "ceo"}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.role, Role.RECRUITER)
+
+
+@_NO_THROTTLE
+class EmailUniqueTests(APITestCase):
+    def setUp(self):
+        self.ceo = User.objects.create_user(
+            username="ceo_email", password="Str0ng!Pass", role=Role.CEO,
+            first_name="CEO", last_name="Email", email="ceo_email@test.com",
+        )
+        User.objects.create_user(
+            username="existing_email_user", password="Str0ng!Pass", role=Role.RECRUITER,
+            first_name="Taken", last_name="Email", email="taken@test.com",
+        )
+        _auth(self.client, self.ceo)
+
+    def test_duplicate_email_rejected(self):
+        res = self.client.post(reverse("user_register"), {
+            "username": "newdup", "email": "taken@test.com",
+            "first_name": "New", "last_name": "Dup",
+            "role": Role.RECRUITER,
+            "password": "Str0ng!Pass", "password2": "Str0ng!Pass",
+        })
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_unique_email_accepted(self):
+        res = self.client.post(reverse("user_register"), {
+            "username": "newuniq", "email": "unique@test.com",
+            "first_name": "New", "last_name": "Uniq",
+            "role": Role.RECRUITER,
+            "password": "Str0ng!Pass", "password2": "Str0ng!Pass",
+        })
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)

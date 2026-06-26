@@ -3,7 +3,7 @@ import { NavLink, Link, Outlet, useNavigate, useLocation } from 'react-router-do
 import {
   LayoutDashboard, Users, Briefcase, FileText,
   Calendar, Mail, Search, LogOut, KeyRound, BarChart2, TrendingUp, Award,
-  ScrollText, FileCheck, ChevronLeft, ChevronRight, ChevronDown, Contact, Layers, Menu,
+  ScrollText, FileCheck, ChevronLeft, ChevronRight, ChevronDown, Contact, Layers, Menu, UserCog,
 } from 'lucide-react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { useAuth } from '@/context/AuthContext'
@@ -39,6 +39,91 @@ const ROUTE_LABELS: Record<string, string> = {
 function getPageTitle(pathname: string): string {
   const segment = '/' + pathname.split('/')[1]
   return ROUTE_LABELS[segment] ?? 'TalentDesk'
+}
+
+// ── My Profile dialog ──────────────────────────────────────────────────────
+
+function ProfileDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { user, refreshUser } = useAuth()
+  const [fields, setFields] = useState({ first_name: '', last_name: '', email: '', phone: '' })
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState(false)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    if (open && user) {
+      setFields({
+        first_name: user.first_name ?? '',
+        last_name:  user.last_name ?? '',
+        email:      user.email ?? '',
+        phone:      '',
+      })
+      setError('')
+      setSuccess(false)
+    }
+  }, [open, user])
+
+  function handleClose() { setError(''); setSuccess(false); onClose() }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setError('')
+    setSaving(true)
+    try {
+      await api.patch('/users/me/', fields)
+      await refreshUser()
+      setSuccess(true)
+    } catch (err: any) {
+      const data = err?.response?.data
+      setError(data ? Object.values(data).flat().join(' ') : 'Failed to update profile.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader><DialogTitle>My Profile</DialogTitle></DialogHeader>
+        {success ? (
+          <div className="space-y-4 pt-2">
+            <p className="text-sm text-blue-400 bg-blue-500/10 border border-blue-500/20 rounded-md px-3 py-2">
+              Profile updated successfully.
+            </p>
+            <div className="flex justify-end"><Button onClick={handleClose}>Done</Button></div>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-3 pt-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>First name</Label>
+                <Input value={fields.first_name} onChange={e => setFields(f => ({ ...f, first_name: e.target.value }))} />
+              </div>
+              <div className="space-y-1">
+                <Label>Last name</Label>
+                <Input value={fields.last_name} onChange={e => setFields(f => ({ ...f, last_name: e.target.value }))} />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label>Email</Label>
+              <Input type="email" value={fields.email} onChange={e => setFields(f => ({ ...f, email: e.target.value }))} />
+            </div>
+            <div className="space-y-1">
+              <Label>Phone <span className="text-slate-500">(optional)</span></Label>
+              <Input value={fields.phone} onChange={e => setFields(f => ({ ...f, phone: e.target.value }))} />
+            </div>
+            {error && (
+              <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-md px-3 py-2">{error}</p>
+            )}
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={handleClose}>Cancel</Button>
+              <Button type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save Changes'}</Button>
+            </div>
+          </form>
+        )}
+      </DialogContent>
+    </Dialog>
+  )
 }
 
 // ── Change password dialog ─────────────────────────────────────────────────
@@ -199,6 +284,7 @@ export default function Layout() {
   const pageTitle = getPageTitle(location.pathname)
   const TitleTag = location.pathname === '/dashboard' ? 'h2' : 'h1'
   const [pwOpen, setPwOpen] = useState(false)
+  const [profileOpen, setProfileOpen] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
 
   // breadcrumb state for detail routes (e.g. /candidates/123)
@@ -357,6 +443,7 @@ export default function Layout() {
         </div>
 
         <ChangePasswordDialog open={pwOpen} onClose={() => setPwOpen(false)} />
+        <ProfileDialog open={profileOpen} onClose={() => setProfileOpen(false)} />
       </aside>
 
       {/* ── Main content area ─────────────────────────────────────────── */}
@@ -463,6 +550,13 @@ export default function Layout() {
                       </div>
                     </>
                   )}
+                  <DropdownMenu.Item
+                    onSelect={() => setProfileOpen(true)}
+                    className="flex items-center gap-2 px-3 py-2 text-sm text-slate-400 rounded-lg hover:bg-white/5 hover:text-slate-200 cursor-pointer outline-none transition-colors"
+                  >
+                    <UserCog className="h-3.5 w-3.5" />
+                    My Profile
+                  </DropdownMenu.Item>
                   <DropdownMenu.Item
                     onSelect={() => setPwOpen(true)}
                     className="flex items-center gap-2 px-3 py-2 text-sm text-slate-400 rounded-lg hover:bg-white/5 hover:text-slate-200 cursor-pointer outline-none transition-colors"

@@ -17,6 +17,7 @@ interface AuthContextValue {
   isLoading: boolean          // true while we're checking localStorage on first load
   login: (username: string, password: string) => Promise<AuthUser>
   logout: () => void
+  refreshUser: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -58,6 +59,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const logout = useCallback(() => {
+    const refresh = localStorage.getItem('refresh')
+    if (refresh) {
+      api.post('/users/token/blacklist/', { refresh }).catch(() => {})
+    }
     localStorage.removeItem('access')
     localStorage.removeItem('refresh')
     setUser(null)
@@ -70,6 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading,
       login,
       logout,
+      refreshUser: fetchMe,
     }}>
       {children}
     </AuthContext.Provider>

@@ -6,7 +6,8 @@ and refresh (/token/refresh/) come for free from the library.
 '''
 
 from django.urls import path
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework.throttling import AnonRateThrottle
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenBlacklistView
 
 from users.views import (
     RegisterView,
@@ -14,15 +15,31 @@ from users.views import (
     ChangePasswordView,
     UserListView,
     UserDetailView,
+    AdminPasswordResetView,
 )
+
+
+class LoginRateThrottle(AnonRateThrottle):
+    scope = "login"
+
+    def get_rate(self):
+        from rest_framework.settings import api_settings
+        return api_settings.DEFAULT_THROTTLE_RATES.get(self.scope, "5/minute")
+
+
+class ThrottledTokenObtainPairView(TokenObtainPairView):
+    throttle_classes = [LoginRateThrottle]
 
 urlpatterns = [
     # --- Auth ---
     # POST: {"username": "...", "password": "..."} → returns access + refresh tokens
-    path("token/", TokenObtainPairView.as_view(), name="token_obtain"),
+    path("token/", ThrottledTokenObtainPairView.as_view(), name="token_obtain"),
 
     # POST: {"refresh": "..."} → returns a new access token
     path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+
+    # POST: {"refresh": "..."} → blacklists the token (call on logout)
+    path("token/blacklist/", TokenBlacklistView.as_view(), name="token_blacklist"),
 
     # --- User management ---
     # POST: CEO creates a new staff user
@@ -39,5 +56,8 @@ urlpatterns = [
 
     # GET/PATCH: retrieve or update a single user — CEO only
     path("<int:pk>/", UserDetailView.as_view(), name="user_detail"),
+
+    # POST: VP/CEO resets a user's password and returns a temp password
+    path("<int:pk>/reset-password/", AdminPasswordResetView.as_view(), name="user_reset_password"),
 ]
 

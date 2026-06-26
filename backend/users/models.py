@@ -16,6 +16,8 @@ class Role(models.TextChoices):
     CEO = "ceo", "CEO / Admin"
 
 class User(AbstractUser):
+    email = models.EmailField(unique=True, verbose_name="email address")
+
     # Role determines what the user can see and do across the entire app
     role = models.CharField(
         max_length=20,
