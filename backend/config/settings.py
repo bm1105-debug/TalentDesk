@@ -150,7 +150,11 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 
 CORS_ALLOWED_ORIGINS = os.getenv(
     "CORS_ALLOWED_ORIGINS", "http://localhost:5173"
-).split(",")
+).split(",") + [
+    "https://www.companylens.online",
+    "https://companylens.online",
+    "https://talentdesk-frontend.onrender.com",
+]
 
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
