@@ -105,7 +105,8 @@ export default function ActivityLog() {
         )}
 
         {!isLoading && !isError && (data?.results.length ?? 0) > 0 && (
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[600px]">
             <thead className="bg-white/[0.04] border-b border-white/[0.06]">
               <tr className="text-left text-xs text-slate-400 tracking-wide">
                 <th className="px-4 py-3 font-semibold">Time</th>
@@ -141,6 +142,7 @@ export default function ActivityLog() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 

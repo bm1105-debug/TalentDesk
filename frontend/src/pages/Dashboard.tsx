@@ -118,29 +118,29 @@ function DashboardSkeleton() {
       {/* Client filter bar */}
       <div className="h-12 rounded-xl bg-white/5 animate-pulse" />
       {/* 6 KPI tiles */}
-      <div className="grid grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className="h-24 rounded-lg bg-white/5 animate-pulse" />
         ))}
       </div>
       {/* Funnel | Trend */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="panel-card h-64 animate-pulse" />
         <div className="panel-card h-64 animate-pulse" />
       </div>
       {/* Source | Decline */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="panel-card h-48 animate-pulse" />
         <div className="panel-card h-48 animate-pulse" />
       </div>
       {/* Diversity */}
       <div className="panel-card h-48 animate-pulse" />
       {/* Bottom grid */}
-      <div className="grid grid-cols-12 gap-4">
-        <div className="panel-card col-span-4 h-56 animate-pulse" />
-        <div className="panel-card col-span-4 h-56 animate-pulse" />
-        <div className="panel-card col-span-4 h-56 animate-pulse" />
-        <div className="panel-card col-span-12 h-32 animate-pulse" />
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+        <div className="panel-card md:col-span-4 h-56 animate-pulse" />
+        <div className="panel-card md:col-span-4 h-56 animate-pulse" />
+        <div className="panel-card md:col-span-4 h-56 animate-pulse" />
+        <div className="panel-card md:col-span-12 h-32 animate-pulse" />
       </div>
     </div>
   )
@@ -271,7 +271,7 @@ function PerformanceSidebar({ data, loading }: { data: ScorecardData | undefined
   const maxPipe  = Math.max(...pipeline.map(r => r.count), 1)
 
   return (
-    <div className="panel-card col-span-4 p-5 space-y-5">
+    <div className="panel-card md:col-span-4 p-5 space-y-5">
       {/* Header */}
       <div className="flex items-center gap-2">
         <div className="p-1.5 bg-blue-500/10 rounded-lg">
@@ -1003,14 +1003,14 @@ export default function Dashboard() {
       </div>
 
       {/* ── Hiring KPI tiles ── */}
-      <div className="grid grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {HIRING_KPIS.map(k => (
           <HiringKpiTile key={k.label} label={k.label} value={k.value} cfg={k.cfg} loading={kpisLoading} />
         ))}
       </div>
 
       {/* ── Pipeline Funnel | Time to Fill Trend ── */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <ConversionFunnel stages={funnelData?.stages ?? []} loading={funnelLoading} error={funnelError} />
         <WidgetCard title={`Time to Fill Trend${selectedClientName ? ` · ${selectedClientName}` : ''}`} loading={trendLoading}>
           {trendData ? <TimeToFillTrendWidget data={trendData} /> : <Empty />}
@@ -1018,7 +1018,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── Source Effectiveness | Decline Reasons ── */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <WidgetCard title="Source Effectiveness" loading={analyticsLoading}>
           {sources.length === 0
             ? <Empty />
@@ -1036,19 +1036,19 @@ export default function Dashboard() {
       </WidgetCard>
 
       {/* ── My Day: Performance + Schedule + Deadlines + Tasks ── */}
-      <div className="grid grid-cols-12 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
 
         {!isCEO && <PerformanceSidebar data={scorecard} loading={scLoading} />}
 
-        <div className={isCEO ? 'col-span-6' : 'col-span-4'}>
+        <div className={isCEO ? 'md:col-span-6' : 'md:col-span-4'}>
           <TodaySchedulePanel interviews={data.interviews_today} />
         </div>
 
-        <div className={isCEO ? 'col-span-6' : 'col-span-4'}>
+        <div className={isCEO ? 'md:col-span-6' : 'md:col-span-4'}>
           <UpcomingDeadlinesPanel deadlines={data.upcoming_deadlines} />
         </div>
 
-        <div className="col-span-12">
+        <div className="md:col-span-12">
           <TaskPanel />
         </div>
 

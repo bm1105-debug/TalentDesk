@@ -163,7 +163,7 @@ function AddJobForm({ onSuccess }: { onSuccess: () => void }) {
         {errors.client && <p className="text-xs text-red-500">{errors.client.message}</p>}
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="space-y-1">
           <Label>Type</Label>
           <select {...register('job_type')} className="flex h-9 w-full rounded-md border border-white/[0.12] bg-[#0d1117] text-slate-200 px-3 py-1 text-sm shadow-sm">
@@ -192,7 +192,7 @@ function AddJobForm({ onSuccess }: { onSuccess: () => void }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="space-y-1">
           <Label>Openings</Label>
           <Input {...register('openings')} type="number" min={1} defaultValue={1} />

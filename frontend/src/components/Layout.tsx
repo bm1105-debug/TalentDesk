@@ -3,7 +3,7 @@ import { NavLink, Link, Outlet, useNavigate, useLocation } from 'react-router-do
 import {
   LayoutDashboard, Users, Briefcase, FileText,
   Calendar, Mail, Search, LogOut, KeyRound, BarChart2, TrendingUp, Award,
-  ScrollText, FileCheck, ChevronLeft, ChevronRight, ChevronDown, Contact, Layers,
+  ScrollText, FileCheck, ChevronLeft, ChevronRight, ChevronDown, Contact, Layers, Menu,
 } from 'lucide-react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { useAuth } from '@/context/AuthContext'
@@ -168,12 +168,13 @@ const ADMIN_ITEMS = [
   { to: '/activity', label: 'Audit Log', icon: ScrollText },
 ]
 
-function NavItem({ to, label, icon: Icon, collapsed }: {
-  to: string; label: string; icon: React.ElementType; collapsed: boolean
+function NavItem({ to, label, icon: Icon, collapsed, onClick }: {
+  to: string; label: string; icon: React.ElementType; collapsed: boolean; onClick?: () => void
 }) {
   return (
     <NavLink
       to={to}
+      onClick={onClick}
       title={collapsed ? label : undefined}
       className={({ isActive }) =>
         cn(
@@ -198,6 +199,7 @@ export default function Layout() {
   const pageTitle = getPageTitle(location.pathname)
   const TitleTag = location.pathname === '/dashboard' ? 'h2' : 'h1'
   const [pwOpen, setPwOpen] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   // breadcrumb state for detail routes (e.g. /candidates/123)
   const isDetail = location.pathname.split('/').filter(Boolean).length > 1
@@ -250,18 +252,34 @@ export default function Layout() {
     /* ── Root shell: direct style injection on .flex.h-screen ───────── */
     <div className="flex h-screen" style={{ background: 'var(--td-bg)', transition: 'background 0.3s ease' }}>
 
+      {/* Mobile backdrop */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 md:hidden"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
 
       {/* ── Sidebar: direct style injection on the sidebar container ──── */}
       <aside
-        className={cn('flex-shrink-0 flex flex-col', isExpanded ? 'w-[220px]' : 'w-14')}
+        className={cn(
+          'flex-shrink-0 flex flex-col',
+          // Mobile: fixed drawer, slides in/out
+          'fixed inset-y-0 left-0 z-50 transition-transform duration-200 ease-in-out',
+          mobileOpen ? 'translate-x-0' : '-translate-x-full',
+          // Desktop: relative, always visible, no translate
+          'md:relative md:inset-auto md:translate-x-0 md:z-20',
+          isExpanded ? 'w-[220px]' : 'md:w-14',
+          // Mobile drawer always full width
+          'w-[220px]',
+        )}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         style={{
           background:  '#09090f',
           borderRight: '1px solid rgba(255,255,255,0.05)',
           boxShadow:   '4px 0 30px rgba(0,0,0,0.5)',
-          transition:  'width 0.22s cubic-bezier(0.4,0,0.2,1)',
-          zIndex:      20,
+          transition:  'width 0.22s cubic-bezier(0.4,0,0.2,1), transform 0.2s ease-in-out',
         }}
       >
 
@@ -298,19 +316,19 @@ export default function Layout() {
           <nav className="py-2 px-2 space-y-0.5">
             <SectionLabel label="Pipeline" collapsed={!isExpanded} />
             {PIPELINE_ITEMS.map(item => (
-              <NavItem key={item.to} {...item} collapsed={!isExpanded} />
+              <NavItem key={item.to} {...item} collapsed={!isExpanded} onClick={() => setMobileOpen(false)} />
             ))}
 
             <SectionLabel label="Workflow" collapsed={!isExpanded} divider />
             {WORKFLOW_ITEMS.map(item => (
-              <NavItem key={item.to} {...item} collapsed={!isExpanded} />
+              <NavItem key={item.to} {...item} collapsed={!isExpanded} onClick={() => setMobileOpen(false)} />
             ))}
 
             <SectionLabel label="Insights" collapsed={!isExpanded} divider />
             {INSIGHTS_ITEMS.filter(item =>
               !(item.to === '/scorecard' && user?.role === 'ceo')
             ).map(item => (
-              <NavItem key={item.to} {...item} collapsed={!isExpanded} />
+              <NavItem key={item.to} {...item} collapsed={!isExpanded} onClick={() => setMobileOpen(false)} />
             ))}
 
             <SectionLabel label="Admin" collapsed={!isExpanded} divider />
@@ -318,7 +336,7 @@ export default function Layout() {
               if ((item.to === '/people' || item.to === '/activity') && !isManager) return false
               return true
             }).map(item => (
-              <NavItem key={item.to} {...item} collapsed={!isExpanded} />
+              <NavItem key={item.to} {...item} collapsed={!isExpanded} onClick={() => setMobileOpen(false)} />
             ))}
           </nav>
         </div>
@@ -360,7 +378,15 @@ export default function Layout() {
             height: '2px',
             background: 'linear-gradient(90deg, #1d4ed8 0%, #3b82f6 50%, transparent 100%)',
           }} />
-          <div className="h-14 flex items-center justify-between px-6">
+          <div className="h-14 flex items-center justify-between px-3 md:px-6">
+          {/* Mobile hamburger */}
+          <button
+            className="md:hidden p-2 -ml-1 mr-1 text-slate-400 hover:text-slate-200 transition-colors rounded-lg hover:bg-white/5"
+            onClick={() => setMobileOpen(true)}
+            aria-label="Open menu"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
           {/* Left: breadcrumb on detail routes, plain title on list routes */}
           {isDetail && parentLabel ? (
             <nav className="flex items-center gap-1.5 min-w-0 shrink-0" aria-label="Breadcrumb">
@@ -460,7 +486,7 @@ export default function Layout() {
         </header>
 
         {/* ── Main content: direct style injection on main ─────────── */}
-        <main className="flex-1 overflow-y-auto p-6" style={{
+        <main className="flex-1 overflow-y-auto p-3 md:p-6" style={{
           background: 'radial-gradient(ellipse at 15% 50%, rgba(37,99,235,0.11) 0%, transparent 55%), radial-gradient(ellipse at 85% 15%, rgba(59,130,246,0.08) 0%, transparent 45%), #08080f',
           transition: 'background 0.3s ease',
         }}>

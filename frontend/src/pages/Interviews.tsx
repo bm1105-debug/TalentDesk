@@ -676,7 +676,7 @@ export default function Interviews() {
 
       {view === 'list'
         ? <ListView statusFilter={statusFilter} page={page} setPage={setPage} />
-        : <CalendarView year={calYear} month={calMonth} />
+        : <div className="overflow-x-auto"><div className="min-w-[640px]"><CalendarView year={calYear} month={calMonth} /></div></div>
       }
     </div>
   )

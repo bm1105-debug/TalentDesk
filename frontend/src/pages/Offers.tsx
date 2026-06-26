@@ -183,7 +183,8 @@ export default function Offers() {
 
       {/* ── Table ── */}
       <div className="bg-[#0d1117] rounded-xl border border-white/[0.06] overflow-hidden" style={{ borderTop: '2px solid #2563eb' }}>
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full text-sm min-w-[700px]">
           <thead className="bg-white/[0.04] border-b border-white/[0.06]">
             <tr>
               <th className="text-left px-4 py-3 font-medium text-slate-400">Candidate</th>
@@ -260,6 +261,7 @@ export default function Offers() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* ── Pagination ── */}

@@ -229,7 +229,7 @@ function AIEmailGenerator() {
       </div>
 
       {/* 2-column grid: input card | output card */}
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         {/* ── Left: Input Form ── */}
         <div className={cardCls}>

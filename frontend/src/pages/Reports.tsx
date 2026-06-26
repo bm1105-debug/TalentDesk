@@ -118,7 +118,7 @@ export default function Reports() {
         <div className="space-y-6">
 
           {/* Outcome summary */}
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <OutcomeCard label="Active"    count={report.outcomes.active}    color="bg-blue-500/10 border-blue-500/20 text-blue-300" />
             <OutcomeCard label="Placed"    count={report.outcomes.placed}    color="bg-blue-600/10 border-blue-600/20 text-blue-300" />
             <OutcomeCard label="Rejected"  count={report.outcomes.rejected}  color="bg-red-500/10 border-red-500/20 text-red-300" />

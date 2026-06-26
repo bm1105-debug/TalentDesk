@@ -516,7 +516,7 @@ export default function JobDetail() {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-6 mt-6 pt-6 border-t border-white/[0.06] text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-6 pt-6 border-t border-white/[0.06] text-sm">
             <div>
               <p className="text-slate-500 text-xs uppercase tracking-wide mb-1">Salary</p>
               <p className="font-medium text-slate-100">{fmtSalary(job.salary_min, job.salary_max)}</p>

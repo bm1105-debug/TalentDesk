@@ -59,7 +59,7 @@ const KPI_CFG = [
 
 function RecruiterStatsWidget({ data, loading }: { data: RecruiterStats | undefined; loading: boolean }) {
   return (
-    <div className="grid grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
       {KPI_CFG.map(({ label, key, color, icon: Icon, fmt }) => (
         <div
           key={label}
@@ -423,7 +423,7 @@ export default function People() {
           <RecruiterStatsWidget data={data?.recruiter_stats} loading={isLoading} />
 
           {/* Row 2: Source effectiveness | Open jobs */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <WidgetCard title="Source Effectiveness" loading={isLoading}>
               {sources.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-6 gap-2 text-center">
@@ -442,7 +442,7 @@ export default function People() {
           </div>
 
           {/* Row 3: Pipeline funnel | Interview outcomes */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <WidgetCard title="Pipeline Funnel" loading={isLoading}>
               <PipelineFunnelWidget stages={data?.pipeline_funnel ?? []} />
             </WidgetCard>

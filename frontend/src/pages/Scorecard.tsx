@@ -70,7 +70,7 @@ export default function Scorecard() {
 
       {/* ── Stat cards ── */}
       {isLoading ? (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="bg-[#0d1117] rounded-xl border border-white/[0.06] p-5 space-y-2">
               <Skeleton className="h-8 w-16" />
@@ -79,7 +79,7 @@ export default function Scorecard() {
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <StatCard label="Total Submitted"  value={stats?.total ?? 0} />
           <StatCard label="Active"           value={stats?.active ?? 0} highlight />
           <StatCard label="Placed"           value={stats?.placed ?? 0} />
@@ -94,7 +94,7 @@ export default function Scorecard() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
         {/* ── Pipeline breakdown ── */}
         <div className="bg-[#0d1117] rounded-xl border border-white/[0.06] p-5">

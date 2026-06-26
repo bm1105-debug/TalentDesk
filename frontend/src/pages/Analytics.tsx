@@ -43,7 +43,8 @@ function LeaderboardWidget({ rows, currentUserId }: { rows: LeaderboardEntry[]; 
   if (rows.length === 0) return <Empty />
   const maxPlacements = Math.max(...rows.map(r => r.placements), 1)
   return (
-    <table className="w-full text-sm">
+    <div className="overflow-x-auto">
+    <table className="w-full text-sm min-w-[500px]">
       <thead>
         <tr className="text-left text-xs text-slate-500 uppercase tracking-wide border-b border-white/[0.06] bg-white/[0.04]">
           <th className="pb-2 font-medium">Recruiter</th>
@@ -74,6 +75,7 @@ function LeaderboardWidget({ rows, currentUserId }: { rows: LeaderboardEntry[]; 
         })}
       </tbody>
     </table>
+    </div>
   )
 }
 
@@ -168,7 +170,7 @@ export default function Analytics() {
       </div>
 
       {/* ── Row 1: Candidate pool stat cards ── */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="Active"      value={pool?.active}      loading={isLoading} />
         <StatCard label="Passive"     value={pool?.passive}     loading={isLoading} />
         <StatCard label="Placed"      value={pool?.placed}      loading={isLoading} />
@@ -181,7 +183,7 @@ export default function Analytics() {
       </WidgetCard>
 
       {/* ── Row 3: Source effectiveness | Decline reasons ── */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <WidgetCard title="Source Effectiveness" loading={isLoading}>
           {sources.length === 0
             ? <Empty />
@@ -204,7 +206,7 @@ export default function Analytics() {
       </WidgetCard>
 
       {/* ── Row 6: Pipeline funnel | Interview outcomes ── */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <WidgetCard title="Pipeline Funnel" loading={isLoading}>
           <PipelineFunnelWidget stages={data?.pipeline_funnel ?? []} />
         </WidgetCard>
