@@ -15,7 +15,7 @@ interface AuthContextValue {
   user: AuthUser | null
   isAuthenticated: boolean
   isLoading: boolean          // true while we're checking localStorage on first load
-  login: (username: string, password: string) => Promise<void>
+  login: (username: string, password: string) => Promise<AuthUser>
   logout: () => void
 }
 
@@ -48,13 +48,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [fetchMe])
 
-  const login = useCallback(async (username: string, password: string) => {
-    // POST to SimpleJWT token endpoint — returns access + refresh tokens
+  const login = useCallback(async (username: string, password: string): Promise<AuthUser> => {
     const { data } = await api.post('/users/token/', { username, password })
     localStorage.setItem('access',  data.access)
     localStorage.setItem('refresh', data.refresh)
-    await fetchMe()
-  }, [fetchMe])
+    const { data: me } = await api.get<AuthUser>('/users/me/')
+    setUser(me)
+    return me
+  }, [])
 
   const logout = useCallback(() => {
     localStorage.removeItem('access')
