@@ -279,7 +279,7 @@ function EmployeePicker({
   }
 
   return (
-    <div ref={containerRef} className="relative w-80">
+    <div ref={containerRef} className="relative flex-1 min-w-[160px] sm:w-80 sm:flex-none">
       {/* Trigger */}
       <button
         onClick={() => setOpen(o => !o)}
@@ -373,9 +373,9 @@ export default function People() {
     <div className="space-y-5">
 
       {/* ── Header + picker ── */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <p className="text-sm text-slate-400">View performance and analytics for any team member</p>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 w-full sm:w-auto">
           {isManager && <AddUserDialog teamLeads={teamLeads} onSuccess={() => {}} />}
           <EmployeePicker users={users} selectedId={selectedId} onSelect={selectUser} />
         </div>
