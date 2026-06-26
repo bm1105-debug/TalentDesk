@@ -996,7 +996,7 @@ export default function Dashboard() {
           </>
         )}
         {!selectedClient && (
-          <p className="ml-auto text-xs text-slate-500 italic">
+          <p className="hidden md:block ml-auto text-xs text-slate-500 italic">
             Pick a client to scope: KPIs, Time to Fill, Decline Reasons, Diversity
           </p>
         )}

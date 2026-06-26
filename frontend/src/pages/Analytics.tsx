@@ -163,7 +163,7 @@ export default function Analytics() {
           </>
         )}
         {!selectedClient && (
-          <p className="ml-auto text-xs text-slate-500 italic">
+          <p className="hidden md:block ml-auto text-xs text-slate-500 italic">
             Pick a client to scope: Time to Fill, Decline Reasons, Diversity
           </p>
         )}

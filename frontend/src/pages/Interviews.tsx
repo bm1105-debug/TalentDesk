@@ -510,7 +510,7 @@ function ListView({ statusFilter, page, setPage }: {
     <>
       <div className="bg-[#0d1117] rounded-xl border border-white/[0.08] overflow-x-auto shadow-sm"
         style={{ borderTop: '2px solid #2563eb' }}>
-        <table className="w-full min-w-[650px] text-sm">
+        <table className={`w-full text-sm ${!isLoading && data?.results.length === 0 ? '' : 'min-w-[650px]'}`}>
           <thead className="bg-[#09090f] border-b border-white/[0.08] sticky top-0 z-10">
             <tr>
               <SortTh label="Candidate" col="candidate" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
