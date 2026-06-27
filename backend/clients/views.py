@@ -5,6 +5,7 @@ Row-level scoping: recruiters see all clients (they need to know who the firm wo
 
 '''
 
+from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -88,6 +89,6 @@ class ContactViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         # Bind the contact to the client from the URL automatically
-        client = Client.objects.get(pk=self.kwargs["client_pk"])
+        client = get_object_or_404(Client, pk=self.kwargs["client_pk"])
         serializer.save(client=client)
 

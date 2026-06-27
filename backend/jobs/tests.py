@@ -119,8 +119,8 @@ class JobCRUDTests(APITestCase):
         res = self.client.post(self.url, payload, format="json")
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         self.assertEqual(res.data["openings"], 2)
-        # created_by should be the logged-in manager
-        self.assertIn("manager", res.data["created_by"])
+        # created_by should be the logged-in manager's full name (StringRelatedField uses __str__)
+        self.assertEqual(res.data["created_by"], str(self.manager))
 
     def test_recruiter_cannot_create_job(self):
         # Recruiters are read-only — job creation is a manager responsibility

@@ -32,6 +32,13 @@ class RegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("A user with this email already exists.")
         return value
 
+    def validate_role(self, value):
+        from users.models import Role
+        requesting_user = self.context.get("request") and self.context["request"].user
+        if requesting_user and value == Role.CEO and requesting_user.role != Role.CEO:
+            raise serializers.ValidationError("Only a CEO can create CEO-level accounts.")
+        return value
+
     def validate_reports_to(self, value):
         if value and value.role != 'team_lead':
             raise serializers.ValidationError("reports_to must be a Team Lead.")

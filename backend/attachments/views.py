@@ -1,10 +1,12 @@
 from django.http import FileResponse
+from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.generics import ListCreateAPIView, DestroyAPIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser, FormParser
 
+from candidates.models import Candidate
 from users.permissions import IsRecruiterOrAbove, IsVPOrAbove
 from .models import Attachment
 from .serializers import AttachmentSerializer
@@ -33,8 +35,14 @@ class AttachmentListCreateView(ListCreateAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        try:
+            candidate_pk = int(candidate_id)
+        except (ValueError, TypeError):
+            return Response({'detail': 'candidate must be a valid ID.'}, status=status.HTTP_400_BAD_REQUEST)
+        candidate = get_object_or_404(Candidate, pk=candidate_pk)
+
         attachment = Attachment.objects.create(
-            candidate_id=candidate_id,
+            candidate=candidate,
             file=file,
             original_name=file.name,
             file_size=file.size,

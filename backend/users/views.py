@@ -102,12 +102,23 @@ class UserDetailView(generics.RetrieveUpdateAPIView):
 
     def get_serializer_class(self):
         if self.request.method in ("PUT", "PATCH"):
+            from rest_framework import serializers as drf_serializers
+            from users.models import Role as _Role
+
             class WritableUserSerializer(UserSerializer):
                 class Meta(UserSerializer.Meta):
                     read_only_fields = (
                         "id", "username", "email", "first_name",
                         "last_name", "phone", "date_joined",
                     )
+
+                def validate_reports_to(self, value):
+                    if value and value.role != _Role.TEAM_LEAD:
+                        raise drf_serializers.ValidationError(
+                            "reports_to must reference a Team Lead."
+                        )
+                    return value
+
             return WritableUserSerializer
         return UserSerializer
 

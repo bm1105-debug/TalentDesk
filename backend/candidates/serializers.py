@@ -54,6 +54,9 @@ class CandidateSerializer(serializers.ModelSerializer):
             tags.append(tag)
         instance.skills.set(tags)  # replaces existing skills on update
 
+    def validate_email(self, value):
+        return value.lower().strip() if value else value
+
     def create(self, validated_data):
         skill_names = validated_data.pop("skill_names", [])
         # Inject the requesting user as created_by

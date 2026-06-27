@@ -1,11 +1,14 @@
 from pathlib import Path
 from datetime import timedelta
 import os
+import sys
 from dotenv import load_dotenv
 
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+TESTING = "test" in sys.argv
 
 # Loaded from .env — crashes loudly if missing (intentional)
 SECRET_KEY = os.environ["SECRET_KEY"]
@@ -123,9 +126,9 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.UserRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
-        "anon": "60/minute",
-        "user": "300/minute",
-        "login": "5/minute",
+        "anon":  "60/minute",
+        "user":  "300/minute",
+        "login": "10000/minute" if TESTING else "5/minute",
     },
 }
 

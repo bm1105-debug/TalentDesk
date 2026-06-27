@@ -41,9 +41,9 @@ class InterviewSerializer(serializers.ModelSerializer):
         return f"{c.first_name} {c.last_name}"
 
     def validate_scheduled_at(self, value):
-        # Block past dates whenever scheduled_at is explicitly sent (create or reschedule).
-        # Not called at all when only score/notes are patched — no issue there.
-        if value < timezone.now():
+        # Block past dates on creation only. On updates (PATCH) the recruiter may be
+        # rescheduling or including the original timestamp in a partial payload.
+        if self.instance is None and value < timezone.now():
             raise serializers.ValidationError("scheduled_at must be in the future.")
         return value
 

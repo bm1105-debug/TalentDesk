@@ -54,10 +54,13 @@ class TaskViewSet(RoleQuerysetMixin, viewsets.ModelViewSet):
         return super().destroy(request, *args, **kwargs)
 
     def partial_update(self, request, *args, **kwargs):
-        # Clear notified_at whenever a task is re-opened so it can be re-notified
         instance = self.get_object()
         new_status = request.data.get("status")
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        # Clear notified_at in the same save when re-opening a completed task
+        extra = {}
         if new_status == Task.Status.OPEN and instance.status == Task.Status.DONE:
-            instance.notified_at = None
-            instance.save(update_fields=["notified_at"])
-        return super().partial_update(request, *args, **kwargs)
+            extra["notified_at"] = None
+        serializer.save(**extra)
+        return Response(serializer.data)

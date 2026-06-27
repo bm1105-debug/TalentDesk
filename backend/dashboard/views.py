@@ -86,6 +86,7 @@ class MyDayView(APIView):
         # ── Trends (current 7 days vs previous 7 days) ───────────────────────
         week_start = (now - timedelta(days=7)).date()
         prev_start = (now - timedelta(days=14)).date()
+        prev_end   = week_start - timedelta(days=1)   # exclusive upper bound for prev week
 
         def _trend(current: int, previous: int) -> dict:
             if previous == 0:
@@ -98,23 +99,23 @@ class MyDayView(APIView):
         trends = {
             "open_jobs": _trend(
                 open_jobs_qs.filter(created_at__date__gte=week_start).count(),
-                open_jobs_qs.filter(created_at__date__range=(prev_start, week_start)).count(),
+                open_jobs_qs.filter(created_at__date__range=(prev_start, prev_end)).count(),
             ),
             "active_submittals": _trend(
                 active_submittals_qs.filter(created_at__date__gte=week_start).count(),
-                active_submittals_qs.filter(created_at__date__range=(prev_start, week_start)).count(),
+                active_submittals_qs.filter(created_at__date__range=(prev_start, prev_end)).count(),
             ),
             "urgent_jobs": _trend(
                 urgent_jobs.filter(created_at__date__gte=week_start).count(),
-                urgent_jobs.filter(created_at__date__range=(prev_start, week_start)).count(),
+                urgent_jobs.filter(created_at__date__range=(prev_start, prev_end)).count(),
             ),
             "overdue_jobs": _trend(
                 overdue_jobs.filter(created_at__date__gte=week_start).count(),
-                overdue_jobs.filter(created_at__date__range=(prev_start, week_start)).count(),
+                overdue_jobs.filter(created_at__date__range=(prev_start, prev_end)).count(),
             ),
             "pending_offers": _trend(
                 pending_offers_qs.filter(created_at__date__gte=week_start).count(),
-                pending_offers_qs.filter(created_at__date__range=(prev_start, week_start)).count(),
+                pending_offers_qs.filter(created_at__date__range=(prev_start, prev_end)).count(),
             ),
         }
 

@@ -83,9 +83,12 @@ class Offer(models.Model):
             created_by = actor,
         )
 
-        submittal.status        = Submittal.SubmittalStatus.PLACED
-        submittal.current_stage = placed_stage
-        submittal.save(update_fields=["status", "current_stage", "updated_at"])
+        submittal.status = Submittal.SubmittalStatus.PLACED
+        update_fields    = ["status", "updated_at"]
+        if placed_stage is not None:
+            submittal.current_stage = placed_stage
+            update_fields.append("current_stage")
+        submittal.save(update_fields=update_fields)
 
     def decline(self, actor, notes=""):
         """Mark declined. Submittal stage left for recruiter to decide."""

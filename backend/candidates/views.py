@@ -17,7 +17,8 @@ from users.mixins import RoleQuerysetMixin
 
 def _check_duplicate(field, value, exclude_pk=None):
     """Return a 409 Response if a candidate with this field value already exists."""
-    qs = Candidate.objects.filter(**{field: value})
+    lookup = f"{field}__iexact" if field == "email" else field
+    qs = Candidate.objects.filter(**{lookup: value})
     if exclude_pk:
         qs = qs.exclude(pk=exclude_pk)
     existing = qs.first()
@@ -128,7 +129,11 @@ class CandidateViewSet(RoleQuerysetMixin, viewsets.ModelViewSet):
         if not ids or not isinstance(ids, list):
             return Response({"detail": "ids must be a non-empty list."}, status=status.HTTP_400_BAD_REQUEST)
 
-        updated = Candidate.objects.filter(pk__in=ids).update(status=new_status)
+        qs = Candidate.objects.filter(pk__in=ids)
+        allowed = self.allowed_author_ids()
+        if allowed is not None:
+            qs = qs.filter(created_by__in=allowed)
+        updated = qs.update(status=new_status)
         return Response({"updated": updated})
 
     @action(detail=True, methods=["post"], url_path="add-skill")
