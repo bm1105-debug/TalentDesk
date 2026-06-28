@@ -73,6 +73,8 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 - Always check the current file for syntax errors after completion
 - Always implement issues one by one. Close an issue after completing it
 - Alawys display token usage after every chat
+- Commit and update memory after major upgrade
+- Don't Push until I say to push
 
 ## 6. Coding Standards
 At the start of every conversation, read `design.md` in the project root. It contains the SOLID principles, clean code guidelines, UI standards, and refactoring strategy that must guide all code changes in this repo.
