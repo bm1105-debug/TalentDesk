@@ -6,6 +6,7 @@ from rest_framework.response import Response
 
 from .models import Offer
 from .serializers import OfferSerializer, OfferActionSerializer
+from rest_framework.permissions import AllowAny
 from users.permissions import IsRecruiterOrAbove, IsVPOrAbove
 from users.mixins import RoleQuerysetMixin
 
@@ -43,6 +44,8 @@ class OfferViewSet(RoleQuerysetMixin, viewsets.ModelViewSet):
         return qs
 
     def get_permissions(self):
+        if self.action in ("list", "retrieve"):
+            return [AllowAny()]
         if self.action == "destroy":
             return [IsVPOrAbove()]
         return [IsRecruiterOrAbove()]

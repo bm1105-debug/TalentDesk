@@ -5,7 +5,7 @@ from django.utils import timezone
 
 from rest_framework import viewsets, filters, status
 from rest_framework.exceptions import ValidationError
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -106,6 +106,8 @@ class CandidateViewSet(RoleQuerysetMixin, viewsets.ModelViewSet):
         return super().create(request, *args, **kwargs)
 
     def get_permissions(self):
+        if self.action in ("list", "retrieve"):
+            return [AllowAny()]
         if self.action == "destroy":
             return [IsVPOrAbove()]
         return [IsRecruiterOrAbove()]

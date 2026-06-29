@@ -12,6 +12,7 @@ from rest_framework.response import Response
 
 from .models import Interview
 from .serializers import InterviewSerializer, InterviewStatusUpdateSerializer
+from rest_framework.permissions import AllowAny
 from users.permissions import IsRecruiterOrAbove, IsVPOrAbove
 from users.mixins import RoleQuerysetMixin
 from notifications.utils import notify
@@ -69,8 +70,8 @@ class InterviewViewSet(RoleQuerysetMixin, viewsets.ModelViewSet):
         )
 
     def get_permissions(self):
-        # Recruiters can schedule and view interviews
-        # Only managers can delete interview records
+        if self.action in ("list", "retrieve"):
+            return [AllowAny()]
         if self.action == "destroy":
             return [IsVPOrAbove()]
         return [IsRecruiterOrAbove()]

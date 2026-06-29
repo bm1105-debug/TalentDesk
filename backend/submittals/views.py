@@ -9,6 +9,7 @@ from .serializers import (
     NoteSerializer,
     StatusChangeSerializer,
 )
+from rest_framework.permissions import AllowAny
 from users.permissions import IsRecruiterOrAbove, IsVPOrAbove
 from users.mixins import RoleQuerysetMixin
 from notifications.utils import notify
@@ -51,8 +52,8 @@ class SubmittalViewSet(RoleQuerysetMixin, viewsets.ModelViewSet):
         return qs
 
     def get_permissions(self):
-        # Recruiters can create submittals and add notes
-        # Managers control status changes and deletions
+        if self.action in ("list", "retrieve"):
+            return [AllowAny()]
         if self.action in ("destroy", "change_status"):
             return [IsVPOrAbove()]
         return [IsRecruiterOrAbove()]
