@@ -887,6 +887,17 @@ export default function Dashboard() {
   const maxCandidates = sources.length > 0 ? Math.max(...sources.map(s => s.candidates)) : 1
   const selectedClientName = clients.find(c => c.id === selectedClient)?.name
 
+  if (!isAuthenticated) return (
+    <div className="flex flex-col items-center justify-center py-32 gap-4 text-center">
+      <Briefcase className="h-10 w-10 text-blue-400/40" />
+      <p className="text-lg font-semibold text-slate-300">Sign in to see your dashboard</p>
+      <p className="text-sm text-slate-500 max-w-xs">Your personal pipeline, tasks, and hiring stats are visible once you're signed in.</p>
+      <Link to="/login" className="mt-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">
+        Sign In
+      </Link>
+    </div>
+  )
+
   if (isLoading) return <DashboardSkeleton />
 
   if (isError || !data) {
