@@ -9,7 +9,7 @@ import {
   HandCoins, CalendarDays, Trophy, ArrowRight,
   ListTodo, Plus, ChevronDown, ChevronUp,
   CheckSquare, CalendarCheck, Filter,
-  Building2, X,
+  Building2, X, Users, ClipboardList,
 } from 'lucide-react'
 import { EmptyState } from '@/components/EmptyState'
 import api from '@/api/client'
@@ -816,6 +816,171 @@ function ConversionFunnel({ stages, loading, error }: {
   )
 }
 
+// ── Guest Overview ─────────────────────────────────────────────────────────────
+
+function GuestDashboard() {
+  const { data: candidatesData } = useQuery({
+    queryKey: ['guest-candidates'],
+    queryFn: () => api.get('/candidates/', { params: { page_size: 6 } }).then(r => r.data),
+  })
+  const { data: jobsData } = useQuery({
+    queryKey: ['guest-jobs'],
+    queryFn: () => api.get('/jobs/', { params: { status: 'open', page_size: 6 } }).then(r => r.data),
+  })
+  const { data: submittalsData } = useQuery({
+    queryKey: ['guest-submittals'],
+    queryFn: () => api.get('/submittals/', { params: { page_size: 1 } }).then(r => r.data),
+  })
+  const { data: interviewsData } = useQuery({
+    queryKey: ['guest-interviews'],
+    queryFn: () => api.get('/interviews/', { params: { page_size: 1 } }).then(r => r.data),
+  })
+
+  const stats = [
+    { label: 'Total Candidates', value: candidatesData?.count, icon: Users,         color: '#3b82f6' },
+    { label: 'Open Jobs',        value: jobsData?.count,       icon: Briefcase,     color: '#10b981' },
+    { label: 'Submittals',       value: submittalsData?.count, icon: ClipboardList, color: '#8b5cf6' },
+    { label: 'Interviews',       value: interviewsData?.count, icon: CalendarCheck, color: '#f59e0b' },
+  ]
+
+  const candidates: Array<{ id: number; first_name: string; last_name: string; current_title: string; current_company: string; status: string }> =
+    candidatesData?.results ?? []
+  const jobs: Array<{ id: number; title: string; client_name: string; priority: string; openings: number }> =
+    jobsData?.results ?? []
+
+  return (
+    <div className="space-y-4">
+
+      {/* Hero banner */}
+      <div
+        className="relative overflow-hidden"
+        style={{
+          background:   'radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px) 0 0 / 22px 22px, linear-gradient(135deg, rgba(37,99,235,0.12) 0%, rgba(59,130,246,0.08) 50%, rgba(96,165,250,0.05) 100%)',
+          border:       '1px solid rgba(37,99,235,0.2)',
+          borderRadius: '14px',
+          padding:      '20px 24px',
+          boxShadow:    '0 0 40px rgba(37,99,235,0.10)',
+        }}
+      >
+        <div className="absolute pointer-events-none z-0" style={{ top: '-60px', right: '-20px', width: '280px', height: '280px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(37,99,235,0.28) 0%, transparent 70%)' }} />
+        {[
+          { top: '12px', right: '160px', size: '14px', opacity: 0.7 },
+          { top: '32px', right: '80px',  size: '10px', opacity: 0.5 },
+        ].map((s, i) => (
+          <span key={i} className="absolute pointer-events-none z-0 select-none" style={{ ...s, color: '#fbbf24', fontSize: s.size, lineHeight: 1 }}>✦</span>
+        ))}
+        <div className="relative z-10">
+          <h1 style={{ fontSize: '1.4rem', fontWeight: 900, color: '#f1f5f9', letterSpacing: '-0.6px', textShadow: '0 0 40px rgba(37,99,235,0.4)' }}>
+            Company Overview
+          </h1>
+          <p style={{ color: 'rgba(241,245,249,0.45)', fontSize: '12px', marginTop: '4px' }}>
+            Live pipeline data · Sign in to access your personal dashboard
+          </p>
+          <Link
+            to="/login"
+            className="inline-flex items-center gap-1.5 mt-3 px-4 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+          >
+            Sign In <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+      </div>
+
+      {/* Stat tiles */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {stats.map(({ label, value, icon: Icon, color }) => (
+          <div key={label} style={{
+            padding: '14px 16px', height: '96px', display: 'flex', flexDirection: 'column',
+            justifyContent: 'space-between', borderRadius: '8px',
+            background: `linear-gradient(135deg, ${color}12 0%, rgba(255,255,255,0.018) 100%)`,
+            border: '1px solid rgba(255,255,255,0.07)', borderLeft: `3px solid ${color}`,
+            boxShadow: `0 2px 12px ${color}18`,
+          }}>
+            <div style={{ width: 32, height: 32, borderRadius: 7, background: `${color}20`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Icon className="h-4 w-4" style={{ color }} />
+            </div>
+            {value == null ? (
+              <div className="space-y-1">
+                <div className="h-6 w-12 bg-white/10 rounded animate-pulse" />
+                <div className="h-2.5 w-20 bg-white/10 rounded animate-pulse" />
+              </div>
+            ) : (
+              <div>
+                <p style={{ fontSize: '28px', fontWeight: 800, lineHeight: 1, letterSpacing: '-0.5px', color: '#f1f5f9' }}>{value}</p>
+                <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.35)', marginTop: '3px' }}>{label}</p>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Recent candidates + open jobs */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        {/* Candidates */}
+        <div style={{ background: '#0d1117', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', overflow: 'hidden' }}>
+          <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-blue-400" />
+              <span style={{ color: '#e2e8f0', fontWeight: 700, fontSize: '13px' }}>Recent Candidates</span>
+            </div>
+            <Link to="/candidates" className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-0.5">
+              View all <ArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
+          {candidates.length === 0 ? (
+            <p className="px-4 py-6 text-sm text-slate-500 text-center">Loading…</p>
+          ) : (
+            <div>
+              {candidates.map(c => (
+                <div key={c.id} className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02] transition-colors">
+                  <div>
+                    <p className="text-sm font-medium text-slate-200">{c.first_name} {c.last_name}</p>
+                    <p className="text-xs text-slate-500">{c.current_title}{c.current_company ? ` · ${c.current_company}` : ''}</p>
+                  </div>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${c.status === 'active' ? 'bg-green-500/15 text-green-400' : c.status === 'placed' ? 'bg-blue-500/15 text-blue-400' : 'bg-slate-500/15 text-slate-400'}`}>
+                    {c.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Open jobs */}
+        <div style={{ background: '#0d1117', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', overflow: 'hidden' }}>
+          <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <div className="flex items-center gap-2">
+              <Briefcase className="h-4 w-4 text-green-400" />
+              <span style={{ color: '#e2e8f0', fontWeight: 700, fontSize: '13px' }}>Open Jobs</span>
+            </div>
+            <Link to="/jobs" className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-0.5">
+              View all <ArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
+          {jobs.length === 0 ? (
+            <p className="px-4 py-6 text-sm text-slate-500 text-center">No open jobs · <Link to="/login" className="text-blue-400 hover:underline">Sign in to manage</Link></p>
+          ) : (
+            <div>
+              {jobs.map(j => (
+                <div key={j.id} className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02] transition-colors">
+                  <div>
+                    <p className="text-sm font-medium text-slate-200">{j.title}</p>
+                    <p className="text-xs text-slate-500">{j.client_name}</p>
+                  </div>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${j.priority === 'urgent' ? 'bg-red-500/15 text-red-400' : j.priority === 'high' ? 'bg-orange-500/15 text-orange-400' : 'bg-slate-500/15 text-slate-400'}`}>
+                    {j.priority}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+      </div>
+    </div>
+  )
+}
+
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
@@ -887,16 +1052,7 @@ export default function Dashboard() {
   const maxCandidates = sources.length > 0 ? Math.max(...sources.map(s => s.candidates)) : 1
   const selectedClientName = clients.find(c => c.id === selectedClient)?.name
 
-  if (!isAuthenticated) return (
-    <div className="flex flex-col items-center justify-center py-32 gap-4 text-center">
-      <Briefcase className="h-10 w-10 text-blue-400/40" />
-      <p className="text-lg font-semibold text-slate-300">Sign in to see your dashboard</p>
-      <p className="text-sm text-slate-500 max-w-xs">Your personal pipeline, tasks, and hiring stats are visible once you're signed in.</p>
-      <Link to="/login" className="mt-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">
-        Sign In
-      </Link>
-    </div>
-  )
+  if (!isAuthenticated) return <GuestDashboard />
 
   if (isLoading) return <DashboardSkeleton />
 
