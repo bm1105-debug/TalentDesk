@@ -174,7 +174,7 @@ function QuickSubmitDialog({ candidateId, candidateName }: { candidateId: number
 
 function AttachmentsTab({ candidateId }: { candidateId: number }) {
   const qc = useQueryClient()
-  const { user } = useAuth()
+  const { user, isAuthenticated } = useAuth()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState('')
@@ -217,11 +217,13 @@ function AttachmentsTab({ candidateId }: { candidateId: number }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <Button size="sm" variant="outline" className="gap-1.5" disabled={uploading}
-          onClick={() => fileInputRef.current?.click()}>
-          {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-          {uploading ? 'Uploading…' : 'Upload file'}
-        </Button>
+        {isAuthenticated && (
+          <Button size="sm" variant="outline" className="gap-1.5" disabled={uploading}
+            onClick={() => fileInputRef.current?.click()}>
+            {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+            {uploading ? 'Uploading…' : 'Upload file'}
+          </Button>
+        )}
         <input ref={fileInputRef} type="file" accept=".pdf,.docx,.doc,.txt,.png,.jpg,.jpeg"
           className="hidden" onChange={handleUpload} />
         <span className="text-xs text-slate-500">PDF, DOCX, TXT, images</span>
@@ -273,6 +275,7 @@ function AttachmentsTab({ candidateId }: { candidateId: number }) {
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function CandidateDetail() {
+  const { isAuthenticated } = useAuth()
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const qc = useQueryClient()
@@ -386,7 +389,7 @@ export default function CandidateDetail() {
 
           {/* Action buttons */}
           <div className="flex items-center gap-2 shrink-0">
-            <QuickSubmitDialog candidateId={candidate.id} candidateName={candidateName} />
+            {isAuthenticated && <QuickSubmitDialog candidateId={candidate.id} candidateName={candidateName} />}
 
             <button onClick={() => navigate('/communications')} className="btn-secondary gap-1.5">
               <Send className="h-4 w-4" /> Send Email
@@ -592,7 +595,7 @@ export default function CandidateDetail() {
           <div className="card p-5 space-y-3">
             <div className="flex items-center justify-between">
               <p className="section-label">Notes</p>
-              {!editingNotes && (
+              {isAuthenticated && !editingNotes && (
                 <button
                   onClick={() => { setNoteText(candidate.notes ?? ''); setEditingNotes(true) }}
                   className="p-1 rounded text-slate-600 hover:text-slate-300 transition-colors"

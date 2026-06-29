@@ -4,8 +4,10 @@
 import { useState, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Sparkles, Download } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import api from '@/api/client'
 import { timeAgo } from '@/lib/time'
+import { useAuth } from '@/context/AuthContext'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -479,5 +481,19 @@ function AIEmailGenerator() {
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function Communications() {
+  const { isAuthenticated } = useAuth()
+  if (!isAuthenticated) return (
+    <div className="flex flex-col items-center justify-center py-32 gap-4 text-center">
+      <Sparkles className="h-10 w-10 text-blue-400/40" />
+      <p className="text-lg font-semibold text-slate-300">Sign in to use the AI Email Generator</p>
+      <p className="text-sm text-slate-500 max-w-xs">Create personalised emails for candidates and clients using Groq AI.</p>
+      <Link
+        to="/login"
+        className="mt-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+      >
+        Sign In
+      </Link>
+    </div>
+  )
   return <AIEmailGenerator />
 }

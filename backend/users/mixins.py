@@ -19,6 +19,9 @@ class RoleQuerysetMixin:
         if hasattr(self.request, '_pod_ids'):
             return self.request._pod_ids
         user = self.request.user
+        if not user.is_authenticated:
+            self.request._pod_ids = None
+            return None
         if user.role == Role.RECRUITER:
             result = {user.pk}
         elif user.role == Role.TEAM_LEAD:
@@ -31,4 +34,5 @@ class RoleQuerysetMixin:
         return result
 
     def is_manager(self):
-        return self.request.user.role in (Role.VP, Role.CEO)
+        user = self.request.user
+        return user.is_authenticated and user.role in (Role.VP, Role.CEO)

@@ -14,6 +14,7 @@ import InitialsAvatar from '@/components/InitialsAvatar'
 import { useNavigate } from 'react-router-dom'
 import { useRef } from 'react'
 import api from '@/api/client'
+import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -483,6 +484,7 @@ function CandidateCard({ candidate }: { candidate: Candidate }) {
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function Candidates() {
+  const { isAuthenticated } = useAuth()
   const [viewMode,          setViewMode]          = useState<'table' | 'card'>(
     () => (localStorage.getItem('candidates_view_mode') as 'table' | 'card') ?? 'table'
   )
@@ -567,19 +569,21 @@ export default function Candidates() {
             }
           </button>
 
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="gap-1.5 rounded-full px-4" style={{ boxShadow: '0 0 16px rgba(37,99,235,0.4)' }}>
-                <Plus className="h-3.5 w-3.5" /> Add Candidate
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add Candidate</DialogTitle>
-              </DialogHeader>
-              <AddCandidateForm onSuccess={() => setDialogOpen(false)} />
-            </DialogContent>
-          </Dialog>
+          {isAuthenticated && (
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="gap-1.5 rounded-full px-4" style={{ boxShadow: '0 0 16px rgba(37,99,235,0.4)' }}>
+                  <Plus className="h-3.5 w-3.5" /> Add Candidate
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add Candidate</DialogTitle>
+                </DialogHeader>
+                <AddCandidateForm onSuccess={() => setDialogOpen(false)} />
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
       </div>
 

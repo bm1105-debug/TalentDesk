@@ -566,7 +566,7 @@ function StarButton({ submittal }: { submittal: Submittal }) {
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function Submittals() {
-  const { user } = useAuth()
+  const { user, isAuthenticated } = useAuth()
   const isManager = ['vp', 'ceo'].includes(user?.role ?? '')
 
   const [status,          setStatus]          = useState('')
@@ -602,17 +602,19 @@ export default function Submittals() {
       {/* ── Top bar ── */}
       <div className="flex items-center justify-between">
 
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm" className="gap-1.5 rounded-full px-4" style={{ boxShadow: '0 0 16px rgba(37,99,235,0.4)' }}>
-              <Plus className="h-3.5 w-3.5" /> Submit Candidate
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Submit Candidate to Job</DialogTitle></DialogHeader>
-            <AddSubmittalForm onSuccess={() => setDialogOpen(false)} />
-          </DialogContent>
-        </Dialog>
+        {isAuthenticated && (
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="gap-1.5 rounded-full px-4" style={{ boxShadow: '0 0 16px rgba(37,99,235,0.4)' }}>
+                <Plus className="h-3.5 w-3.5" /> Submit Candidate
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Submit Candidate to Job</DialogTitle></DialogHeader>
+              <AddSubmittalForm onSuccess={() => setDialogOpen(false)} />
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       {/* ── Filters ── */}
@@ -664,7 +666,7 @@ export default function Submittals() {
             )}
             {data?.results.map(s => (
               <tr key={s.id} className={`hover:bg-white/[0.03] transition-colors duration-100 ${s.is_shortlisted ? 'bg-amber-500/5' : ''}`}>
-                <td className="px-3 py-3"><StarButton submittal={s} /></td>
+                <td className="px-3 py-3">{isAuthenticated && <StarButton submittal={s} />}</td>
                 <td className="px-4 py-3 font-medium text-slate-100">{s.candidate_name}</td>
                 <td className="px-4 py-3 text-slate-400">{s.job_title}</td>
                 <td className="px-4 py-3">
@@ -677,7 +679,7 @@ export default function Submittals() {
                 <td className="px-4 py-3"><SubmittalStatusBadge status={s.status} /></td>
                 <td className="px-4 py-3 text-slate-500 text-xs">{s.submitted_by}</td>
                 <td className="px-4 py-3">
-                  {s.status === 'active' && (
+                  {isAuthenticated && s.status === 'active' && (
                     <div className="flex items-center gap-1">
                       <AdvanceStageDialog submittal={s} onDone={() => {}} />
                       <AddNoteDialog submittal={s} onDone={() => {}} />

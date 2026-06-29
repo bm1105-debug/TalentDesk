@@ -28,14 +28,8 @@ export default function App() {
       {/* Public */}
       <Route path="/login" element={<Login />} />
 
-      {/* Protected — all children share the Layout shell */}
-      <Route
-        element={
-          <ProtectedRoute>
-            <Layout />
-          </ProtectedRoute>
-        }
-      >
+      {/* All children share the Layout shell — auth not required to browse */}
+      <Route element={<Layout />}>
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard"      element={<Dashboard />} />
         <Route path="candidates"     element={<Candidates />} />

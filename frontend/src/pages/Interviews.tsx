@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Plus, ChevronLeft, ChevronRight, CheckCircle, XCircle, Star, List, CalendarDays, ChevronUp, ChevronDown } from 'lucide-react'
 import api from '@/api/client'
+import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -488,6 +489,7 @@ function ListView({ statusFilter, page, setPage }: {
   page: number
   setPage: (fn: (p: number) => number) => void
 }) {
+  const { isAuthenticated } = useAuth()
   const [sortCol, setSortCol] = useState<string | null>(null)
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
 
@@ -555,8 +557,8 @@ function ListView({ statusFilter, page, setPage }: {
                     <td className="px-4 py-3"><InterviewStatusBadge status={i.status} /></td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <StatusButtons interview={i} />
-                        <ScoreDialog interview={i} />
+                        {isAuthenticated && <StatusButtons interview={i} />}
+                        {isAuthenticated && <ScoreDialog interview={i} />}
                       </div>
                     </td>
                   </tr>
@@ -588,6 +590,7 @@ function ListView({ statusFilter, page, setPage }: {
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function Interviews() {
+  const { isAuthenticated } = useAuth()
   const [view,         setView]         = useState<'list' | 'calendar'>('list')
   const [statusFilter, setStatusFilter] = useState('')
   const [page,         setPage]         = useState(1)
@@ -631,17 +634,19 @@ export default function Interviews() {
             </button>
           </div>
 
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="gap-1.5 rounded-full px-4" style={{ boxShadow: '0 0 16px rgba(37,99,235,0.4)' }}>
-                <Plus className="h-3.5 w-3.5" /> Schedule Interview
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader><DialogTitle>Schedule Interview</DialogTitle></DialogHeader>
-              <ScheduleForm onSuccess={() => setDialogOpen(false)} />
-            </DialogContent>
-          </Dialog>
+          {isAuthenticated && (
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="gap-1.5 rounded-full px-4" style={{ boxShadow: '0 0 16px rgba(37,99,235,0.4)' }}>
+                  <Plus className="h-3.5 w-3.5" /> Schedule Interview
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Schedule Interview</DialogTitle></DialogHeader>
+                <ScheduleForm onSuccess={() => setDialogOpen(false)} />
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
       </div>
 

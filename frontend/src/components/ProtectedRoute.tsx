@@ -20,12 +20,14 @@ export default function ProtectedRoute({ children, minRole, maxRole }: Props) {
 
   if (isLoading) return null
 
-  if (!isAuthenticated) return <Navigate to="/login" replace />
+  // Role-gated routes require a logged-in account
+  if (!isAuthenticated && (minRole || maxRole)) return <Navigate to="/login" replace />
 
-  const current = ROLE_LEVEL[user?.role ?? ''] ?? 0
-
-  if (minRole && current < (ROLE_LEVEL[minRole] ?? 0)) return <Navigate to="/dashboard" replace />
-  if (maxRole && current > (ROLE_LEVEL[maxRole] ?? 0)) return <Navigate to="/dashboard" replace />
+  if (isAuthenticated) {
+    const current = ROLE_LEVEL[user?.role ?? ''] ?? 0
+    if (minRole && current < (ROLE_LEVEL[minRole] ?? 0)) return <Navigate to="/dashboard" replace />
+    if (maxRole && current > (ROLE_LEVEL[maxRole] ?? 0)) return <Navigate to="/dashboard" replace />
+  }
 
   return <>{children}</>
 }

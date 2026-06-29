@@ -278,7 +278,7 @@ function NavItem({ to, label, icon: Icon, collapsed, onClick }: {
 // ── Layout ─────────────────────────────────────────────────────────────────
 
 export default function Layout() {
-  const { user, logout } = useAuth()
+  const { user, logout, isAuthenticated } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const pageTitle = getPageTitle(location.pathname)
@@ -507,6 +507,15 @@ export default function Layout() {
           </button>
 
           <div className="flex items-center gap-1 shrink-0">
+            {!isAuthenticated ? (
+              <Link
+                to="/login"
+                className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+              >
+                Sign In
+              </Link>
+            ) : (
+            <>
             <NotificationBell />
 
             <DropdownMenu.Root>
@@ -575,6 +584,8 @@ export default function Layout() {
                 </DropdownMenu.Content>
               </DropdownMenu.Portal>
             </DropdownMenu.Root>
+            </>
+            )}
           </div>
           </div>
         </header>

@@ -579,6 +579,7 @@ function AddTaskDialog({ onAdded }: { onAdded: () => void }) {
 }
 
 function TaskPanel() {
+  const { isAuthenticated } = useAuth()
   const qc = useQueryClient()
   const [collapsed, setCollapsed] = useState(false)
 
@@ -614,7 +615,7 @@ function TaskPanel() {
           )}
         </div>
         <div className="flex items-center gap-2">
-          <AddTaskDialog onAdded={() => qc.invalidateQueries({ queryKey: ['tasks'] })} />
+          {isAuthenticated && <AddTaskDialog onAdded={() => qc.invalidateQueries({ queryKey: ['tasks'] })} />}
           <button onClick={() => setCollapsed(c => !c)} className="text-white/35 hover:text-white/65 transition-colors">
             {collapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
           </button>
@@ -818,7 +819,7 @@ function ConversionFunnel({ stages, loading, error }: {
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
-  const { user } = useAuth()
+  const { user, isAuthenticated } = useAuth()
   const [selectedClient, setSelectedClient] = useState<number | null>(null)
 
   const { data: clients = [], isLoading: clientsLoading } = useQuery<ClientItem[]>({

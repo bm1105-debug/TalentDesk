@@ -11,6 +11,7 @@ import {
 } from '@dnd-kit/core'
 import type { DragEndEvent } from '@dnd-kit/core'
 import api from '@/api/client'
+import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -292,6 +293,7 @@ function MakeOfferDialog({ submittal }: { submittal: Submittal }) {
 // ── Kanban View ───────────────────────────────────────────────────────────────
 
 function KanbanCard({ submittal, isError }: { submittal: Submittal; isError: boolean }) {
+  const { isAuthenticated } = useAuth()
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: submittal.id })
   return (
     <div
@@ -312,7 +314,7 @@ function KanbanCard({ submittal, isError }: { submittal: Submittal; isError: boo
           </Link>
           <p className="text-xs text-slate-500 mt-0.5">{submittal.current_stage_name ?? 'Not started'}</p>
         </div>
-        <StarButton submittal={submittal} />
+        {isAuthenticated && <StarButton submittal={submittal} />}
       </div>
       <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/[0.06]">
         <MatchBadge score={submittal.match_score} />
@@ -434,6 +436,7 @@ function KanbanView({ job, allSubmittals }: { job: Job; allSubmittals: Submittal
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function JobDetail() {
+  const { isAuthenticated } = useAuth()
   const { id }    = useParams<{ id: string }>()
   const navigate  = useNavigate()
   const [stageFilter, setStageFilter] = useState<number | null>(null)
@@ -633,7 +636,7 @@ export default function JobDetail() {
             )}
             {displayed.map(s => (
               <tr key={s.id} className={`transition-colors hover:bg-white/[0.03] ${s.is_shortlisted ? 'bg-amber-500/5' : ''}`}>
-                <td className="px-3 py-3"><StarButton submittal={s} /></td>
+                <td className="px-3 py-3">{isAuthenticated && <StarButton submittal={s} />}</td>
                 <td className="px-4 py-3">
                   <Link
                     to={`/candidates/${s.candidate}`}
@@ -654,7 +657,7 @@ export default function JobDetail() {
                   {fmtLastContacted(s.candidate_last_contacted_at)}
                 </td>
                 <td className="px-4 py-3">
-                  {s.status === 'active' && job && (
+                  {isAuthenticated && s.status === 'active' && job && (
                     <div className="flex items-center gap-1">
                       <AdvanceStageDialog submittal={s} stages={job.stages} />
                       <AddNoteDialog submittal={s} />

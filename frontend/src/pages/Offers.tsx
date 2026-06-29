@@ -9,6 +9,7 @@ import { z } from 'zod'
 import { ChevronLeft, ChevronRight, CheckCircle, XCircle, MinusCircle, FileText } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import api from '@/api/client'
+import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { StatusBadge } from '@/components/StatusBadge'
@@ -143,6 +144,7 @@ function OfferActionDialog({
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function Offers() {
+  const { isAuthenticated } = useAuth()
   const [statusFilter, setStatusFilter] = useState('')
   const [page, setPage] = useState(1)
   const [actionState, setActionState] = useState<{ offer: Offer; action: OfferAction } | null>(null)
@@ -231,7 +233,7 @@ export default function Offers() {
                   <StatusBadge status={o.status} />
                 </td>
                 <td className="px-4 py-3">
-                  {o.status === 'pending' && (
+                  {isAuthenticated && o.status === 'pending' && (
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => setActionState({ offer: o, action: 'accept' })}
