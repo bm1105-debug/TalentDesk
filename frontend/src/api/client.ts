@@ -38,8 +38,11 @@ api.interceptors.response.use(
     }
 
     const refresh = localStorage.getItem('refresh')
+    const access  = localStorage.getItem('access')
     if (!refresh) {
-      // No refresh token — force login
+      // Pure guest (no tokens at all) — don't redirect, let the component handle it
+      if (!access) return Promise.reject(error)
+      // Had an access token but lost refresh — session unrecoverable, force login
       window.location.href = '/login'
       return Promise.reject(error)
     }
